@@ -80,6 +80,7 @@
             font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            position: relative;
         }
 
         button:hover {
@@ -96,6 +97,31 @@
             cursor: not-allowed;
             opacity: 0.5;
             transform: none;
+        }
+
+        .target-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+        }
+
+        .target-badge.badge-a {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        }
+
+        .target-badge.badge-b {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a3b8 100%);
         }
 
         .btn-init {
@@ -370,10 +396,10 @@
             
             <h3 style="font-size: 16px; color: #00d4ff; margin: 15px 0 10px 0;">Shapes</h3>
             <div class="button-group">
-                <button class="btn-transition" onclick="transition('grid')">Grid</button>
-                <button class="btn-transition" onclick="transition('circle')">Circle</button>
-                <button class="btn-transition" onclick="transition('spiral')">Spiral</button>
-                <button class="btn-transition" onclick="transition('random')">Random</button>
+                <button class="btn-transition" onclick="selectTarget('grid', event)" data-target="grid">Grid</button>
+                <button class="btn-transition" onclick="selectTarget('circle', event)" data-target="circle">Circle</button>
+                <button class="btn-transition" onclick="selectTarget('spiral', event)" data-target="spiral">Spiral</button>
+                <button class="btn-transition" onclick="selectTarget('random', event)" data-target="random">Random</button>
             </div>
 
             <h3 style="font-size: 16px; color: #00d4ff; margin: 15px 0 10px 0;">Images</h3>
@@ -381,14 +407,14 @@
                 <label for="image1Upload">Image 1:</label>
                 <input type="file" id="image1Upload" accept="image/*" onchange="handleImageUpload(1, event)">
                 <div id="image1Preview" class="image-preview"></div>
-                <button class="btn-transition" onclick="transitionToImage(1)" id="transitionImage1Btn" disabled>Image 1</button>
+                <button class="btn-transition" onclick="selectTarget('image1', event)" id="transitionImage1Btn" data-target="image1" disabled>Image 1</button>
             </div>
             
             <div class="config-group">
                 <label for="image2Upload">Image 2:</label>
                 <input type="file" id="image2Upload" accept="image/*" onchange="handleImageUpload(2, event)">
                 <div id="image2Preview" class="image-preview"></div>
-                <button class="btn-transition" onclick="transitionToImage(2)" id="transitionImage2Btn" disabled>Image 2</button>
+                <button class="btn-transition" onclick="selectTarget('image2', event)" id="transitionImage2Btn" data-target="image2" disabled>Image 2</button>
             </div>
 
             <h2>🎮 Controls</h2>
@@ -433,6 +459,12 @@
             1: null,
             2: null
         };
+
+        // A/B target selection state
+        let targetA = null;
+        let targetB = null;
+        let alternationInterval = null;
+        let currentTarget = 'A';
 
         // Intercept console.log for debug display
         const originalLog = console.log;
@@ -643,26 +675,6 @@
             }
         };
 
-        window.transition = function(pattern) {
-            try {
-                if (!engine) {
-                    console.warn('Engine not initialized. Call Initialize Engine first.');
-                    return;
-                }
-
-                // Check if a preset is active
-                if (engine.getActivePresetId()) {
-                    console.log(`Transitioning preset to ${pattern}...`);
-                    engine.transitionPresetTo('pattern', pattern, 2000);
-                } else {
-                    engine.transition(pattern, 2000);
-                    console.log(`Transitioning to ${pattern}...`);
-                }
-            } catch (error) {
-                console.error('Failed to transition:', error.message);
-            }
-        };
-
         window.startEngine = function() {
             try {
                 if (!engine) {
@@ -798,10 +810,167 @@
             }
         };
 
+        // A/B Target Selection System
+        window.selectTarget = function(targetId, event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const button = event.currentTarget;
+            
+            // Determine which slot to assign (A or B)
+            // If clicking same target, cycle through: none -> A -> B -> none
+            // If clicking different target, assign to first available slot (A first, then B)
+            
+            const currentBadge = button.querySelector('.target-badge');
+            let newSelection = null;
+            
+            if (currentBadge) {
+                if (currentBadge.classList.contains('badge-a')) {
+                    // A -> B
+                    newSelection = 'B';
+                } else {
+                    // B -> none
+                    newSelection = null;
+                }
+            } else {
+                // none -> A or B (depending on what's available)
+                if (!targetA || targetA === targetId) {
+                    newSelection = 'A';
+                } else if (!targetB || targetB === targetId) {
+                    newSelection = 'B';
+                } else {
+                    // Both slots taken, don't assign
+                    console.log('Both A and B slots are taken. Click a target to cycle its state.');
+                    return;
+                }
+            }
+            
+            // Remove current badge if exists
+            if (currentBadge) {
+                currentBadge.remove();
+            }
+            
+            // Clear previous selection if assigning new
+            if (newSelection === 'A') {
+                if (targetA && targetA !== targetId) {
+                    const prevButton = document.querySelector(`[data-target="${targetA}"]`);
+                    if (prevButton) {
+                        const prevBadge = prevButton.querySelector('.target-badge.badge-a');
+                        if (prevBadge) prevBadge.remove();
+                    }
+                }
+                targetA = targetId;
+            } else if (newSelection === 'B') {
+                if (targetB && targetB !== targetId) {
+                    const prevButton = document.querySelector(`[data-target="${targetB}"]`);
+                    if (prevButton) {
+                        const prevBadge = prevButton.querySelector('.target-badge.badge-b');
+                        if (prevBadge) prevBadge.remove();
+                    }
+                }
+                targetB = targetId;
+            } else {
+                // Removing selection
+                if (targetA === targetId) {
+                    targetA = null;
+                } else if (targetB === targetId) {
+                    targetB = null;
+                }
+            }
+            
+            // Add new badge if selected
+            if (newSelection) {
+                const badge = document.createElement('span');
+                badge.className = `target-badge badge-${newSelection.toLowerCase()}`;
+                badge.textContent = newSelection;
+                button.appendChild(badge);
+            }
+            
+            // Update alternation
+            updateAlternation();
+            
+            console.log(`Target selection updated: A=${targetA}, B=${targetB}`);
+        };
+
+        function updateAlternation() {
+            // Stop any existing alternation
+            if (alternationInterval) {
+                clearInterval(alternationInterval);
+                alternationInterval = null;
+            }
+            
+            // Start alternation if both A and B are selected
+            if (targetA && targetB && engine) {
+                console.log('Starting alternation between targets A and B');
+                currentTarget = 'A';
+                
+                // Transition to first target immediately
+                performTransition(targetA);
+                
+                // Set up alternation (switch every 4 seconds)
+                alternationInterval = setInterval(() => {
+                    currentTarget = currentTarget === 'A' ? 'B' : 'A';
+                    const target = currentTarget === 'A' ? targetA : targetB;
+                    performTransition(target);
+                }, 4000);
+            } else if (targetA && engine) {
+                // Only A selected, transition to it once
+                performTransition(targetA);
+            } else if (targetB && engine) {
+                // Only B selected, transition to it once
+                performTransition(targetB);
+            }
+        }
+
+        function performTransition(targetId) {
+            if (!engine) return;
+            
+            if (targetId.startsWith('image')) {
+                const imageNum = targetId === 'image1' ? 1 : 2;
+                const image = window.uploadedImages[imageNum];
+                if (image) {
+                    console.log(`Transitioning to ${targetId} (${currentTarget})`);
+                    if (engine.getActivePresetId()) {
+                        engine.transitionPresetTo('image', image, 2000);
+                    } else {
+                        engine.transitionToImage(image, 2000);
+                    }
+                }
+            } else {
+                console.log(`Transitioning to ${targetId} (${currentTarget})`);
+                if (engine.getActivePresetId()) {
+                    engine.transitionPresetTo('pattern', targetId, 2000);
+                } else {
+                    engine.transition(targetId, 2000);
+                }
+            }
+        }
+
+        // Keep old transition function for backward compatibility
+        window.transition = function(pattern) {
+            try {
+                if (!engine) {
+                    console.warn('Engine not initialized.');
+                    return;
+                }
+                
+                // Check if a preset is active
+                if (engine.getActivePresetId()) {
+                    console.log(`Transitioning preset to ${pattern}...`);
+                    engine.transitionPresetTo('pattern', pattern, 2000);
+                } else {
+                    engine.transition(pattern, 2000);
+                    console.log(`Transitioning to ${pattern}...`);
+                }
+            } catch (error) {
+                console.error('Failed to transition:', error.message);
+            }
+        };
+
         window.transitionToImage = function(imageNum) {
             try {
                 if (!engine) {
-                    console.warn('Engine not initialized. Call Initialize Engine first.');
+                    console.warn('Engine not initialized.');
                     return;
                 }
 
@@ -825,8 +994,42 @@
             }
         };
 
+        // Auto-initialize engine on page load
+        function autoInitialize() {
+            try {
+                const particleCount = parseInt(document.getElementById('particleCount').value);
+                const speed = parseFloat(document.getElementById('speed').value);
+
+                console.log(`Auto-initializing engine with ${particleCount} particles in random pattern...`);
+                
+                engine = new ParticleEngine(canvas, {
+                    particleCount: particleCount,
+                    speed: speed,
+                    autoResize: false
+                });
+
+                // Register presets
+                registerPresets();
+
+                // Initialize with random pattern
+                engine.initializeParticles('random');
+                engine.start();
+                
+                updateStatus('Running');
+                console.log('Engine auto-initialized and started!');
+            } catch (error) {
+                console.error('Failed to auto-initialize engine:', error.message);
+                updateStatus('Error');
+            }
+        }
+
+        // Call auto-initialize when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            autoInitialize();
+        });
+
         // Initial log message
-        addLogEntry('Debug panel loaded. Click "Initialize Engine" to start.');
+        addLogEntry('Debug panel loaded. Engine will auto-initialize...');
     </script>
 </body>
 </html>
