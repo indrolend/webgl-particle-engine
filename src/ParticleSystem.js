@@ -17,6 +17,9 @@ export class ParticleSystem {
     this.isTransitioning = false;
     this.transitionProgress = 0;
     
+    // Interpolation factor for smooth transitions
+    this.INTERPOLATION_FACTOR = 0.1;
+    
     console.log('[ParticleSystem] Initialized with config:', this.config);
   }
 
@@ -155,13 +158,17 @@ export class ParticleSystem {
     console.log(`[ParticleSystem] Created ${this.particles.length} particles in spiral formation`);
   }
 
-  transitionToGrid(duration = 2000) {
-    console.log(`[ParticleSystem] Starting transition to grid (${duration}ms)...`);
-    
+  _startTransition(duration) {
     this.isTransitioning = true;
     this.transitionProgress = 0;
     this.transitionDuration = duration;
     this.transitionStartTime = Date.now();
+  }
+
+  transitionToGrid(duration = 2000) {
+    console.log(`[ParticleSystem] Starting transition to grid (${duration}ms)...`);
+    
+    this._startTransition(duration);
     
     const cols = Math.ceil(Math.sqrt(this.particles.length));
     const rows = Math.ceil(this.particles.length / cols);
@@ -184,10 +191,7 @@ export class ParticleSystem {
   transitionToCircle(duration = 2000) {
     console.log(`[ParticleSystem] Starting transition to circle (${duration}ms)...`);
     
-    this.isTransitioning = true;
-    this.transitionProgress = 0;
-    this.transitionDuration = duration;
-    this.transitionStartTime = Date.now();
+    this._startTransition(duration);
     
     const centerX = this.width / 2;
     const centerY = this.height / 2;
@@ -210,10 +214,7 @@ export class ParticleSystem {
   transitionToSpiral(duration = 2000) {
     console.log(`[ParticleSystem] Starting transition to spiral (${duration}ms)...`);
     
-    this.isTransitioning = true;
-    this.transitionProgress = 0;
-    this.transitionDuration = duration;
-    this.transitionStartTime = Date.now();
+    this._startTransition(duration);
     
     const centerX = this.width / 2;
     const centerY = this.height / 2;
@@ -236,10 +237,7 @@ export class ParticleSystem {
   transitionToRandom(duration = 2000) {
     console.log(`[ParticleSystem] Starting transition to random (${duration}ms)...`);
     
-    this.isTransitioning = true;
-    this.transitionProgress = 0;
-    this.transitionDuration = duration;
-    this.transitionStartTime = Date.now();
+    this._startTransition(duration);
     
     for (let i = 0; i < this.particles.length; i++) {
       const particle = this.particles[i];
@@ -271,15 +269,16 @@ export class ParticleSystem {
       if (this.isTransitioning) {
         // Smooth easing function (ease-in-out)
         const t = this.easeInOutCubic(this.transitionProgress);
+        const factor = t * this.INTERPOLATION_FACTOR;
         
         // Interpolate position
-        particle.x = particle.x + (particle.targetX - particle.x) * t * 0.1;
-        particle.y = particle.y + (particle.targetY - particle.y) * t * 0.1;
+        particle.x = particle.x + (particle.targetX - particle.x) * factor;
+        particle.y = particle.y + (particle.targetY - particle.y) * factor;
         
         // Interpolate color
-        particle.r = particle.r + (particle.targetR - particle.r) * t * 0.1;
-        particle.g = particle.g + (particle.targetG - particle.g) * t * 0.1;
-        particle.b = particle.b + (particle.targetB - particle.b) * t * 0.1;
+        particle.r = particle.r + (particle.targetR - particle.r) * factor;
+        particle.g = particle.g + (particle.targetG - particle.g) * factor;
+        particle.b = particle.b + (particle.targetB - particle.b) * factor;
       } else {
         // Free movement
         particle.x += particle.vx * deltaTime * this.config.speed;
