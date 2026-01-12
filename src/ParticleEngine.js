@@ -95,6 +95,16 @@ export class ParticleEngine {
     console.log('[ParticleEngine] Particles initialized');
   }
 
+  /**
+   * Initialize particles from an image
+   * @param {HTMLImageElement} image - The image element
+   */
+  initializeFromImage(image) {
+    console.log('[ParticleEngine] Initializing particles from image...');
+    this.particleSystem.initializeFromImage(image);
+    console.log('[ParticleEngine] Particles initialized from image');
+  }
+
   transition(pattern, duration = 2000) {
     console.log(`[ParticleEngine] Transitioning to ${pattern} (${duration}ms)`);
     
@@ -114,6 +124,16 @@ export class ParticleEngine {
       default:
         console.warn(`[ParticleEngine] Unknown pattern: ${pattern}`);
     }
+  }
+
+  /**
+   * Transition particles to an image
+   * @param {HTMLImageElement} image - The target image element
+   * @param {number} duration - Transition duration in milliseconds
+   */
+  transitionToImage(image, duration = 2000) {
+    console.log('[ParticleEngine] Transitioning to image...');
+    this.particleSystem.transitionToImage(image, duration);
   }
 
   start() {

@@ -158,6 +158,184 @@ export class ParticleSystem {
     console.log(`[ParticleSystem] Created ${this.particles.length} particles in spiral formation`);
   }
 
+  /**
+   * Extract pixel data from an image
+   * @param {HTMLImageElement} image - The image element
+   * @param {number} maxParticles - Maximum number of particles to create
+   * @returns {Object} - Contains pixels array and dimensions
+   */
+  extractImageData(image, maxParticles = 5000) {
+    console.log('[ParticleSystem] Extracting image data...');
+    
+    // Create offscreen canvas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Calculate grid dimensions to limit particle count
+    const aspectRatio = image.width / image.height;
+    let gridWidth, gridHeight;
+    
+    if (aspectRatio >= 1) {
+      // Landscape or square
+      gridWidth = Math.floor(Math.sqrt(maxParticles * aspectRatio));
+      gridHeight = Math.floor(gridWidth / aspectRatio);
+    } else {
+      // Portrait
+      gridHeight = Math.floor(Math.sqrt(maxParticles / aspectRatio));
+      gridWidth = Math.floor(gridHeight * aspectRatio);
+    }
+    
+    // Ensure minimum dimensions
+    gridWidth = Math.max(10, Math.min(gridWidth, 200));
+    gridHeight = Math.max(10, Math.min(gridHeight, 200));
+    
+    canvas.width = gridWidth;
+    canvas.height = gridHeight;
+    
+    // Draw scaled image
+    ctx.drawImage(image, 0, 0, gridWidth, gridHeight);
+    
+    // Get pixel data
+    const imageData = ctx.getImageData(0, 0, gridWidth, gridHeight);
+    const data = imageData.data;
+    
+    const pixels = [];
+    
+    // Sample pixels from the grid
+    for (let y = 0; y < gridHeight; y++) {
+      for (let x = 0; x < gridWidth; x++) {
+        const idx = (y * gridWidth + x) * 4;
+        const r = data[idx] / 255;
+        const g = data[idx + 1] / 255;
+        const b = data[idx + 2] / 255;
+        const a = data[idx + 3] / 255;
+        
+        // Only include pixels with sufficient opacity
+        if (a > 0.1) {
+          pixels.push({
+            x: x,
+            y: y,
+            r: r,
+            g: g,
+            b: b,
+            alpha: a
+          });
+        }
+      }
+    }
+    
+    console.log(`[ParticleSystem] Extracted ${pixels.length} pixels from ${gridWidth}x${gridHeight} grid`);
+    
+    return {
+      pixels: pixels,
+      gridWidth: gridWidth,
+      gridHeight: gridHeight,
+      originalWidth: image.width,
+      originalHeight: image.height
+    };
+  }
+
+  /**
+   * Initialize particles from an image
+   * @param {HTMLImageElement} image - The image element
+   */
+  initializeFromImage(image) {
+    console.log('[ParticleSystem] Initializing particles from image...');
+    
+    const imageData = this.extractImageData(image, this.config.particleCount);
+    const pixels = imageData.pixels;
+    
+    this.particles = [];
+    
+    // Calculate scaling to fit canvas while maintaining aspect ratio
+    const scaleX = this.width / imageData.gridWidth;
+    const scaleY = this.height / imageData.gridHeight;
+    const scale = Math.min(scaleX, scaleY) * 0.9; // 90% to add padding
+    
+    // Calculate offset to center the image
+    const offsetX = (this.width - imageData.gridWidth * scale) / 2;
+    const offsetY = (this.height - imageData.gridHeight * scale) / 2;
+    
+    for (let i = 0; i < pixels.length; i++) {
+      const pixel = pixels[i];
+      const x = offsetX + pixel.x * scale;
+      const y = offsetY + pixel.y * scale;
+      
+      this.particles.push(this.createParticle(
+        x, y, 0, 0,
+        {
+          r: pixel.r,
+          g: pixel.g,
+          b: pixel.b,
+          alpha: pixel.alpha
+        }
+      ));
+    }
+    
+    console.log(`[ParticleSystem] Created ${this.particles.length} particles from image`);
+  }
+
+  /**
+   * Transition particles to an image
+   * @param {HTMLImageElement} image - The target image element
+   * @param {number} duration - Transition duration in milliseconds
+   */
+  transitionToImage(image, duration = 2000) {
+    console.log(`[ParticleSystem] Starting transition to image (${duration}ms)...`);
+    
+    this._startTransition(duration);
+    
+    const imageData = this.extractImageData(image, this.particles.length);
+    const pixels = imageData.pixels;
+    
+    // Calculate scaling to fit canvas while maintaining aspect ratio
+    const scaleX = this.width / imageData.gridWidth;
+    const scaleY = this.height / imageData.gridHeight;
+    const scale = Math.min(scaleX, scaleY) * 0.9; // 90% to add padding
+    
+    // Calculate offset to center the image
+    const offsetX = (this.width - imageData.gridWidth * scale) / 2;
+    const offsetY = (this.height - imageData.gridHeight * scale) / 2;
+    
+    // If we have more particles than pixels, distribute them
+    if (this.particles.length > pixels.length) {
+      console.log(`[ParticleSystem] More particles (${this.particles.length}) than pixels (${pixels.length}), distributing...`);
+      
+      for (let i = 0; i < this.particles.length; i++) {
+        const particle = this.particles[i];
+        const pixelIndex = i % pixels.length;
+        const pixel = pixels[pixelIndex];
+        
+        const x = offsetX + pixel.x * scale;
+        const y = offsetY + pixel.y * scale;
+        
+        // Add slight random offset when reusing pixels
+        const randomOffset = (i / pixels.length) * 2;
+        
+        particle.targetX = x + (Math.random() - 0.5) * randomOffset;
+        particle.targetY = y + (Math.random() - 0.5) * randomOffset;
+        particle.targetR = pixel.r;
+        particle.targetG = pixel.g;
+        particle.targetB = pixel.b;
+      }
+    } else {
+      // Map particles to pixels
+      for (let i = 0; i < this.particles.length; i++) {
+        const particle = this.particles[i];
+        const pixel = pixels[i];
+        
+        const x = offsetX + pixel.x * scale;
+        const y = offsetY + pixel.y * scale;
+        
+        particle.targetX = x;
+        particle.targetY = y;
+        particle.targetR = pixel.r;
+        particle.targetG = pixel.g;
+        particle.targetB = pixel.b;
+      }
+    }
+  }
+
   _startTransition(duration) {
     this.isTransitioning = true;
     this.transitionProgress = 0;

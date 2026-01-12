@@ -185,6 +185,61 @@
             height: 8px;
         }
 
+        input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        input[type="file"]::file-selector-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .image-preview {
+            width: 100%;
+            max-height: 150px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            overflow: hidden;
+            display: none;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .image-preview.active {
+            display: block;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .image-info {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            font-size: 11px;
+            color: #00d4ff;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
         .range-value {
             text-align: right;
             color: #00d4ff;
@@ -268,6 +323,21 @@
                 <button class="btn-init" onclick="initPattern('spiral')">Spiral Pattern</button>
             </div>
 
+            <h2>🖼️ Image Upload</h2>
+            <div class="config-group">
+                <label for="image1Upload">Image 1:</label>
+                <input type="file" id="image1Upload" accept="image/*" onchange="handleImageUpload(1, event)">
+                <div id="image1Preview" class="image-preview"></div>
+                <button class="btn-init" onclick="initFromImage(1)" id="initImage1Btn" disabled>Initialize from Image 1</button>
+            </div>
+            
+            <div class="config-group">
+                <label for="image2Upload">Image 2:</label>
+                <input type="file" id="image2Upload" accept="image/*" onchange="handleImageUpload(2, event)">
+                <div id="image2Preview" class="image-preview"></div>
+                <button class="btn-transition" onclick="transitionToImage(2)" id="transitionImage2Btn" disabled>Transition to Image 2</button>
+            </div>
+
             <h2>✨ Transitions</h2>
             <div class="button-group">
                 <button class="btn-transition" onclick="transition('grid')">→ Grid</button>
@@ -311,6 +381,12 @@
         const canvas = document.getElementById('particleCanvas');
         const logElement = document.getElementById('log');
         const maxLogEntries = 50;
+
+        // Store uploaded images
+        let uploadedImages = {
+            1: null,
+            2: null
+        };
 
         // Intercept console.log for debug display
         const originalLog = console.log;
@@ -485,6 +561,110 @@
         window.clearLog = function() {
             logElement.innerHTML = '';
             console.log('Log cleared');
+        };
+
+        // Image upload handlers
+        window.handleImageUpload = function(imageNum, event) {
+            const file = event.target.files[0];
+            
+            if (!file) {
+                console.warn(`No file selected for Image ${imageNum}`);
+                return;
+            }
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                console.error(`Invalid file type: ${file.type}. Please upload an image file.`);
+                alert('Please upload a valid image file (PNG, JPG, GIF, etc.)');
+                return;
+            }
+
+            console.log(`Loading Image ${imageNum}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = new Image();
+                
+                img.onload = function() {
+                    // Store the image
+                    uploadedImages[imageNum] = img;
+                    
+                    // Update preview
+                    const previewDiv = document.getElementById(`image${imageNum}Preview`);
+                    previewDiv.innerHTML = `
+                        <img src="${e.target.result}" alt="Image ${imageNum}">
+                        <div class="image-info">${img.width}x${img.height}px</div>
+                    `;
+                    previewDiv.classList.add('active');
+                    
+                    // Enable appropriate button
+                    if (imageNum === 1) {
+                        document.getElementById('initImage1Btn').disabled = false;
+                    } else {
+                        document.getElementById('transitionImage2Btn').disabled = false;
+                    }
+                    
+                    console.log(`Image ${imageNum} loaded successfully: ${img.width}x${img.height}px`);
+                };
+                
+                img.onerror = function() {
+                    console.error(`Failed to load Image ${imageNum}`);
+                    alert('Failed to load image. Please try a different file.');
+                };
+                
+                img.src = e.target.result;
+            };
+            
+            reader.onerror = function() {
+                console.error(`Failed to read file for Image ${imageNum}`);
+                alert('Failed to read file. Please try again.');
+            };
+            
+            reader.readAsDataURL(file);
+        };
+
+        window.initFromImage = function(imageNum) {
+            try {
+                const image = uploadedImages[imageNum];
+                
+                if (!image) {
+                    console.warn(`Image ${imageNum} not loaded`);
+                    return;
+                }
+
+                if (!engine) {
+                    console.log('Engine not initialized, creating new engine...');
+                    initializeEngine();
+                }
+
+                console.log(`Initializing particles from Image ${imageNum}...`);
+                engine.initializeFromImage(image);
+                console.log('Particles initialized from image');
+            } catch (error) {
+                console.error('Failed to initialize from image:', error.message);
+            }
+        };
+
+        window.transitionToImage = function(imageNum) {
+            try {
+                if (!engine) {
+                    console.warn('Engine not initialized. Call Initialize Engine first.');
+                    return;
+                }
+
+                const image = uploadedImages[imageNum];
+                
+                if (!image) {
+                    console.warn(`Image ${imageNum} not loaded`);
+                    return;
+                }
+
+                console.log(`Transitioning to Image ${imageNum}...`);
+                engine.transitionToImage(image, 2000);
+            } catch (error) {
+                console.error('Failed to transition to image:', error.message);
+            }
         };
 
         // Initial log message
