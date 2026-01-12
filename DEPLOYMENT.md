@@ -77,40 +77,14 @@ Your site will be available at: `https://username.github.io/webgl-particle-engin
 
 Your site will automatically redeploy on every push to the main branch.
 
-### Method 3: Workers with Static Assets (Advanced)
-
-For adding dynamic functionality (API endpoints, authentication, etc.), you can deploy with Workers:
-
-1. Update `wrangler.json` to include the Worker entry point:
-   ```json
-   {
-     "name": "webgl-particle-engine",
-     "main": "src/index.js",
-     "compatibility_date": "2026-01-12",
-     "assets": {
-       "directory": "./public",
-       "binding": "ASSETS"
-     }
-   }
-   ```
-
-2. Deploy with:
-   ```bash
-   ./build.sh && npx wrangler deploy
-   ```
-
-   The Worker entry point (`src/index.js`) is already created for future use.
-
 ## Configuration Files
 
 ### wrangler.json
 The `wrangler.json` file is configured for Cloudflare Wrangler v4 with:
 - `assets.directory`: Points to `./public` for static asset deployment
-- `assets.binding`: Named "ASSETS" for Worker access (if using Workers)
 - `compatibility_date`: Set to current date for latest features
 
-For pure static deployment, use `npx wrangler pages deploy ./public`.
-For Worker-based deployment, use `npx wrangler deploy` with the main field configured.
+This is a pure static site configuration. For dynamic functionality with Workers, you would need to add a `main` field pointing to a Worker script and an `assets.binding` field.
 
 ## Testing Locally
 
