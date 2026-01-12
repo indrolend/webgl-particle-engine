@@ -6,9 +6,11 @@ A high-performance WebGL-based particle system with smooth animated transitions 
 
 - **WebGL Rendering**: Hardware-accelerated particle rendering for smooth performance
 - **Multiple Patterns**: Grid, Circle, Spiral, and Random formations
-- **Smooth Transitions**: Animated transitions between patterns with easing
+- **Image-Based Particles**: Upload images and create particle formations from pixel data
+- **Smooth Transitions**: Animated transitions between patterns and images with easing
 - **Configurable**: Adjustable particle count, speed, and size
 - **Debug Interface**: Interactive HTML panel with real-time controls and logging
+- **Image Upload**: Dual image upload with preview and dimension display
 - **Modular Design**: Clean, maintainable code structure in `src/` directory
 - **Deployment Ready**: Optimized for GitHub Pages and Cloudflare Pages
 
@@ -94,6 +96,7 @@ const engine = new ParticleEngine(canvas, {
 - **grid**: Particles arranged in a uniform grid
 - **circle**: Particles arranged in a circular formation
 - **spiral**: Particles arranged in a spiral pattern
+- **image**: Particles arranged based on uploaded image pixel data (see Image-Based Particles below)
 
 ### API Methods
 
@@ -103,10 +106,30 @@ Initialize particles with a specific pattern.
 engine.initializeParticles('grid');
 ```
 
+#### `initializeFromImage(image)`
+Initialize particles from an uploaded image.
+```javascript
+const img = new Image();
+img.onload = () => {
+    engine.initializeFromImage(img);
+};
+img.src = 'path/to/image.png';
+```
+
 #### `transition(pattern, duration)`
 Smoothly transition to a new pattern.
 ```javascript
 engine.transition('circle', 2000); // 2 second transition
+```
+
+#### `transitionToImage(image, duration)`
+Smoothly transition particles to an uploaded image.
+```javascript
+const img = new Image();
+img.onload = () => {
+    engine.transitionToImage(img, 2000); // 2 second transition
+};
+img.src = 'path/to/image.png';
 ```
 
 #### `start()`
@@ -154,6 +177,53 @@ Clean up resources and stop the engine.
 engine.destroy();
 ```
 
+## 🖼️ Image-Based Particles
+
+The engine supports creating particle formations from uploaded images. This feature extracts pixel data from images and maps particles to visible pixels, creating stunning visual effects.
+
+### Features
+
+- **Automatic Grid Optimization**: Images are automatically sampled to an optimal grid size (10x10 to 200x200) based on particle count
+- **Aspect Ratio Preservation**: Images maintain their aspect ratio when rendered as particles
+- **Performance Optimized**: Large images are downsampled for efficient particle rendering
+- **Opacity Filtering**: Only pixels with sufficient opacity (>0.1) are included
+- **Smooth Transitions**: Morph between different images with color and position interpolation
+- **Intelligent Distribution**: When particle count exceeds pixel count, particles are distributed with slight random offsets
+
+### Usage Example
+
+```javascript
+// Create engine
+const engine = new ParticleEngine(canvas, {
+    particleCount: 1000,
+    speed: 1.0
+});
+
+// Load first image
+const image1 = new Image();
+image1.onload = () => {
+    engine.initializeFromImage(image1);
+    engine.start();
+};
+image1.src = 'image1.png';
+
+// Later, transition to second image
+const image2 = new Image();
+image2.onload = () => {
+    engine.transitionToImage(image2, 2000); // 2 second transition
+};
+image2.src = 'image2.png';
+```
+
+### Debug Interface
+
+The debug interface (`debug.html`) includes a dedicated **Image Upload** section where you can:
+1. Upload two images using file input controls
+2. Preview uploaded images with dimensions displayed
+3. Initialize particles from Image 1
+4. Smoothly transition to Image 2
+5. View debug logs showing extraction and particle creation details
+
 ## 🎮 Debug Interface
 
 The `debug.html` file provides an interactive interface for testing and debugging:
@@ -161,7 +231,8 @@ The `debug.html` file provides an interactive interface for testing and debuggin
 ### Features:
 - **Configuration Panel**: Adjust particle count and speed with sliders
 - **Pattern Initialization**: Test different initial patterns
-- **Transition Controls**: Trigger transitions between patterns
+- **Image Upload**: Upload and preview two images for particle initialization
+- **Transition Controls**: Trigger transitions between patterns and images
 - **Engine Controls**: Start, stop, and reconfigure the engine
 - **Real-time Info**: View particle count and FPS
 - **Debug Log**: See detailed console output in the UI
@@ -169,10 +240,11 @@ The `debug.html` file provides an interactive interface for testing and debuggin
 ### Controls:
 1. **Initialize Engine**: Create a new engine instance with current settings
 2. **Pattern Buttons**: Initialize particles in specific formations
-3. **Transition Buttons**: Smoothly animate to different patterns
-4. **Start/Stop**: Control the animation loop
-5. **Apply Config**: Update engine with new configuration
-6. **Clear Log**: Clear the debug console output
+3. **Image Upload**: Upload images and initialize/transition particles to images
+4. **Transition Buttons**: Smoothly animate to different patterns or images
+5. **Start/Stop**: Control the animation loop
+6. **Apply Config**: Update engine with new configuration
+7. **Clear Log**: Clear the debug console output
 
 ## 🏗️ Project Structure
 
