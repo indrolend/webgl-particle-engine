@@ -402,15 +402,6 @@
                 <div class="range-value" id="speedValue">1.0</div>
             </div>
 
-            <h2>🚀 Initialize</h2>
-            <div class="button-group">
-                <button class="btn-init" onclick="initializeEngine()">Initialize Engine</button>
-                <button class="btn-init" onclick="initPattern('random')">Random Pattern</button>
-                <button class="btn-init" onclick="initPattern('grid')">Grid Pattern</button>
-                <button class="btn-init" onclick="initPattern('circle')">Circle Pattern</button>
-                <button class="btn-init" onclick="initPattern('spiral')">Spiral Pattern</button>
-            </div>
-
             <h2>🎬 Animation Presets</h2>
             <div class="config-group">
                 <label for="presetSelect">Select Preset:</label>
@@ -993,27 +984,9 @@
                 alternationInterval = null;
             }
             
-            // Start alternation if both A and B are selected
-            if (targetA && targetB && engine) {
-                console.log('Starting alternation between targets A and B');
-                currentTarget = 'A';
-                
-                // Transition to first target immediately
-                performTransition(targetA);
-                
-                // Set up alternation (switch every 4 seconds)
-                alternationInterval = setInterval(() => {
-                    currentTarget = currentTarget === 'A' ? 'B' : 'A';
-                    const target = currentTarget === 'A' ? targetA : targetB;
-                    performTransition(target);
-                }, 4000);
-            } else if (targetA && engine) {
-                // Only A selected, transition to it once
-                performTransition(targetA);
-            } else if (targetB && engine) {
-                // Only B selected, transition to it once
-                performTransition(targetB);
-            }
+            // No automatic transitions - user must press MORPH button
+            // Just log the selection state
+            console.log(`Target selection updated: A=${targetA}, B=${targetB}`);
         }
 
         function performTransition(targetId) {
