@@ -575,7 +575,7 @@
             // Validate file type
             if (!file.type.startsWith('image/')) {
                 console.error(`Invalid file type: ${file.type}. Please upload an image file.`);
-                alert('Please upload a valid image file (PNG, JPG, GIF, etc.)');
+                addLogEntry(`[ERROR] Invalid file type: ${file.type}. Please upload an image file.`, 'error');
                 return;
             }
 
@@ -610,7 +610,7 @@
                 
                 img.onerror = function() {
                     console.error(`Failed to load Image ${imageNum}`);
-                    alert('Failed to load image. Please try a different file.');
+                    addLogEntry(`[ERROR] Failed to load Image ${imageNum}. Please try a different file.`, 'error');
                 };
                 
                 img.src = e.target.result;
@@ -618,7 +618,7 @@
             
             reader.onerror = function() {
                 console.error(`Failed to read file for Image ${imageNum}`);
-                alert('Failed to read file. Please try again.');
+                addLogEntry(`[ERROR] Failed to read file for Image ${imageNum}. Please try again.`, 'error');
             };
             
             reader.readAsDataURL(file);

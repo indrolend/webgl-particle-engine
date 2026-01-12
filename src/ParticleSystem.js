@@ -20,6 +20,13 @@ export class ParticleSystem {
     // Interpolation factor for smooth transitions
     this.INTERPOLATION_FACTOR = 0.1;
     
+    // Image processing constants
+    this.MIN_GRID_DIMENSION = 10;
+    this.MAX_GRID_DIMENSION = 200;
+    this.MIN_OPACITY_THRESHOLD = 0.1;
+    this.IMAGE_PADDING_FACTOR = 0.9; // 90% to add padding
+    this.PARTICLE_DISTRIBUTION_OFFSET = 2;
+    
     console.log('[ParticleSystem] Initialized with config:', this.config);
   }
 
@@ -186,8 +193,8 @@ export class ParticleSystem {
     }
     
     // Ensure minimum dimensions
-    gridWidth = Math.max(10, Math.min(gridWidth, 200));
-    gridHeight = Math.max(10, Math.min(gridHeight, 200));
+    gridWidth = Math.max(this.MIN_GRID_DIMENSION, Math.min(gridWidth, this.MAX_GRID_DIMENSION));
+    gridHeight = Math.max(this.MIN_GRID_DIMENSION, Math.min(gridHeight, this.MAX_GRID_DIMENSION));
     
     canvas.width = gridWidth;
     canvas.height = gridHeight;
@@ -211,7 +218,7 @@ export class ParticleSystem {
         const a = data[idx + 3] / 255;
         
         // Only include pixels with sufficient opacity
-        if (a > 0.1) {
+        if (a > this.MIN_OPACITY_THRESHOLD) {
           pixels.push({
             x: x,
             y: y,
@@ -250,7 +257,7 @@ export class ParticleSystem {
     // Calculate scaling to fit canvas while maintaining aspect ratio
     const scaleX = this.width / imageData.gridWidth;
     const scaleY = this.height / imageData.gridHeight;
-    const scale = Math.min(scaleX, scaleY) * 0.9; // 90% to add padding
+    const scale = Math.min(scaleX, scaleY) * this.IMAGE_PADDING_FACTOR;
     
     // Calculate offset to center the image
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
@@ -291,7 +298,7 @@ export class ParticleSystem {
     // Calculate scaling to fit canvas while maintaining aspect ratio
     const scaleX = this.width / imageData.gridWidth;
     const scaleY = this.height / imageData.gridHeight;
-    const scale = Math.min(scaleX, scaleY) * 0.9; // 90% to add padding
+    const scale = Math.min(scaleX, scaleY) * this.IMAGE_PADDING_FACTOR;
     
     // Calculate offset to center the image
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
@@ -310,7 +317,7 @@ export class ParticleSystem {
         const y = offsetY + pixel.y * scale;
         
         // Add slight random offset when reusing pixels
-        const randomOffset = (i / pixels.length) * 2;
+        const randomOffset = (i / pixels.length) * this.PARTICLE_DISTRIBUTION_OFFSET;
         
         particle.targetX = x + (Math.random() - 0.5) * randomOffset;
         particle.targetY = y + (Math.random() - 0.5) * randomOffset;
