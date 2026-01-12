@@ -11,9 +11,13 @@ echo "Copying HTML files..."
 cp index.html public/
 cp debug.html public/
 
-# Copy src directory
+# Copy src directory (excluding Worker entry point)
 echo "Copying src directory..."
-cp -r src public/
+mkdir -p public/src
+cp src/ParticleEngine.js public/src/
+cp src/ParticleSystem.js public/src/
+cp src/Renderer.js public/src/
 
 echo "Build complete! Files are ready in ./public directory"
 echo "To deploy: npx wrangler pages deploy ./public --project-name=webgl-particle-engine"
+
