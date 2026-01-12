@@ -43,10 +43,28 @@ Your site will be available at: `https://username.github.io/webgl-particle-engin
    - **Root directory**: (leave empty)
 3. Click "Save and Deploy"
 
+### ⚠️ TROUBLESHOOTING: Still seeing "npx wrangler versions upload" error?
+
+If you're still seeing this error after removing `wrangler.toml`, it means you have a build command configured in your Cloudflare Pages dashboard. Here's how to fix it:
+
+**Step-by-step fix:**
+1. Go to your Cloudflare Pages dashboard
+2. Select your `webgl-particle-engine` project
+3. Go to **Settings** → **Builds & deployments**
+4. Scroll to **Build configurations**
+5. Click **Edit configuration**
+6. **CLEAR the "Build command" field completely** - it should be empty, not even a space
+7. Set "Build output directory" to `/`
+8. Click **Save**
+9. Go to **Deployments** tab and click **Retry deployment**
+
+The error `Executing user deploy command: npx wrangler versions upload` means Cloudflare is using a build command you previously configured. This must be removed from the dashboard settings.
+
 ### Common Issues:
-- If Cloudflare tries to run `npx wrangler versions upload`, you have the wrong configuration
+- If Cloudflare tries to run `npx wrangler versions upload`, you have a build command configured in the dashboard
 - Make sure the build command is completely empty - not "npm run build", not "wrangler deploy", just empty
 - The site should deploy directly from the repository root with zero build steps
+- Don't confuse "Build command" with "Deploy command" - both should be empty
 
 ### What NOT to do:
 - ❌ Don't set a build command
