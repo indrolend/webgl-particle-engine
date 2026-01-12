@@ -170,7 +170,8 @@
         }
 
         input[type="number"],
-        input[type="range"] {
+        input[type="range"],
+        select {
             width: 100%;
             padding: 8px;
             background: rgba(255, 255, 255, 0.1);
@@ -178,6 +179,15 @@
             border-radius: 4px;
             color: white;
             font-size: 14px;
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: white;
         }
 
         input[type="range"] {
@@ -338,6 +348,39 @@
                 <button class="btn-transition" onclick="transitionToImage(2)" id="transitionImage2Btn" disabled>Transition to Image 2</button>
             </div>
 
+            <h2>🎬 Animation Presets</h2>
+            <div class="config-group">
+                <label for="presetSelect">Select Preset:</label>
+                <select id="presetSelect" onchange="handlePresetChange()">
+                    <option value="">None (Default)</option>
+                </select>
+            </div>
+            
+            <div id="presetControls" style="display: none;">
+                <h3 style="font-size: 14px; color: #aaa; margin: 10px 0;">Preset Parameters</h3>
+                
+                <!-- School of Fish Parameters -->
+                <div id="schoolOfFishParams" style="display: none;">
+                    <div class="config-group">
+                        <label for="explosionRadius">Explosion Radius:</label>
+                        <input type="range" id="explosionRadius" min="100" max="500" step="10" value="300">
+                        <div class="range-value" id="explosionRadiusValue">300</div>
+                    </div>
+                    <div class="config-group">
+                        <label for="swarmStrength">Swarm Strength:</label>
+                        <input type="range" id="swarmStrength" min="0.01" max="0.2" step="0.01" value="0.05">
+                        <div class="range-value" id="swarmStrengthValue">0.05</div>
+                    </div>
+                    <div class="config-group">
+                        <label for="reformationDuration">Reformation Duration (ms):</label>
+                        <input type="range" id="reformationDuration" min="1000" max="5000" step="100" value="2000">
+                        <div class="range-value" id="reformationDurationValue">2000</div>
+                    </div>
+                </div>
+                
+                <button class="btn-control" onclick="applyPresetConfig()">Apply Preset Config</button>
+            </div>
+
             <h2>✨ Transitions</h2>
             <div class="button-group">
                 <button class="btn-transition" onclick="transition('grid')">→ Grid</button>
@@ -376,6 +419,7 @@
 
     <script type="module">
         import { ParticleEngine } from './src/ParticleEngine.js';
+        import { SchoolOfFishPreset } from './src/presets/SchoolOfFishPreset.js';
 
         let engine = null;
         const canvas = document.getElementById('particleCanvas');
@@ -449,6 +493,19 @@
             document.getElementById('speedValue').textContent = parseFloat(e.target.value).toFixed(1);
         });
 
+        // Preset parameter handlers
+        document.getElementById('explosionRadius').addEventListener('input', (e) => {
+            document.getElementById('explosionRadiusValue').textContent = e.target.value;
+        });
+
+        document.getElementById('swarmStrength').addEventListener('input', (e) => {
+            document.getElementById('swarmStrengthValue').textContent = parseFloat(e.target.value).toFixed(2);
+        });
+
+        document.getElementById('reformationDuration').addEventListener('input', (e) => {
+            document.getElementById('reformationDurationValue').textContent = e.target.value;
+        });
+
         // Global functions for button handlers
         window.initializeEngine = function() {
             try {
@@ -468,6 +525,9 @@
                     autoResize: false
                 });
 
+                // Register presets
+                registerPresets();
+
                 engine.initializeParticles('random');
                 engine.start();
                 
@@ -476,6 +536,94 @@
             } catch (error) {
                 console.error('Failed to initialize engine:', error.message);
                 updateStatus('Error');
+            }
+        };
+
+        function registerPresets() {
+            // Register School of Fish preset
+            const schoolOfFishPreset = new SchoolOfFishPreset();
+            engine.registerPreset('schoolOfFish', schoolOfFishPreset);
+            
+            // Populate preset dropdown
+            const presetSelect = document.getElementById('presetSelect');
+            presetSelect.innerHTML = '<option value="">None (Default)</option>';
+            
+            const presets = engine.getPresets();
+            presets.forEach(({ id, preset }) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = preset.name;
+                presetSelect.appendChild(option);
+            });
+            
+            console.log(`Registered ${presets.length} preset(s)`);
+        }
+
+        window.handlePresetChange = function() {
+            try {
+                if (!engine) {
+                    console.warn('Engine not initialized.');
+                    return;
+                }
+
+                const presetId = document.getElementById('presetSelect').value;
+                const presetControls = document.getElementById('presetControls');
+                const schoolOfFishParams = document.getElementById('schoolOfFishParams');
+
+                if (presetId === '') {
+                    // Deactivate preset
+                    engine.deactivatePreset();
+                    presetControls.style.display = 'none';
+                    schoolOfFishParams.style.display = 'none';
+                    console.log('Preset deactivated');
+                } else if (presetId === 'schoolOfFish') {
+                    // Activate School of Fish preset
+                    engine.activatePreset(presetId);
+                    presetControls.style.display = 'block';
+                    schoolOfFishParams.style.display = 'block';
+                    console.log('School of Fish preset activated');
+                } else {
+                    // Activate other presets
+                    engine.activatePreset(presetId);
+                    presetControls.style.display = 'block';
+                    schoolOfFishParams.style.display = 'none';
+                    console.log(`Preset '${presetId}' activated`);
+                }
+            } catch (error) {
+                console.error('Failed to change preset:', error.message);
+            }
+        };
+
+        window.applyPresetConfig = function() {
+            try {
+                if (!engine) {
+                    console.warn('Engine not initialized.');
+                    return;
+                }
+
+                const activePresetId = engine.getActivePresetId();
+                
+                if (activePresetId === 'schoolOfFish') {
+                    const explosionRadius = parseInt(document.getElementById('explosionRadius').value);
+                    const swarmStrength = parseFloat(document.getElementById('swarmStrength').value);
+                    const reformationDuration = parseInt(document.getElementById('reformationDuration').value);
+                    
+                    const presets = engine.getPresets();
+                    const schoolOfFish = presets.find(p => p.id === 'schoolOfFish');
+                    
+                    if (schoolOfFish) {
+                        schoolOfFish.preset.updateConfig({
+                            explosionRadius: explosionRadius,
+                            alignmentStrength: swarmStrength,
+                            cohesionStrength: swarmStrength * 0.4,
+                            separationStrength: swarmStrength * 1.6,
+                            reformationDuration: reformationDuration
+                        });
+                        console.log('School of Fish config updated');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to apply preset config:', error.message);
             }
         };
 
@@ -500,8 +648,14 @@
                     return;
                 }
 
-                engine.transition(pattern, 2000);
-                console.log(`Transitioning to ${pattern}...`);
+                // Check if a preset is active
+                if (engine.getActivePresetId()) {
+                    console.log(`Transitioning preset to ${pattern}...`);
+                    engine.transitionPresetTo('pattern', pattern, 2000);
+                } else {
+                    engine.transition(pattern, 2000);
+                    console.log(`Transitioning to ${pattern}...`);
+                }
             } catch (error) {
                 console.error('Failed to transition:', error.message);
             }
@@ -661,7 +815,13 @@
                 }
 
                 console.log(`Transitioning to Image ${imageNum}...`);
-                engine.transitionToImage(image, 2000);
+                
+                // Check if a preset is active
+                if (engine.getActivePresetId()) {
+                    engine.transitionPresetTo('image', image, 2000);
+                } else {
+                    engine.transitionToImage(image, 2000);
+                }
             } catch (error) {
                 console.error('Failed to transition to image:', error.message);
             }
