@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Particle Engine - Debug</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        canvas {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .controls {
+            width: 320px;
+            background: rgba(20, 20, 35, 0.9);
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #00d4ff;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #00d4ff;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+            padding-bottom: 5px;
+        }
+
+        .button-group {
+            margin-bottom: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #333;
+            cursor: not-allowed;
+            opacity: 0.5;
+            transform: none;
+        }
+
+        .btn-init {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-init:hover {
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        .btn-transition {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-transition:hover {
+            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.6);
+        }
+
+        .btn-control {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            box-shadow: 0 4px 15px rgba(67, 233, 123, 0.4);
+        }
+
+        .btn-control:hover {
+            box-shadow: 0 6px 20px rgba(67, 233, 123, 0.6);
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            box-shadow: 0 4px 15px rgba(250, 112, 154, 0.4);
+        }
+
+        .btn-stop:hover {
+            box-shadow: 0 6px 20px rgba(250, 112, 154, 0.6);
+        }
+
+        .info {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .info-label {
+            color: #aaa;
+        }
+
+        .info-value {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        .config-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        input[type="number"],
+        input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: white;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            padding: 0;
+            height: 8px;
+        }
+
+        .range-value {
+            text-align: right;
+            color: #00d4ff;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        #log {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            word-wrap: break-word;
+        }
+
+        .log-time {
+            color: #888;
+        }
+
+        .log-message {
+            color: #0f0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .controls {
+                width: 100%;
+                max-height: 40vh;
+                border-left: none;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .canvas-container {
+                height: 60vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="particleCanvas" width="1200" height="800"></canvas>
+        </div>
+
+        <div class="controls">
+            <h1>🎨 Particle Engine</h1>
+            <p style="color: #888; font-size: 13px; margin-bottom: 20px;">WebGL Particle Transition Engine Debug Panel</p>
+
+            <h2>⚙️ Configuration</h2>
+            <div class="config-group">
+                <label for="particleCount">Particle Count:</label>
+                <input type="range" id="particleCount" min="100" max="5000" step="100" value="1000">
+                <div class="range-value" id="particleCountValue">1000</div>
+            </div>
+
+            <div class="config-group">
+                <label for="speed">Speed Multiplier:</label>
+                <input type="range" id="speed" min="0.1" max="3" step="0.1" value="1">
+                <div class="range-value" id="speedValue">1.0</div>
+            </div>
+
+            <h2>🚀 Initialize</h2>
+            <div class="button-group">
+                <button class="btn-init" onclick="initializeEngine()">Initialize Engine</button>
+                <button class="btn-init" onclick="initPattern('random')">Random Pattern</button>
+                <button class="btn-init" onclick="initPattern('grid')">Grid Pattern</button>
+                <button class="btn-init" onclick="initPattern('circle')">Circle Pattern</button>
+                <button class="btn-init" onclick="initPattern('spiral')">Spiral Pattern</button>
+            </div>
+
+            <h2>✨ Transitions</h2>
+            <div class="button-group">
+                <button class="btn-transition" onclick="transition('grid')">→ Grid</button>
+                <button class="btn-transition" onclick="transition('circle')">→ Circle</button>
+                <button class="btn-transition" onclick="transition('spiral')">→ Spiral</button>
+                <button class="btn-transition" onclick="transition('random')">→ Random</button>
+            </div>
+
+            <h2>🎮 Controls</h2>
+            <div class="button-group">
+                <button class="btn-control" onclick="startEngine()">▶ Start</button>
+                <button class="btn-stop" onclick="stopEngine()">⏸ Stop</button>
+                <button class="btn-control" onclick="updateConfig()">Apply Config</button>
+                <button class="btn-stop" onclick="clearLog()">Clear Log</button>
+            </div>
+
+            <div class="info">
+                <div class="info-item">
+                    <span class="info-label">Status:</span>
+                    <span class="info-value" id="status">Not Initialized</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Particles:</span>
+                    <span class="info-value" id="particleCountDisplay">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">FPS:</span>
+                    <span class="info-value" id="fps">0</span>
+                </div>
+            </div>
+
+            <h2>📋 Debug Log</h2>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ParticleEngine } from './src/ParticleEngine.js';
+
+        let engine = null;
+        const canvas = document.getElementById('particleCanvas');
+        const logElement = document.getElementById('log');
+        const maxLogEntries = 50;
+
+        // Intercept console.log for debug display
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLogEntry(args.join(' '));
+        };
+
+        const originalError = console.error;
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLogEntry('[ERROR] ' + args.join(' '), 'error');
+        };
+
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLogEntry('[WARN] ' + args.join(' '), 'warn');
+        };
+
+        function addLogEntry(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            let color = '#0f0';
+            if (type === 'error') color = '#f55';
+            if (type === 'warn') color = '#fa0';
+            
+            entry.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-message" style="color: ${color}">${message}</span>`;
+            
+            logElement.insertBefore(entry, logElement.firstChild);
+            
+            // Keep only last N entries
+            while (logElement.children.length > maxLogEntries) {
+                logElement.removeChild(logElement.lastChild);
+            }
+        }
+
+        function updateStatus(status) {
+            document.getElementById('status').textContent = status;
+        }
+
+        function updateInfo() {
+            if (engine) {
+                document.getElementById('particleCountDisplay').textContent = engine.getParticleCount();
+                document.getElementById('fps').textContent = engine.getFPS();
+            }
+        }
+
+        // Update info every 100ms
+        setInterval(updateInfo, 100);
+
+        // Range input handlers
+        document.getElementById('particleCount').addEventListener('input', (e) => {
+            document.getElementById('particleCountValue').textContent = e.target.value;
+        });
+
+        document.getElementById('speed').addEventListener('input', (e) => {
+            document.getElementById('speedValue').textContent = parseFloat(e.target.value).toFixed(1);
+        });
+
+        // Global functions for button handlers
+        window.initializeEngine = function() {
+            try {
+                if (engine) {
+                    console.log('Destroying existing engine...');
+                    engine.destroy();
+                }
+
+                const particleCount = parseInt(document.getElementById('particleCount').value);
+                const speed = parseFloat(document.getElementById('speed').value);
+
+                console.log(`Creating new engine with ${particleCount} particles, speed ${speed}...`);
+                
+                engine = new ParticleEngine(canvas, {
+                    particleCount: particleCount,
+                    speed: speed,
+                    autoResize: false
+                });
+
+                engine.initializeParticles('random');
+                engine.start();
+                
+                updateStatus('Running');
+                console.log('Engine initialized and started!');
+            } catch (error) {
+                console.error('Failed to initialize engine:', error.message);
+                updateStatus('Error');
+            }
+        };
+
+        window.initPattern = function(pattern) {
+            try {
+                if (!engine) {
+                    console.warn('Engine not initialized. Call Initialize Engine first.');
+                    return;
+                }
+
+                engine.initializeParticles(pattern);
+                console.log(`Initialized with ${pattern} pattern`);
+            } catch (error) {
+                console.error('Failed to initialize pattern:', error.message);
+            }
+        };
+
+        window.transition = function(pattern) {
+            try {
+                if (!engine) {
+                    console.warn('Engine not initialized. Call Initialize Engine first.');
+                    return;
+                }
+
+                engine.transition(pattern, 2000);
+                console.log(`Transitioning to ${pattern}...`);
+            } catch (error) {
+                console.error('Failed to transition:', error.message);
+            }
+        };
+
+        window.startEngine = function() {
+            try {
+                if (!engine) {
+                    console.warn('Engine not initialized. Call Initialize Engine first.');
+                    return;
+                }
+
+                engine.start();
+                updateStatus('Running');
+                console.log('Engine started');
+            } catch (error) {
+                console.error('Failed to start engine:', error.message);
+            }
+        };
+
+        window.stopEngine = function() {
+            try {
+                if (!engine) {
+                    console.warn('Engine not initialized.');
+                    return;
+                }
+
+                engine.stop();
+                updateStatus('Stopped');
+                console.log('Engine stopped');
+            } catch (error) {
+                console.error('Failed to stop engine:', error.message);
+            }
+        };
+
+        window.updateConfig = function() {
+            try {
+                if (!engine) {
+                    console.warn('Engine not initialized.');
+                    return;
+                }
+
+                const particleCount = parseInt(document.getElementById('particleCount').value);
+                const speed = parseFloat(document.getElementById('speed').value);
+
+                engine.updateConfig({
+                    particleCount: particleCount,
+                    speed: speed
+                });
+
+                console.log('Configuration updated');
+            } catch (error) {
+                console.error('Failed to update config:', error.message);
+            }
+        };
+
+        window.clearLog = function() {
+            logElement.innerHTML = '';
+            console.log('Log cleared');
+        };
+
+        // Initial log message
+        addLogEntry('Debug panel loaded. Click "Initialize Engine" to start.');
+    </script>
+</body>
+</html>
