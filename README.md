@@ -284,6 +284,8 @@ WebGL rendering implementation. Handles:
 
 ## 🌐 Deployment
 
+See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive deployment instructions.
+
 ### GitHub Pages
 
 1. Push your code to a GitHub repository
@@ -294,11 +296,23 @@ WebGL rendering implementation. Handles:
 
 ### Cloudflare Pages
 
+#### Quick Deploy with Wrangler CLI:
+```bash
+# Build the project
+./build.sh
+
+# Deploy to Cloudflare Pages
+npx wrangler pages deploy ./public --project-name=webgl-particle-engine
+```
+
+#### Git Integration (Auto-deploy):
 1. Connect your GitHub repository to Cloudflare Pages
 2. Configure build settings:
-   - **Build command**: (none)
-   - **Build output directory**: `/`
+   - **Build command**: `./build.sh`
+   - **Build output directory**: `public`
 3. Deploy and access your site
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for advanced deployment options including Workers integration.
 
 ### Static Hosting
 
