@@ -308,7 +308,10 @@ export class ParticleSystem {
     
     const positions = GridPattern.generate(this.particles.length, this.width, this.height);
     
-    for (let i = 0; i < this.particles.length; i++) {
+    // Safety check: ensure positions array matches particle count
+    const minLength = Math.min(this.particles.length, positions.length);
+    
+    for (let i = 0; i < minLength; i++) {
       const particle = this.particles[i];
       const pos = positions[i];
       
@@ -324,7 +327,10 @@ export class ParticleSystem {
     
     const positions = CirclePattern.generate(this.particles.length, this.width, this.height);
     
-    for (let i = 0; i < this.particles.length; i++) {
+    // Safety check: ensure positions array matches particle count
+    const minLength = Math.min(this.particles.length, positions.length);
+    
+    for (let i = 0; i < minLength; i++) {
       const particle = this.particles[i];
       const pos = positions[i];
       
@@ -340,7 +346,10 @@ export class ParticleSystem {
     
     const positions = SpiralPattern.generate(this.particles.length, this.width, this.height);
     
-    for (let i = 0; i < this.particles.length; i++) {
+    // Safety check: ensure positions array matches particle count
+    const minLength = Math.min(this.particles.length, positions.length);
+    
+    for (let i = 0; i < minLength; i++) {
       const particle = this.particles[i];
       const pos = positions[i];
       
@@ -356,7 +365,10 @@ export class ParticleSystem {
     
     const positions = RandomPattern.generate(this.particles.length, this.width, this.height, this.config.speed);
     
-    for (let i = 0; i < this.particles.length; i++) {
+    // Safety check: ensure positions array matches particle count
+    const minLength = Math.min(this.particles.length, positions.length);
+    
+    for (let i = 0; i < minLength; i++) {
       const particle = this.particles[i];
       const pos = positions[i];
       

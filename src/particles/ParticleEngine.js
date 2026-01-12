@@ -211,7 +211,9 @@ export class ParticleEngine {
   }
 }
 
-// Export for use in browser
+// Legacy browser support - export to window for non-module scripts
+// Note: This is maintained for backward compatibility with debug.html
+// Consider migrating to full ES6 module usage in all scripts
 if (typeof window !== 'undefined') {
   window.ParticleEngine = ParticleEngine;
 }

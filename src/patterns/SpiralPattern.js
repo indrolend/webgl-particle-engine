@@ -18,7 +18,7 @@ export class SpiralPattern {
     
     for (let i = 0; i < particleCount; i++) {
       const t = i / particleCount;
-      const angle = t * Math.PI * 8; // 4 full rotations
+      const angle = t * Math.PI * 8; // 8π radians = 4 full rotations (2π per rotation)
       const radius = t * maxRadius;
       const x = centerX + Math.cos(angle) * radius;
       const y = centerY + Math.sin(angle) * radius;
