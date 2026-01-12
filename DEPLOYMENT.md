@@ -30,15 +30,29 @@ Ensure your server serves `.js` files with `application/javascript` MIME type fo
 Your site will be available at: `https://username.github.io/webgl-particle-engine/`
 
 ## Cloudflare Pages Setup
-1. Connect repository to Cloudflare Pages
-2. Configure deployment settings:
-   - **Framework preset**: None
-   - **Build command**: (leave empty - no build required)
+
+**Important**: This is a pure static site. Do NOT configure any build commands or use wrangler.
+
+### Setup Steps:
+1. Connect your repository to Cloudflare Pages
+2. Configure the deployment:
+   - **Production branch**: `main` (or your default branch)
+   - **Framework preset**: None (or "None - plain static site")
+   - **Build command**: (leave completely empty)
    - **Build output directory**: `/` (root directory)
    - **Root directory**: (leave empty)
 3. Click "Save and Deploy"
 
-Note: The `wrangler.toml` file is optional for static sites. Cloudflare Pages will deploy directly from the repository root.
+### Common Issues:
+- If Cloudflare tries to run `npx wrangler versions upload`, you have the wrong configuration
+- Make sure the build command is completely empty - not "npm run build", not "wrangler deploy", just empty
+- The site should deploy directly from the repository root with zero build steps
+
+### What NOT to do:
+- ❌ Don't set a build command
+- ❌ Don't use `wrangler.toml` (it's for Workers, not static sites)
+- ❌ Don't use Pages Functions or any Workers features
+- ✅ Just deploy the static files directly
 
 ## Testing Locally
 ```bash
