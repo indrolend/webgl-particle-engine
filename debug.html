@@ -102,14 +102,14 @@
         .target-badge {
             position: absolute;
             top: 4px;
-            right: 4px;
-            width: 20px;
-            height: 20px;
+            left: 4px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             color: white;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -122,6 +122,58 @@
 
         .target-badge.badge-b {
             background: linear-gradient(135deg, #4ecdc4 0%, #44a3b8 100%);
+            left: 26px;
+        }
+
+        .target-badge.badge-both {
+            left: 4px;
+        }
+
+        .target-badge.badge-both.badge-b {
+            left: 24px;
+        }
+
+        #morphButton {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            font-size: 24px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(245, 87, 108, 0.6);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        #morphButton:hover {
+            transform: translateX(-50%) scale(1.1);
+            box-shadow: 0 12px 35px rgba(245, 87, 108, 0.8);
+        }
+
+        #morphButton:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        #morphButton:disabled {
+            background: #333;
+            cursor: not-allowed;
+            opacity: 0.5;
+            transform: translateX(-50%);
+        }
+
+        #imagesSection {
+            display: none;
+        }
+
+        #imagesSection.expanded {
+            display: block;
         }
 
         .btn-init {
@@ -392,7 +444,7 @@
                 <button class="btn-control" onclick="applyPresetConfig()">Apply Preset Config</button>
             </div>
 
-            <h2>🎯 Transition Targets</h2>
+            <h2>🎯 Targets</h2>
             
             <h3 style="font-size: 16px; color: #00d4ff; margin: 15px 0 10px 0;">Shapes</h3>
             <div class="button-group">
@@ -400,21 +452,23 @@
                 <button class="btn-transition" onclick="selectTarget('circle', event)" data-target="circle">Circle</button>
                 <button class="btn-transition" onclick="selectTarget('spiral', event)" data-target="spiral">Spiral</button>
                 <button class="btn-transition" onclick="selectTarget('random', event)" data-target="random">Random</button>
+                <button class="btn-transition" onclick="toggleImagesSection()" id="imagesToggleBtn">Images</button>
             </div>
 
-            <h3 style="font-size: 16px; color: #00d4ff; margin: 15px 0 10px 0;">Images</h3>
-            <div class="config-group">
-                <label for="image1Upload">Image 1:</label>
-                <input type="file" id="image1Upload" accept="image/*" onchange="handleImageUpload(1, event)">
-                <div id="image1Preview" class="image-preview"></div>
-                <button class="btn-transition" onclick="selectTarget('image1', event)" id="transitionImage1Btn" data-target="image1" disabled>Image 1</button>
-            </div>
-            
-            <div class="config-group">
-                <label for="image2Upload">Image 2:</label>
-                <input type="file" id="image2Upload" accept="image/*" onchange="handleImageUpload(2, event)">
-                <div id="image2Preview" class="image-preview"></div>
-                <button class="btn-transition" onclick="selectTarget('image2', event)" id="transitionImage2Btn" data-target="image2" disabled>Image 2</button>
+            <div id="imagesSection">
+                <div class="config-group">
+                    <label for="image1Upload">Image 1:</label>
+                    <input type="file" id="image1Upload" accept="image/*" onchange="handleImageUpload(1, event)">
+                    <div id="image1Preview" class="image-preview"></div>
+                    <button class="btn-transition" onclick="selectTarget('image1', event)" id="transitionImage1Btn" data-target="image1" disabled>Image 1</button>
+                </div>
+                
+                <div class="config-group">
+                    <label for="image2Upload">Image 2:</label>
+                    <input type="file" id="image2Upload" accept="image/*" onchange="handleImageUpload(2, event)">
+                    <div id="image2Preview" class="image-preview"></div>
+                    <button class="btn-transition" onclick="selectTarget('image2', event)" id="transitionImage2Btn" data-target="image2" disabled>Image 2</button>
+                </div>
             </div>
 
             <h2>🎮 Controls</h2>
@@ -444,6 +498,9 @@
             <div id="log"></div>
         </div>
     </div>
+
+    <!-- Morph Button -->
+    <button id="morphButton" onclick="triggerMorph()">MORPH</button>
 
     <script type="module">
         import { ParticleEngine } from './src/ParticleEngine.js';
@@ -817,79 +874,116 @@
             
             const button = event.currentTarget;
             
-            // Determine which slot to assign (A or B)
-            // If clicking same target, cycle through: none -> A -> B -> none
-            // If clicking different target, assign to first available slot (A first, then B)
+            // Check current state of this button
+            const hasA = button.querySelector('.target-badge.badge-a');
+            const hasB = button.querySelector('.target-badge.badge-b');
             
-            const currentBadge = button.querySelector('.target-badge');
-            let newSelection = null;
-            
-            if (currentBadge) {
-                if (currentBadge.classList.contains('badge-a')) {
-                    // A -> B
-                    newSelection = 'B';
-                } else {
-                    // B -> none
-                    newSelection = null;
-                }
-            } else {
-                // none -> A or B (depending on what's available)
-                if (!targetA || targetA === targetId) {
-                    newSelection = 'A';
-                } else if (!targetB || targetB === targetId) {
-                    newSelection = 'B';
-                } else {
-                    // Both slots taken, don't assign
-                    console.log('Both A and B slots are taken. Click a target to cycle its state.');
-                    return;
-                }
-            }
-            
-            // Remove current badge if exists
-            if (currentBadge) {
-                currentBadge.remove();
-            }
-            
-            // Clear previous selection if assigning new
-            if (newSelection === 'A') {
+            // Cycle through states: none -> A -> B -> AB -> none
+            if (!hasA && !hasB) {
+                // none -> A
+                addBadge(button, 'A');
                 if (targetA && targetA !== targetId) {
-                    const prevButton = document.querySelector(`[data-target="${targetA}"]`);
-                    if (prevButton) {
-                        const prevBadge = prevButton.querySelector('.target-badge.badge-a');
-                        if (prevBadge) prevBadge.remove();
-                    }
+                    removeBadgeFromTarget(targetA, 'A');
                 }
                 targetA = targetId;
-            } else if (newSelection === 'B') {
+            } else if (hasA && !hasB) {
+                // A -> B (remove A, add B)
+                hasA.remove();
+                addBadge(button, 'B');
                 if (targetB && targetB !== targetId) {
-                    const prevButton = document.querySelector(`[data-target="${targetB}"]`);
-                    if (prevButton) {
-                        const prevBadge = prevButton.querySelector('.target-badge.badge-b');
-                        if (prevBadge) prevBadge.remove();
-                    }
+                    removeBadgeFromTarget(targetB, 'B');
                 }
+                targetA = null;
                 targetB = targetId;
-            } else {
-                // Removing selection
-                if (targetA === targetId) {
-                    targetA = null;
-                } else if (targetB === targetId) {
-                    targetB = null;
+            } else if (!hasA && hasB) {
+                // B -> AB (keep B, add A)
+                addBadge(button, 'A');
+                if (targetA && targetA !== targetId) {
+                    removeBadgeFromTarget(targetA, 'A');
                 }
+                targetA = targetId;
+            } else {
+                // AB -> none (remove both)
+                hasA.remove();
+                hasB.remove();
+                if (targetA === targetId) targetA = null;
+                if (targetB === targetId) targetB = null;
             }
             
-            // Add new badge if selected
-            if (newSelection) {
-                const badge = document.createElement('span');
-                badge.className = `target-badge badge-${newSelection.toLowerCase()}`;
-                badge.textContent = newSelection;
-                button.appendChild(badge);
-            }
+            // Update badges position if both exist
+            updateBadgePositions(button);
             
             // Update alternation
             updateAlternation();
             
             console.log(`Target selection updated: A=${targetA}, B=${targetB}`);
+        };
+
+        function addBadge(button, type) {
+            const badge = document.createElement('span');
+            badge.className = `target-badge badge-${type.toLowerCase()}`;
+            badge.textContent = type;
+            button.appendChild(badge);
+        }
+
+        function removeBadgeFromTarget(targetId, type) {
+            const button = document.querySelector(`[data-target="${targetId}"]`);
+            if (button) {
+                const badge = button.querySelector(`.target-badge.badge-${type.toLowerCase()}`);
+                if (badge) {
+                    badge.remove();
+                    updateBadgePositions(button);
+                }
+            }
+        }
+
+        function updateBadgePositions(button) {
+            const badgeA = button.querySelector('.target-badge.badge-a');
+            const badgeB = button.querySelector('.target-badge.badge-b');
+            
+            if (badgeA && badgeB) {
+                badgeA.classList.add('badge-both');
+                badgeB.classList.add('badge-both');
+            } else {
+                if (badgeA) badgeA.classList.remove('badge-both');
+                if (badgeB) badgeB.classList.remove('badge-both');
+            }
+        }
+
+        // Toggle images section
+        window.toggleImagesSection = function() {
+            const section = document.getElementById('imagesSection');
+            section.classList.toggle('expanded');
+        };
+
+        // Trigger morph transition
+        window.triggerMorph = function() {
+            if (!engine) {
+                console.warn('Engine not initialized.');
+                return;
+            }
+
+            // Determine which target to transition to
+            let target = null;
+            
+            if (currentTarget === 'A' && targetB) {
+                target = targetB;
+                currentTarget = 'B';
+            } else if (currentTarget === 'B' && targetA) {
+                target = targetA;
+                currentTarget = 'A';
+            } else if (targetA) {
+                target = targetA;
+                currentTarget = 'A';
+            } else if (targetB) {
+                target = targetB;
+                currentTarget = 'B';
+            } else {
+                console.warn('No targets selected. Please select at least one target.');
+                return;
+            }
+            
+            performTransition(target);
         };
 
         function updateAlternation() {
