@@ -30,10 +30,15 @@ Ensure your server serves `.js` files with `application/javascript` MIME type fo
 Your site will be available at: `https://username.github.io/webgl-particle-engine/`
 
 ## Cloudflare Pages Setup
-1. Connect repository
-2. Build command: (leave empty)
-3. Build output directory: `/`
-4. Deploy
+1. Connect repository to Cloudflare Pages
+2. Configure deployment settings:
+   - **Framework preset**: None
+   - **Build command**: (leave empty - no build required)
+   - **Build output directory**: `/` (root directory)
+   - **Root directory**: (leave empty)
+3. Click "Save and Deploy"
+
+Note: The `wrangler.toml` file is optional for static sites. Cloudflare Pages will deploy directly from the repository root.
 
 ## Testing Locally
 ```bash

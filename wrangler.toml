@@ -1,5 +1,8 @@
 name = "webgl-particle-engine"
 compatibility_date = "2026-01-12"
 
-[site]
-bucket = "."
+# This is a static site project
+# For Cloudflare Pages, configure deployment settings in the dashboard:
+# - Build command: (leave empty)
+# - Build output directory: /
+# No wrangler configuration needed for static sites
