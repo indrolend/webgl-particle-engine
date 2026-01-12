@@ -382,8 +382,8 @@
         const logElement = document.getElementById('log');
         const maxLogEntries = 50;
 
-        // Store uploaded images
-        let uploadedImages = {
+        // Store uploaded images on window object for global access
+        window.uploadedImages = {
             1: null,
             2: null
         };
@@ -588,7 +588,7 @@
                 
                 img.onload = function() {
                     // Store the image
-                    uploadedImages[imageNum] = img;
+                    window.uploadedImages[imageNum] = img;
                     
                     // Update preview
                     const previewDiv = document.getElementById(`image${imageNum}Preview`);
@@ -626,7 +626,7 @@
 
         window.initFromImage = function(imageNum) {
             try {
-                const image = uploadedImages[imageNum];
+                const image = window.uploadedImages[imageNum];
                 
                 if (!image) {
                     console.warn(`Image ${imageNum} not loaded`);
@@ -653,7 +653,7 @@
                     return;
                 }
 
-                const image = uploadedImages[imageNum];
+                const image = window.uploadedImages[imageNum];
                 
                 if (!image) {
                     console.warn(`Image ${imageNum} not loaded`);
