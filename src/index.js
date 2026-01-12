@@ -20,8 +20,10 @@ export default {
         // Try to fetch the asset from the static assets
         return await env.ASSETS.fetch(request);
       } catch (e) {
-        // If there's an error, return a 404
-        return new Response('Not found', { status: 404 });
+        // Log the error for debugging
+        console.error('Asset fetch failed:', e);
+        // Return a 404 with error details
+        return new Response(`Not found: ${url.pathname}`, { status: 404 });
       }
     }
     
