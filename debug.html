@@ -333,21 +333,6 @@
                 <button class="btn-init" onclick="initPattern('spiral')">Spiral Pattern</button>
             </div>
 
-            <h2>🖼️ Image Upload</h2>
-            <div class="config-group">
-                <label for="image1Upload">Image 1:</label>
-                <input type="file" id="image1Upload" accept="image/*" onchange="handleImageUpload(1, event)">
-                <div id="image1Preview" class="image-preview"></div>
-                <button class="btn-init" onclick="initFromImage(1)" id="initImage1Btn" disabled>Initialize from Image 1</button>
-            </div>
-            
-            <div class="config-group">
-                <label for="image2Upload">Image 2:</label>
-                <input type="file" id="image2Upload" accept="image/*" onchange="handleImageUpload(2, event)">
-                <div id="image2Preview" class="image-preview"></div>
-                <button class="btn-transition" onclick="transitionToImage(2)" id="transitionImage2Btn" disabled>Transition to Image 2</button>
-            </div>
-
             <h2>🎬 Animation Presets</h2>
             <div class="config-group">
                 <label for="presetSelect">Select Preset:</label>
@@ -381,12 +366,29 @@
                 <button class="btn-control" onclick="applyPresetConfig()">Apply Preset Config</button>
             </div>
 
-            <h2>✨ Transitions</h2>
+            <h2>🎯 Transition Targets</h2>
+            
+            <h3 style="font-size: 16px; color: #00d4ff; margin: 15px 0 10px 0;">Shapes</h3>
             <div class="button-group">
-                <button class="btn-transition" onclick="transition('grid')">→ Grid</button>
-                <button class="btn-transition" onclick="transition('circle')">→ Circle</button>
-                <button class="btn-transition" onclick="transition('spiral')">→ Spiral</button>
-                <button class="btn-transition" onclick="transition('random')">→ Random</button>
+                <button class="btn-transition" onclick="transition('grid')">Grid</button>
+                <button class="btn-transition" onclick="transition('circle')">Circle</button>
+                <button class="btn-transition" onclick="transition('spiral')">Spiral</button>
+                <button class="btn-transition" onclick="transition('random')">Random</button>
+            </div>
+
+            <h3 style="font-size: 16px; color: #00d4ff; margin: 15px 0 10px 0;">Images</h3>
+            <div class="config-group">
+                <label for="image1Upload">Image 1:</label>
+                <input type="file" id="image1Upload" accept="image/*" onchange="handleImageUpload(1, event)">
+                <div id="image1Preview" class="image-preview"></div>
+                <button class="btn-transition" onclick="transitionToImage(1)" id="transitionImage1Btn" disabled>Image 1</button>
+            </div>
+            
+            <div class="config-group">
+                <label for="image2Upload">Image 2:</label>
+                <input type="file" id="image2Upload" accept="image/*" onchange="handleImageUpload(2, event)">
+                <div id="image2Preview" class="image-preview"></div>
+                <button class="btn-transition" onclick="transitionToImage(2)" id="transitionImage2Btn" disabled>Image 2</button>
             </div>
 
             <h2>🎮 Controls</h2>
@@ -752,12 +754,8 @@
                     `;
                     previewDiv.classList.add('active');
                     
-                    // Enable appropriate button
-                    if (imageNum === 1) {
-                        document.getElementById('initImage1Btn').disabled = false;
-                    } else {
-                        document.getElementById('transitionImage2Btn').disabled = false;
-                    }
+                    // Enable transition button
+                    document.getElementById(`transitionImage${imageNum}Btn`).disabled = false;
                     
                     console.log(`Image ${imageNum} loaded successfully: ${img.width}x${img.height}px`);
                 };
