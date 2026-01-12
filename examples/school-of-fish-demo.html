@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School of Fish Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        canvas {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 100%;
+        }
+
+        .info {
+            margin-top: 20px;
+            text-align: center;
+            color: #aaa;
+            max-width: 600px;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <h1>🐟 School of Fish Demo</h1>
+    <canvas id="canvas" width="1000" height="600"></canvas>
+    
+    <div class="controls">
+        <button onclick="transitionToPattern('grid')">→ Grid</button>
+        <button onclick="transitionToPattern('circle')">→ Circle</button>
+        <button onclick="transitionToPattern('spiral')">→ Spiral</button>
+        <button onclick="transitionToPattern('random')">→ Random</button>
+    </div>
+
+    <div class="info">
+        <p>
+            Watch the particles explode, swarm with flocking behavior, and reform into different shapes!
+            Click the buttons above to transition to different patterns.
+        </p>
+    </div>
+
+    <script type="module">
+        import { ParticleEngine } from '../src/ParticleEngine.js';
+        import { SchoolOfFishPreset } from '../src/presets/SchoolOfFishPreset.js';
+
+        const canvas = document.getElementById('canvas');
+        
+        // Create engine
+        const engine = new ParticleEngine(canvas, {
+            particleCount: 1000,
+            speed: 1.0,
+            autoResize: false
+        });
+
+        // Create and register School of Fish preset
+        const schoolOfFish = new SchoolOfFishPreset({
+            explosionRadius: 300,
+            explosionDuration: 1000,
+            swarmDuration: 3000,
+            alignmentStrength: 0.05,
+            cohesionStrength: 0.02,
+            separationStrength: 0.08,
+            reformationDuration: 2000
+        });
+        
+        engine.registerPreset('schoolOfFish', schoolOfFish);
+
+        // Initialize with random particles
+        engine.initializeParticles('random');
+        
+        // Activate the preset
+        engine.activatePreset('schoolOfFish');
+        
+        // Start animation
+        engine.start();
+
+        // Global function for button handlers
+        window.transitionToPattern = function(pattern) {
+            engine.transitionPresetTo('pattern', pattern, 2000);
+        };
+
+        console.log('School of Fish demo started!');
+        console.log('Watch the particles go through explosion → swarming → reformation phases');
+    </script>
+</body>
+</html>

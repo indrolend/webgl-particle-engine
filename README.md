@@ -98,6 +98,44 @@ const engine = new ParticleEngine(canvas, {
 - **spiral**: Particles arranged in a spiral pattern
 - **image**: Particles arranged based on uploaded image pixel data (see Image-Based Particles below)
 
+### Animation Presets
+
+The engine supports animation presets for complex particle behaviors:
+
+#### School of Fish Preset
+
+Create stunning flocking animations with three distinct phases:
+
+```javascript
+import { ParticleEngine } from './src/ParticleEngine.js';
+import { SchoolOfFishPreset } from './src/presets/SchoolOfFishPreset.js';
+
+const engine = new ParticleEngine(canvas, { particleCount: 1000 });
+
+// Create and configure preset
+const schoolOfFish = new SchoolOfFishPreset({
+  explosionRadius: 300,      // How far particles scatter (100-500)
+  swarmDuration: 3000,        // How long particles swarm (ms)
+  alignmentStrength: 0.05,    // Steering towards neighbors' direction
+  cohesionStrength: 0.02,     // Attraction to group center
+  separationStrength: 0.08,   // Repulsion from close neighbors
+  reformationDuration: 2000   // Transition time to target (ms)
+});
+
+// Register and activate
+engine.registerPreset('schoolOfFish', schoolOfFish);
+engine.activatePreset('schoolOfFish');
+engine.start();
+
+// Transition to shapes
+engine.transitionPresetTo('pattern', 'circle', 2000);
+```
+
+**Phases:**
+1. **Explosion**: Particles scatter outward randomly
+2. **Swarming**: Flocking behavior (alignment, cohesion, separation)
+3. **Reformation**: Smooth transition to target shape/image
+
 ### API Methods
 
 #### `initializeParticles(pattern)`
@@ -142,6 +180,41 @@ engine.start();
 Stop the animation loop.
 ```javascript
 engine.stop();
+```
+
+#### `registerPreset(id, preset)`
+Register a new animation preset.
+```javascript
+const myPreset = new SchoolOfFishPreset({ ... });
+engine.registerPreset('myPreset', myPreset);
+```
+
+#### `activatePreset(id, options)`
+Activate a registered preset.
+```javascript
+engine.activatePreset('schoolOfFish');
+```
+
+#### `deactivatePreset()`
+Deactivate the current preset and return to default behavior.
+```javascript
+engine.deactivatePreset();
+```
+
+#### `transitionPresetTo(type, target, duration)`
+Transition active preset to a pattern or image.
+```javascript
+// Transition to pattern
+engine.transitionPresetTo('pattern', 'circle', 2000);
+
+// Transition to image
+engine.transitionPresetTo('image', imageElement, 2000);
+```
+
+#### `getPresets()`
+Get all registered presets.
+```javascript
+const presets = engine.getPresets();
 ```
 
 #### `updateConfig(config)`
@@ -231,6 +304,8 @@ The `debug.html` file provides an interactive interface for testing and debuggin
 ### Features:
 - **Configuration Panel**: Adjust particle count and speed with sliders
 - **Pattern Initialization**: Test different initial patterns
+- **Animation Presets**: Select and configure presets like "School of Fish"
+- **Preset Parameters**: Adjust preset-specific settings (explosion radius, swarm strength, etc.)
 - **Image Upload**: Upload and preview two images for particle initialization
 - **Transition Controls**: Trigger transitions between patterns and images
 - **Engine Controls**: Start, stop, and reconfigure the engine
@@ -251,12 +326,20 @@ The `debug.html` file provides an interactive interface for testing and debuggin
 ```
 webgl-particle-engine/
 ├── src/
-│   ├── ParticleEngine.js   # Main engine coordinator
-│   ├── ParticleSystem.js   # Particle management and transitions
-│   └── Renderer.js         # WebGL rendering
-├── public/                 # Static assets (if needed)
-├── debug.html             # Interactive debug interface
-└── README.md              # Documentation
+│   ├── ParticleEngine.js      # Main engine coordinator
+│   ├── ParticleSystem.js      # Particle management and transitions
+│   ├── Renderer.js            # WebGL rendering
+│   └── presets/               # Animation presets
+│       ├── Preset.js          # Base preset class
+│       ├── PresetManager.js   # Preset management system
+│       ├── SchoolOfFishPreset.js  # School of Fish implementation
+│       └── index.js           # Module exports
+├── examples/                  # Example implementations
+│   └── school-of-fish-demo.html
+├── public/                    # Static assets (if needed)
+├── debug.html                # Interactive debug interface
+├── index.html                # Landing page
+└── README.md                 # Documentation
 ```
 
 ## 🎨 Architecture
@@ -265,6 +348,7 @@ webgl-particle-engine/
 Main engine class that coordinates the renderer and particle system. Handles:
 - Initialization and configuration
 - Animation loop management
+- Preset management and lifecycle
 - FPS tracking
 - High-level API
 
@@ -273,6 +357,7 @@ Manages particle states and transitions. Features:
 - Multiple pattern generators
 - Smooth transition animations with easing
 - Particle physics and movement
+- Preset-compatible target generation
 - Configurable parameters
 
 ### Renderer.js
@@ -281,6 +366,13 @@ WebGL rendering implementation. Handles:
 - Shader compilation and linking
 - Buffer management
 - Efficient particle rendering
+
+### Presets System
+Modular animation preset architecture:
+- **Preset.js**: Abstract base class defining preset lifecycle
+- **PresetManager.js**: Centralized preset registration and activation
+- **SchoolOfFishPreset.js**: Flocking algorithm implementation with explosion, swarming, and reformation phases
+- Easily extensible for custom behaviors
 
 ## 🌐 Deployment
 
