@@ -2,6 +2,13 @@
  * Particle System with Transition Support
  * Manages particles and their transitions between states
  */
+import { Particle } from './particles/Particle.js';
+import { GridPattern } from './patterns/GridPattern.js';
+import { CirclePattern } from './patterns/CirclePattern.js';
+import { SpiralPattern } from './patterns/SpiralPattern.js';
+import { RandomPattern } from './patterns/RandomPattern.js';
+import { easeInOutCubic } from './utils/easing.js';
+
 export class ParticleSystem {
   constructor(config = {}) {
     this.particles = [];
@@ -37,46 +44,22 @@ export class ParticleSystem {
   }
 
   createParticle(x, y, vx, vy, options = {}) {
-    return {
-      x: x,
-      y: y,
-      vx: vx || 0,
-      vy: vy || 0,
-      r: options.r !== undefined ? options.r : Math.random(),
-      g: options.g !== undefined ? options.g : Math.random(),
-      b: options.b !== undefined ? options.b : Math.random(),
-      alpha: options.alpha !== undefined ? options.alpha : 1.0,
-      size: options.size || (this.config.minSize + Math.random() * (this.config.maxSize - this.config.minSize)),
-      life: options.life !== undefined ? options.life : 1.0,
-      targetX: x,
-      targetY: y,
-      targetR: options.r !== undefined ? options.r : Math.random(),
-      targetG: options.g !== undefined ? options.g : Math.random(),
-      targetB: options.b !== undefined ? options.b : Math.random()
-    };
+    const size = options.size || (this.config.minSize + Math.random() * (this.config.maxSize - this.config.minSize));
+    return new Particle(x, y, vx, vy, { ...options, size });
   }
 
   initializeRandom() {
     console.log(`[ParticleSystem] Initializing ${this.config.particleCount} random particles...`);
     
     this.particles = [];
+    const positions = RandomPattern.generate(this.config.particleCount, this.width, this.height, this.config.speed);
     
-    for (let i = 0; i < this.config.particleCount; i++) {
-      const x = Math.random() * this.width;
-      const y = Math.random() * this.height;
-      const angle = Math.random() * Math.PI * 2;
-      const speed = (Math.random() - 0.5) * 2 * this.config.speed;
-      
-      this.particles.push(this.createParticle(
-        x, y,
-        Math.cos(angle) * speed,
-        Math.sin(angle) * speed,
-        {
-          r: Math.random() * 0.5 + 0.5,
-          g: Math.random() * 0.5 + 0.3,
-          b: Math.random() * 0.8 + 0.2
-        }
-      ));
+    for (const pos of positions) {
+      this.particles.push(this.createParticle(pos.x, pos.y, pos.vx, pos.vy, {
+        r: pos.r,
+        g: pos.g,
+        b: pos.b
+      }));
     }
     
     console.log(`[ParticleSystem] Created ${this.particles.length} particles`);
@@ -86,52 +69,31 @@ export class ParticleSystem {
     console.log(`[ParticleSystem] Initializing particles in grid formation...`);
     
     this.particles = [];
-    const cols = Math.ceil(Math.sqrt(this.config.particleCount));
-    const rows = Math.ceil(this.config.particleCount / cols);
-    const spacingX = this.width / (cols + 1);
-    const spacingY = this.height / (rows + 1);
+    const positions = GridPattern.generate(this.config.particleCount, this.width, this.height);
     
-    for (let i = 0; i < this.config.particleCount; i++) {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const x = spacingX * (col + 1);
-      const y = spacingY * (row + 1);
-      
-      this.particles.push(this.createParticle(
-        x, y, 0, 0,
-        {
-          r: 0.3 + (col / cols) * 0.7,
-          g: 0.5,
-          b: 0.8 - (row / rows) * 0.5
-        }
-      ));
+    for (const pos of positions) {
+      this.particles.push(this.createParticle(pos.x, pos.y, pos.vx, pos.vy, {
+        r: pos.r,
+        g: pos.g,
+        b: pos.b
+      }));
     }
     
-    console.log(`[ParticleSystem] Created ${this.particles.length} particles in ${cols}x${rows} grid`);
+    console.log(`[ParticleSystem] Created ${this.particles.length} particles in grid`);
   }
 
   initializeCircle() {
     console.log(`[ParticleSystem] Initializing particles in circle formation...`);
     
     this.particles = [];
-    const centerX = this.width / 2;
-    const centerY = this.height / 2;
-    const radius = Math.min(this.width, this.height) * 0.35;
+    const positions = CirclePattern.generate(this.config.particleCount, this.width, this.height);
     
-    for (let i = 0; i < this.config.particleCount; i++) {
-      const angle = (i / this.config.particleCount) * Math.PI * 2;
-      const x = centerX + Math.cos(angle) * radius;
-      const y = centerY + Math.sin(angle) * radius;
-      
-      const hue = i / this.config.particleCount;
-      this.particles.push(this.createParticle(
-        x, y, 0, 0,
-        {
-          r: Math.abs(Math.cos(hue * Math.PI * 2)),
-          g: Math.abs(Math.sin(hue * Math.PI * 2)),
-          b: Math.abs(Math.cos(hue * Math.PI * 2 + Math.PI / 2))
-        }
-      ));
+    for (const pos of positions) {
+      this.particles.push(this.createParticle(pos.x, pos.y, pos.vx, pos.vy, {
+        r: pos.r,
+        g: pos.g,
+        b: pos.b
+      }));
     }
     
     console.log(`[ParticleSystem] Created ${this.particles.length} particles in circle formation`);
@@ -141,25 +103,14 @@ export class ParticleSystem {
     console.log(`[ParticleSystem] Initializing particles in spiral formation...`);
     
     this.particles = [];
-    const centerX = this.width / 2;
-    const centerY = this.height / 2;
-    const maxRadius = Math.min(this.width, this.height) * 0.4;
+    const positions = SpiralPattern.generate(this.config.particleCount, this.width, this.height);
     
-    for (let i = 0; i < this.config.particleCount; i++) {
-      const t = i / this.config.particleCount;
-      const angle = t * Math.PI * 8; // 4 full rotations
-      const radius = t * maxRadius;
-      const x = centerX + Math.cos(angle) * radius;
-      const y = centerY + Math.sin(angle) * radius;
-      
-      this.particles.push(this.createParticle(
-        x, y, 0, 0,
-        {
-          r: 0.8 - t * 0.4,
-          g: 0.4 + t * 0.4,
-          b: 0.9
-        }
-      ));
+    for (const pos of positions) {
+      this.particles.push(this.createParticle(pos.x, pos.y, pos.vx, pos.vy, {
+        r: pos.r,
+        g: pos.g,
+        b: pos.b
+      }));
     }
     
     console.log(`[ParticleSystem] Created ${this.particles.length} particles in spiral formation`);
@@ -355,21 +306,14 @@ export class ParticleSystem {
     
     this._startTransition(duration);
     
-    const cols = Math.ceil(Math.sqrt(this.particles.length));
-    const rows = Math.ceil(this.particles.length / cols);
-    const spacingX = this.width / (cols + 1);
-    const spacingY = this.height / (rows + 1);
+    const positions = GridPattern.generate(this.particles.length, this.width, this.height);
     
     for (let i = 0; i < this.particles.length; i++) {
       const particle = this.particles[i];
-      const col = i % cols;
-      const row = Math.floor(i / cols);
+      const pos = positions[i];
       
-      particle.targetX = spacingX * (col + 1);
-      particle.targetY = spacingY * (row + 1);
-      particle.targetR = 0.3 + (col / cols) * 0.7;
-      particle.targetG = 0.5;
-      particle.targetB = 0.8 - (row / rows) * 0.5;
+      particle.setTarget(pos.x, pos.y);
+      particle.setTargetColor(pos.r, pos.g, pos.b);
     }
   }
 
@@ -378,21 +322,14 @@ export class ParticleSystem {
     
     this._startTransition(duration);
     
-    const centerX = this.width / 2;
-    const centerY = this.height / 2;
-    const radius = Math.min(this.width, this.height) * 0.35;
+    const positions = CirclePattern.generate(this.particles.length, this.width, this.height);
     
     for (let i = 0; i < this.particles.length; i++) {
       const particle = this.particles[i];
-      const angle = (i / this.particles.length) * Math.PI * 2;
+      const pos = positions[i];
       
-      particle.targetX = centerX + Math.cos(angle) * radius;
-      particle.targetY = centerY + Math.sin(angle) * radius;
-      
-      const hue = i / this.particles.length;
-      particle.targetR = Math.abs(Math.cos(hue * Math.PI * 2));
-      particle.targetG = Math.abs(Math.sin(hue * Math.PI * 2));
-      particle.targetB = Math.abs(Math.cos(hue * Math.PI * 2 + Math.PI / 2));
+      particle.setTarget(pos.x, pos.y);
+      particle.setTargetColor(pos.r, pos.g, pos.b);
     }
   }
 
@@ -401,21 +338,14 @@ export class ParticleSystem {
     
     this._startTransition(duration);
     
-    const centerX = this.width / 2;
-    const centerY = this.height / 2;
-    const maxRadius = Math.min(this.width, this.height) * 0.4;
+    const positions = SpiralPattern.generate(this.particles.length, this.width, this.height);
     
     for (let i = 0; i < this.particles.length; i++) {
       const particle = this.particles[i];
-      const t = i / this.particles.length;
-      const angle = t * Math.PI * 8;
-      const radius = t * maxRadius;
+      const pos = positions[i];
       
-      particle.targetX = centerX + Math.cos(angle) * radius;
-      particle.targetY = centerY + Math.sin(angle) * radius;
-      particle.targetR = 0.8 - t * 0.4;
-      particle.targetG = 0.4 + t * 0.4;
-      particle.targetB = 0.9;
+      particle.setTarget(pos.x, pos.y);
+      particle.setTargetColor(pos.r, pos.g, pos.b);
     }
   }
 
@@ -424,14 +354,14 @@ export class ParticleSystem {
     
     this._startTransition(duration);
     
+    const positions = RandomPattern.generate(this.particles.length, this.width, this.height, this.config.speed);
+    
     for (let i = 0; i < this.particles.length; i++) {
       const particle = this.particles[i];
+      const pos = positions[i];
       
-      particle.targetX = Math.random() * this.width;
-      particle.targetY = Math.random() * this.height;
-      particle.targetR = Math.random() * 0.5 + 0.5;
-      particle.targetG = Math.random() * 0.5 + 0.3;
-      particle.targetB = Math.random() * 0.8 + 0.2;
+      particle.setTarget(pos.x, pos.y);
+      particle.setTargetColor(pos.r, pos.g, pos.b);
     }
   }
 
@@ -453,39 +383,17 @@ export class ParticleSystem {
       
       if (this.isTransitioning) {
         // Smooth easing function (ease-in-out)
-        const t = this.easeInOutCubic(this.transitionProgress);
+        const t = easeInOutCubic(this.transitionProgress);
         const factor = t * this.INTERPOLATION_FACTOR;
         
-        // Interpolate position
-        particle.x = particle.x + (particle.targetX - particle.x) * factor;
-        particle.y = particle.y + (particle.targetY - particle.y) * factor;
-        
-        // Interpolate color
-        particle.r = particle.r + (particle.targetR - particle.r) * factor;
-        particle.g = particle.g + (particle.targetG - particle.g) * factor;
-        particle.b = particle.b + (particle.targetB - particle.b) * factor;
+        // Interpolate using Particle class method
+        particle.interpolate(factor);
       } else {
-        // Free movement
-        particle.x += particle.vx * deltaTime * this.config.speed;
-        particle.y += particle.vy * deltaTime * this.config.speed;
-        
-        // Bounce off edges
-        if (particle.x < 0 || particle.x > this.width) {
-          particle.vx *= -1;
-          particle.x = Math.max(0, Math.min(this.width, particle.x));
-        }
-        if (particle.y < 0 || particle.y > this.height) {
-          particle.vy *= -1;
-          particle.y = Math.max(0, Math.min(this.height, particle.y));
-        }
+        // Free movement using Particle class method
+        particle.updatePosition(deltaTime, this.config.speed);
+        particle.bounceOffEdges(this.width, this.height);
       }
     }
-  }
-
-  easeInOutCubic(t) {
-    return t < 0.5
-      ? 4 * t * t * t
-      : 1 - Math.pow(-2 * t + 2, 3) / 2;
   }
 
   getParticles() {
