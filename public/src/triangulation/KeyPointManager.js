@@ -27,32 +27,13 @@ export class KeyPointManager {
     const maxX = width - 1;
     const maxY = height - 1;
     
-    // Add corner points first (essential for boundary)
-    points.push({ x: 0, y: 0 });
-    points.push({ x: maxX, y: 0 });
-    points.push({ x: maxX, y: maxY });
-    points.push({ x: 0, y: maxY });
-    
-    // Add edge points
-    for (let i = 1; i < gridSize - 1; i++) {
-      const t = i / (gridSize - 1);
-      // Top edge
-      points.push({ x: t * maxX, y: 0 });
-      // Bottom edge
-      points.push({ x: t * maxX, y: maxY });
-      // Left edge
-      points.push({ x: 0, y: t * maxY });
-      // Right edge
-      points.push({ x: maxX, y: t * maxY });
-    }
-    
-    // Add interior grid points
-    for (let i = 1; i < gridSize - 1; i++) {
-      for (let j = 1; j < gridSize - 1; j++) {
-        points.push({
-          x: (i / (gridSize - 1)) * maxX,
-          y: (j / (gridSize - 1)) * maxY
-        });
+    // Generate a uniform grid of points
+    // Create gridSize x gridSize points evenly distributed across the image
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        const x = (col / (gridSize - 1)) * maxX;
+        const y = (row / (gridSize - 1)) * maxY;
+        points.push({ x, y });
       }
     }
     
