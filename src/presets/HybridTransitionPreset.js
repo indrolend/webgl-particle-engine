@@ -42,6 +42,10 @@ export class HybridTransitionPreset extends Preset {
     this.sourceImage = null;
     this.targetImage = null;
     this.blendProgress = 0;
+    
+    // Physics constants
+    this.VACUUM_FORCE_MULTIPLIER = 0.1; // Controls the strength of vacuum force based on distance
+    this.ALPHA_BLEND_RATE = 0.05; // Controls smoothness of particle fade during blend phase
   }
 
   initialize(particles, dimensions, options = {}) {
@@ -182,8 +186,8 @@ export class HybridTransitionPreset extends Preset {
         if (distance > 1) {
           // Apply vacuum force (stronger as we progress)
           const force = this.config.vacuumStrength * easedProgress;
-          const forceX = (dx / distance) * force * distance * 0.1;
-          const forceY = (dy / distance) * force * distance * 0.1;
+          const forceX = (dx / distance) * force * distance * this.VACUUM_FORCE_MULTIPLIER;
+          const forceY = (dy / distance) * force * distance * this.VACUUM_FORCE_MULTIPLIER;
 
           particle.vx += forceX;
           particle.vy += forceY;
@@ -231,8 +235,7 @@ export class HybridTransitionPreset extends Preset {
     
     particles.forEach(particle => {
       // Smoothly adjust alpha
-      const alphaBlend = 0.05;
-      particle.alpha = particle.alpha + (targetAlpha - particle.alpha) * alphaBlend;
+      particle.alpha = particle.alpha + (targetAlpha - particle.alpha) * this.ALPHA_BLEND_RATE;
       
       // Keep particles in final position with minimal drift
       if (particle.targetX !== undefined && particle.targetY !== undefined) {
