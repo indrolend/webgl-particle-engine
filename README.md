@@ -1,15 +1,17 @@
 # WebGL Particle Transition Engine
 
-A high-performance WebGL-based particle system with smooth animated transitions between different patterns. Features a modular architecture with detailed logging and a comprehensive debug interface.
+A high-performance WebGL-based particle system with smooth animated transitions between different patterns. Features a simplified, user-friendly interface with View Transitions API integration for seamless visual effects.
 
 ## ✨ Features
 
-- **WebGL Rendering**: Hardware-accelerated particle rendering for smooth performance
+- **WebGL Rendering**: Hardware-accelerated particle rendering for smooth 60 FPS performance
 - **Multiple Patterns**: Grid, Circle, Spiral, and Random formations
 - **Image-Based Particles**: Upload images and create particle formations from pixel data
-- **Smooth Transitions**: Animated transitions between patterns and images with easing
-- **Configurable**: Adjustable particle count, speed, and size
-- **Debug Interface**: Interactive HTML panel with real-time controls and logging
+- **Smooth Transitions**: Browser-native View Transitions API for seamless morphing
+- **Gravity Physics**: Real-time gravity simulation affecting particle movement
+- **Simplified Interface**: Clean, minimal controls for size, speed, and gravity
+- **A/B Target System**: Select two targets and toggle between them with the MORPH button
+- **Auto-Initialize**: Starts automatically with random particle pattern
 - **Image Upload**: Dual image upload with preview and dimension display
 - **Modular Design**: Clean, maintainable code structure in `src/` directory
 - **Deployment Ready**: Optimized for GitHub Pages and Cloudflare Pages
@@ -84,6 +86,7 @@ http://localhost:8000/debug.html
 const engine = new ParticleEngine(canvas, {
     particleCount: 1000,  // Number of particles (100-5000)
     speed: 1.0,          // Speed multiplier (0.1-3.0)
+    gravity: 0,          // Gravity force (-50 to 50, 0 = no gravity)
     autoResize: true,    // Automatically resize canvas
     minSize: 2,          // Minimum particle size
     maxSize: 8           // Maximum particle size
@@ -297,49 +300,52 @@ The debug interface (`debug.html`) includes a dedicated **Image Upload** section
 4. Smoothly transition to Image 2
 5. View debug logs showing extraction and particle creation details
 
-## 🎮 Debug Interface
+## 🎮 Simplified Debug Interface
 
-The `debug.html` file provides an interactive interface for testing and debugging:
+The `debug.html` file provides a clean, minimalist interface for particle control:
 
 ### Features:
-- **Configuration Panel**: Adjust particle count and speed with sliders
-- **Pattern Initialization**: Test different initial patterns
-- **Animation Presets**: Select and configure presets like "School of Fish"
-- **Preset Parameters**: Adjust preset-specific settings (explosion radius, swarm strength, etc.)
-- **Image Upload**: Upload and preview two images for particle initialization
-- **Transition Controls**: Trigger transitions between patterns and images
-- **Engine Controls**: Start, stop, and reconfigure the engine
+- **Particle Controls**: 
+  - Size adjustment (1-20)
+  - Speed multiplier (0.1-3.0)
+  - Gravity control (-50 to 50)
+- **A/B Target System**: Select two targets (patterns or images) and toggle between them
+- **Transition Targets**: Grid, Circle, Spiral, Random patterns
+- **Image Upload**: Upload and preview two images for particle transitions
+- **MORPH Button**: Large, centered button to trigger transitions between selected targets
 - **Real-time Info**: View particle count and FPS
-- **Debug Log**: See detailed console output in the UI
+- **Auto-Initialize**: Engine starts automatically with random pattern
 
-### Controls:
-1. **Initialize Engine**: Create a new engine instance with current settings
-2. **Pattern Buttons**: Initialize particles in specific formations
-3. **Image Upload**: Upload images and initialize/transition particles to images
-4. **Transition Buttons**: Smoothly animate to different patterns or images
-5. **Start/Stop**: Control the animation loop
-6. **Apply Config**: Update engine with new configuration
-7. **Clear Log**: Clear the debug console output
+### How to Use:
+1. **Adjust Controls**: Use sliders to modify particle size, speed, and gravity in real-time
+2. **Select Targets**: Click pattern or image buttons to cycle through target selections (A → B → Both → None)
+3. **Upload Images**: Choose image files to use as transition targets
+4. **Press MORPH**: Click the large pink MORPH button to transition between selected A/B targets
+5. **Watch Performance**: Monitor FPS and particle count in the info panel
+
+### View Transitions API Integration:
+The interface uses the browser-native View Transitions API for smooth, seamless transitions between states. When supported by the browser, transitions are hardware-accelerated for optimal performance.
 
 ## 🏗️ Project Structure
 
 ```
 webgl-particle-engine/
 ├── src/
-│   ├── ParticleEngine.js      # Main engine coordinator
-│   ├── ParticleSystem.js      # Particle management and transitions
-│   ├── Renderer.js            # WebGL rendering
-│   └── presets/               # Animation presets
-│       ├── Preset.js          # Base preset class
-│       ├── PresetManager.js   # Preset management system
+│   ├── ParticleEngine.js          # Main engine coordinator
+│   ├── ParticleSystem.js          # Particle management and transitions
+│   ├── Renderer.js                # WebGL rendering
+│   ├── ViewTransitionsHelper.js   # View Transitions API integration
+│   └── presets/                   # Animation presets
+│       ├── Preset.js              # Base preset class
+│       ├── PresetManager.js       # Preset management system
 │       ├── SchoolOfFishPreset.js  # School of Fish implementation
-│       └── index.js           # Module exports
-├── examples/                  # Example implementations
+│       └── index.js               # Module exports
+├── examples/                      # Example implementations
 │   └── school-of-fish-demo.html
-├── public/                    # Static assets (if needed)
-├── debug.html                # Interactive debug interface
-├── index.html                # Landing page
-└── README.md                 # Documentation
+├── public/                        # Static assets (if needed)
+├── debug.html                    # Simplified interactive interface
+├── index.html                    # Landing page
+└── README.md                     # Documentation
 ```
 
 ## 🎨 Architecture
@@ -356,7 +362,7 @@ Main engine class that coordinates the renderer and particle system. Handles:
 Manages particle states and transitions. Features:
 - Multiple pattern generators
 - Smooth transition animations with easing
-- Particle physics and movement
+- Particle physics and movement with gravity support
 - Preset-compatible target generation
 - Configurable parameters
 
@@ -366,6 +372,13 @@ WebGL rendering implementation. Handles:
 - Shader compilation and linking
 - Buffer management
 - Efficient particle rendering
+
+### ViewTransitionsHelper.js
+Browser-native View Transitions API integration:
+- Feature detection and fallback support
+- Smooth cross-fade transitions between states
+- Particle animation synchronization with DOM updates
+- Optimized for performance with hardware acceleration
 
 ### Presets System
 Modular animation preset architecture:

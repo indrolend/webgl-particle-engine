@@ -9,7 +9,8 @@ export class ParticleSystem {
       particleCount: config.particleCount || 1000,
       speed: config.speed || 1.0,
       minSize: config.minSize || 2,
-      maxSize: config.maxSize || 8
+      maxSize: config.maxSize || 8,
+      gravity: config.gravity || 0
     };
     
     this.width = 800;
@@ -465,6 +466,9 @@ export class ParticleSystem {
         particle.g = particle.g + (particle.targetG - particle.g) * factor;
         particle.b = particle.b + (particle.targetB - particle.b) * factor;
       } else {
+        // Apply gravity
+        particle.vy += this.config.gravity * deltaTime;
+        
         // Free movement
         particle.x += particle.vx * deltaTime * this.config.speed;
         particle.y += particle.vy * deltaTime * this.config.speed;
@@ -495,5 +499,119 @@ export class ParticleSystem {
   updateConfig(newConfig) {
     this.config = { ...this.config, ...newConfig };
     console.log('[ParticleSystem] Config updated:', this.config);
+  }
+
+  /**
+   * Generate target positions for a pattern
+   * @param {string} pattern - Pattern name ('grid', 'circle', 'spiral', 'random')
+   * @param {number} count - Number of targets to generate
+   * @returns {Array} Array of target objects {x, y, r, g, b}
+   */
+  generateTargets(pattern, count) {
+    const targets = [];
+    
+    switch (pattern) {
+      case 'grid':
+        const cols = Math.ceil(Math.sqrt(count));
+        const rows = Math.ceil(count / cols);
+        const spacingX = this.width / (cols + 1);
+        const spacingY = this.height / (rows + 1);
+        
+        for (let i = 0; i < count; i++) {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          targets.push({
+            x: spacingX * (col + 1),
+            y: spacingY * (row + 1),
+            r: 0.3 + (col / cols) * 0.7,
+            g: 0.5,
+            b: 0.8 - (row / rows) * 0.5
+          });
+        }
+        break;
+        
+      case 'circle':
+        const centerX = this.width / 2;
+        const centerY = this.height / 2;
+        const radius = Math.min(this.width, this.height) * 0.35;
+        
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2;
+          const hue = i / count;
+          targets.push({
+            x: centerX + Math.cos(angle) * radius,
+            y: centerY + Math.sin(angle) * radius,
+            r: Math.abs(Math.cos(hue * Math.PI * 2)),
+            g: Math.abs(Math.sin(hue * Math.PI * 2)),
+            b: Math.abs(Math.cos(hue * Math.PI * 2 + Math.PI / 2))
+          });
+        }
+        break;
+        
+      case 'spiral':
+        const spiralCenterX = this.width / 2;
+        const spiralCenterY = this.height / 2;
+        const maxRadius = Math.min(this.width, this.height) * 0.4;
+        
+        for (let i = 0; i < count; i++) {
+          const t = i / count;
+          const angle = t * Math.PI * 8;
+          const r = t * maxRadius;
+          targets.push({
+            x: spiralCenterX + Math.cos(angle) * r,
+            y: spiralCenterY + Math.sin(angle) * r,
+            r: 0.8 - t * 0.4,
+            g: 0.4 + t * 0.4,
+            b: 0.9
+          });
+        }
+        break;
+        
+      case 'random':
+      default:
+        for (let i = 0; i < count; i++) {
+          targets.push({
+            x: Math.random() * this.width,
+            y: Math.random() * this.height,
+            r: Math.random() * 0.5 + 0.5,
+            g: Math.random() * 0.5 + 0.3,
+            b: Math.random() * 0.8 + 0.2
+          });
+        }
+        break;
+    }
+    
+    return targets;
+  }
+
+  /**
+   * Convert image data to target array
+   * @param {Object} imageData - Image data from extractImageData
+   * @returns {Array} Array of target objects
+   */
+  imageDataToTargets(imageData) {
+    const targets = [];
+    const pixels = imageData.pixels;
+    
+    // Calculate scaling to fit canvas
+    const scaleX = this.width / imageData.gridWidth;
+    const scaleY = this.height / imageData.gridHeight;
+    const scale = Math.min(scaleX, scaleY) * this.IMAGE_PADDING_FACTOR;
+    
+    // Calculate offset to center
+    const offsetX = (this.width - imageData.gridWidth * scale) / 2;
+    const offsetY = (this.height - imageData.gridHeight * scale) / 2;
+    
+    for (let pixel of pixels) {
+      targets.push({
+        x: offsetX + pixel.x * scale,
+        y: offsetY + pixel.y * scale,
+        r: pixel.r,
+        g: pixel.g,
+        b: pixel.b
+      });
+    }
+    
+    return targets;
   }
 }

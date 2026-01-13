@@ -4,6 +4,7 @@
  */
 import { Renderer } from './Renderer.js';
 import { ParticleSystem } from './ParticleSystem.js';
+import { PresetManager } from './presets/PresetManager.js';
 
 export class ParticleEngine {
   constructor(canvas, config = {}) {
@@ -39,6 +40,10 @@ export class ParticleEngine {
     });
     this.particleSystem.setDimensions(canvas.width, canvas.height);
     console.log('[ParticleEngine] Particle system initialized');
+    
+    // Initialize preset manager
+    this.presetManager = new PresetManager();
+    console.log('[ParticleEngine] Preset manager initialized');
     
     // Setup auto-resize if enabled
     if (this.config.autoResize) {
@@ -172,8 +177,15 @@ export class ParticleEngine {
       this.fpsUpdateTime = currentTime;
     }
     
-    // Update particle system
-    this.particleSystem.update(deltaTime);
+    // Update preset if active
+    if (this.presetManager.hasActivePreset()) {
+      const particles = this.particleSystem.getParticles();
+      const dimensions = { width: this.canvas.width, height: this.canvas.height };
+      this.presetManager.update(particles, deltaTime, dimensions);
+    } else {
+      // Update particle system (default behavior)
+      this.particleSystem.update(deltaTime);
+    }
     
     // Render particles
     const particles = this.particleSystem.getParticles();
@@ -186,11 +198,79 @@ export class ParticleEngine {
   updateConfig(newConfig) {
     console.log('[ParticleEngine] Updating configuration:', newConfig);
     
-    if (newConfig.particleCount !== undefined || newConfig.speed !== undefined) {
+    if (newConfig.particleCount !== undefined || newConfig.speed !== undefined || newConfig.gravity !== undefined) {
       this.particleSystem.updateConfig(newConfig);
     }
     
     this.config = { ...this.config, ...newConfig };
+  }
+
+  /**
+   * Register a preset
+   * @param {string} id - Unique identifier for the preset
+   * @param {Preset} preset - Preset instance
+   */
+  registerPreset(id, preset) {
+    this.presetManager.registerPreset(id, preset);
+  }
+
+  /**
+   * Activate a preset
+   * @param {string} id - Preset identifier
+   * @param {Object} options - Additional options
+   * @returns {boolean} Success status
+   */
+  activatePreset(id, options = {}) {
+    const particles = this.particleSystem.getParticles();
+    const dimensions = { width: this.canvas.width, height: this.canvas.height };
+    return this.presetManager.activatePreset(id, particles, dimensions, options);
+  }
+
+  /**
+   * Deactivate the current preset
+   */
+  deactivatePreset() {
+    this.presetManager.deactivateCurrentPreset();
+  }
+
+  /**
+   * Get all registered presets
+   * @returns {Array} Array of preset info objects
+   */
+  getPresets() {
+    return this.presetManager.getAllPresets();
+  }
+
+  /**
+   * Get the active preset ID
+   * @returns {string|null} Active preset ID or null
+   */
+  getActivePresetId() {
+    return this.presetManager.getActivePresetId();
+  }
+
+  /**
+   * Transition preset to a target pattern or image
+   * @param {string} targetType - 'pattern' or 'image'
+   * @param {any} target - Pattern name or image element
+   * @param {number} duration - Transition duration
+   */
+  transitionPresetTo(targetType, target, duration = 2000) {
+    const particles = this.particleSystem.getParticles();
+    let targets = [];
+
+    if (targetType === 'pattern') {
+      // Generate target positions based on pattern
+      targets = this.particleSystem.generateTargets(target, particles.length);
+    } else if (targetType === 'image') {
+      // Extract image data and create targets
+      const imageData = this.particleSystem.extractImageData(target, particles.length);
+      targets = this.particleSystem.imageDataToTargets(imageData);
+    }
+
+    if (targets.length > 0) {
+      this.presetManager.transitionTo(particles, targets, duration);
+    }
   }
 
   getParticleCount() {
@@ -205,6 +285,7 @@ export class ParticleEngine {
     console.log('[ParticleEngine] Destroying engine...');
     
     this.stop();
+    this.presetManager.deactivateCurrentPreset();
     this.renderer.destroy();
     
     console.log('[ParticleEngine] Engine destroyed');
