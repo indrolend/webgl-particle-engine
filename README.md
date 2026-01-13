@@ -1,18 +1,19 @@
 # WebGL Particle Transition Engine
 
-A high-performance WebGL-based particle system with smooth animated transitions between different patterns. Features a modular architecture with detailed logging and a comprehensive debug interface.
+A high-performance WebGL-based particle system with smooth animated transitions, specializing in seamless image morphing effects. Features a modular architecture with detailed logging and both focused and comprehensive interfaces.
 
 ## ✨ Features
 
-- **WebGL Rendering**: Hardware-accelerated particle rendering for smooth performance
-- **Multiple Patterns**: Grid, Circle, Spiral, and Random formations
-- **Image-Based Particles**: Upload images and create particle formations from pixel data
-- **Smooth Transitions**: Animated transitions between patterns and images with easing
-- **Configurable**: Adjustable particle count, speed, and size
-- **Debug Interface**: Interactive HTML panel with real-time controls and logging
-- **Image Upload**: Dual image upload with preview and dimension display
-- **Modular Design**: Clean, maintainable code structure in `src/` directory
-- **Deployment Ready**: Optimized for GitHub Pages and Cloudflare Pages
+- **🎨 Image Morphing**: Seamless particle-based transitions between images with high visual quality
+- **⚡ WebGL Rendering**: Hardware-accelerated particle rendering for smooth 60 FPS performance
+- **🖼️ Image-Based Particles**: Upload images and create particle formations from pixel data
+- **✨ Smooth Transitions**: Animated transitions with optimized easing for natural morphing effects
+- **Multiple Patterns**: Grid, Circle, Spiral, and Random formations (for advanced use)
+- **⚙️ Configurable**: Adjustable particle count, speed, and size
+- **🎯 Focused Interface**: Dedicated image morphing UI (main page) for streamlined workflow
+- **🐛 Debug Interface**: Interactive HTML panel with real-time controls and logging
+- **📦 Modular Design**: Clean, maintainable code structure in `src/` directory
+- **🚀 Deployment Ready**: Optimized for GitHub Pages and Cloudflare Pages
 
 ## 🚀 Quick Start
 
@@ -38,10 +39,15 @@ php -S localhost:8000
 
 3. Open your browser and navigate to:
 ```
-http://localhost:8000/morph.html    # Simple image morphing interface
-http://localhost:8000/debug.html    # Full debug interface
-http://localhost:8000/index.html    # Landing page
+http://localhost:8000/              # 🎨 Main page - Image morphing interface
+http://localhost:8000/index.html    # 🎨 Main page - Image morphing interface (same as above)
+http://localhost:8000/debug.html    # 🐛 Full debug interface with all features
+http://localhost:8000/landing.html  # 🏠 Original landing page with links
 ```
+
+## 🎨 Image Morphing
+
+The **primary focus** of this engine is seamless image-to-image transitions using WebGL particles. The main page (`index.html`) provides a streamlined experience for this core functionality.
 
 ## 📖 Usage
 
@@ -299,24 +305,36 @@ The debug interface (`debug.html`) includes a dedicated **Image Upload** section
 4. Smoothly transition to Image 2
 5. View debug logs showing extraction and particle creation details
 
-## 🎨 Image Morph Interface
+## 🎨 Image Morph Interface - Primary Feature
 
-The `morph.html` file provides a simple, focused interface specifically for image morphing:
+The main page (`index.html`) provides a **focused, streamlined interface exclusively for image morphing**. This is the recommended interface for experiencing seamless particle-based image transitions.
 
-### Features:
-- **Dual Image Upload**: Upload two images with live preview
-- **One-Click Morphing**: Single "Morph" button to toggle between images
-- **Smooth Transitions**: 2-second particle transitions with WebGL rendering
-- **Status Messages**: Real-time feedback on upload and transition status
-- **Clean UI**: Minimalist, centered design for optimal user experience
+### Key Features:
+- **🖼️ Dual Image Upload**: Upload two images with live preview and validation
+- **⚡ One-Click Morphing**: Single "Morph" button to toggle between images
+- **✨ Seamless Transitions**: Optimized 2-second particle transitions with enhanced easing
+- **📊 Status Messages**: Real-time feedback on upload and transition progress
+- **🎯 Clean UI**: Minimalist, centered design focused on the morphing experience
+- **🔧 Optimized Parameters**: 2000 particles for high-quality image representation
 
-### Usage:
-1. Open `morph.html` in your browser
+### How to Use:
+1. Open the main page in your browser (default: `index.html`)
 2. Click "Choose Image 1" and select your first image
 3. Click "Choose Image 2" and select your second image
 4. Click the "Morph ✨" button to initialize particles from Image 1
-5. Click "Morph" again to transition to Image 2
-6. Keep clicking to toggle between the two images
+5. Click "Morph" again to see a smooth transition to Image 2
+6. Keep clicking to toggle seamlessly between the two images
+
+### Why This Interface?
+
+This interface is specifically designed to **focus exclusively on images**, without extending to other website elements like pages, menus, or sections. It demonstrates the engine's core strength: creating visually stunning, seamless transitions between image assets using WebGL-accelerated particles.
+
+The implementation optimizes for:
+- **Visual Quality**: High particle count for detailed image representation
+- **Smooth Morphing**: Enhanced easing functions and interpolation
+- **Aspect Ratio Preservation**: Images maintain their proportions during transitions
+- **Color Fidelity**: Accurate color reproduction and smooth color transitions
+- **Performance**: 60 FPS on modern hardware with efficient WebGL rendering
 
 The interface uses 2000 particles by default for smooth, high-quality morphing effects. The WebGL engine automatically handles image scaling, aspect ratio preservation, and particle distribution.
 
@@ -360,8 +378,10 @@ webgl-particle-engine/
 ├── examples/                  # Example implementations
 │   └── school-of-fish-demo.html
 ├── public/                    # Static assets (if needed)
+├── index.html                # Main page - Image morphing interface
+├── morph.html                # Alternative entry point (same as index.html)
+├── landing.html              # Original landing page with links to demos
 ├── debug.html                # Interactive debug interface
-├── index.html                # Landing page
 └── README.md                 # Documentation
 ```
 

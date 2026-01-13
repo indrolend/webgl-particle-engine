@@ -22,6 +22,24 @@ else
   exit 1
 fi
 
+if [ -f landing.html ]; then
+  cp landing.html public/
+fi
+
+if [ -f morph.html ]; then
+  cp morph.html public/
+fi
+
+# Copy JavaScript files needed by index.html
+echo "Copying JavaScript files..."
+if [ -f morph-ui.js ]; then
+  cp morph-ui.js public/
+fi
+
+if [ -f webgl-engine.js ]; then
+  cp webgl-engine.js public/
+fi
+
 # Copy src directory (excluding Worker entry point)
 echo "Copying src directory..."
 mkdir -p public/src
@@ -45,6 +63,12 @@ if [ -f src/Renderer.js ]; then
 else
   echo "Warning: src/Renderer.js not found"
   exit 1
+fi
+
+# Copy presets directory if exists
+if [ -d src/presets ]; then
+  mkdir -p public/src/presets
+  cp -r src/presets/* public/src/presets/
 fi
 
 echo "Build complete! Files are ready in ./public directory"
