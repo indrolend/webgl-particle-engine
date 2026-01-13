@@ -201,7 +201,7 @@ export class ParticleSystem {
    * Pseudo-random number generator for consistent noise
    */
   rand(n) {
-    return Math.abs(Math.sin(n * this.NOISE_MULTIPLIER) % 1.0);
+    return Math.abs(Math.sin(n * this.NOISE_MULTIPLIER));
   }
 
   /**
@@ -209,9 +209,9 @@ export class ParticleSystem {
    * Particles start from far away positions and converge to form images
    */
   calculateDispersedPosition(x, y, width, height) {
-    // Create directional variation based on position
-    const modX = (x % 2) >= 1 ? 1 : -1;
-    const modY = (y % 2) >= 1 ? 1 : -1;
+    // Create directional variation based on position (alternating pattern)
+    const modX = (Math.floor(x) % 2 !== 0) ? 1 : -1;
+    const modY = (Math.floor(y) % 2 !== 0) ? 1 : -1;
     
     // Use noise for organic dispersal pattern
     const noiseX = this.noise(x * this.NOISE_COORDINATE_SCALE) * this.DISPERSAL_DISTANCE_MULTIPLIER * modX;
