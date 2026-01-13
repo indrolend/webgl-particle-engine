@@ -2,7 +2,7 @@
  * Morph UI - User Interface Logic for Image Morphing
  * Handles image uploads, validation, and morph button events
  */
-import { ParticleEngine } from './src/ParticleEngine.js';
+import { ParticleEngine } from './webgl-engine.js';
 
 // State management
 let image1 = null;
@@ -59,11 +59,11 @@ function handleImageUpload(event, previewContainer, imageIndex) {
     const img = new Image();
     
     img.onload = function() {
-        // Store the loaded image
+        // Store the loaded image based on imageIndex (1 or 2)
         if (imageIndex === 1) {
             image1 = img;
             console.log('[MorphUI] Image 1 loaded:', img.width, 'x', img.height);
-        } else {
+        } else if (imageIndex === 2) {
             image2 = img;
             console.log('[MorphUI] Image 2 loaded:', img.width, 'x', img.height);
         }
