@@ -64,13 +64,19 @@ export class TriangulationMorph {
         this.config.gridSize
       );
       
+      // Validate source key points
+      if (!this.sourceKeyPoints || this.sourceKeyPoints.length === 0) {
+        console.error('[TriangulationMorph] Failed to generate source key points');
+        return;
+      }
+      
       // Generate corresponding points for target image (scaled to target dimensions)
       const scaleX = this.targetImage.width / this.sourceImage.width;
       const scaleY = this.targetImage.height / this.sourceImage.height;
       
       this.targetKeyPoints = this.sourceKeyPoints.map(p => ({
-        x: p.x * scaleX,
-        y: p.y * scaleY
+        x: Math.max(0, Math.min(this.targetImage.width - 1, p.x * scaleX)),
+        y: Math.max(0, Math.min(this.targetImage.height - 1, p.y * scaleY))
       }));
     } else if (this.config.keyPointMethod === 'feature') {
       // Extract image data for feature detection
@@ -189,13 +195,58 @@ export class TriangulationMorph {
    * @param {Object} newConfig 
    */
   updateConfig(newConfig) {
+    const oldConfig = { ...this.config };
     this.config = { ...this.config, ...newConfig };
     console.log('[TriangulationMorph] Config updated:', this.config);
     
-    // Regenerate if images are set
-    if (this.sourceImage && this.targetImage) {
+    // Check if triangulation-affecting parameters changed
+    const needsRegeneration = 
+      (newConfig.keyPointMethod && newConfig.keyPointMethod !== oldConfig.keyPointMethod) ||
+      (newConfig.gridSize && newConfig.gridSize !== oldConfig.gridSize) ||
+      (newConfig.featurePointCount && newConfig.featurePointCount !== oldConfig.featurePointCount);
+    
+    // Regenerate if images are set and parameters changed
+    if (needsRegeneration && this.sourceImage && this.targetImage) {
+      console.log('[TriangulationMorph] Regenerating triangulation due to config change');
       this.generateKeyPoints();
       this.generateTriangulation();
     }
+  }
+  
+  /**
+   * Check if triangulation is ready for rendering
+   * @returns {boolean}
+   */
+  isReady() {
+    return this.sourceKeyPoints.length > 0 && 
+           this.targetKeyPoints.length > 0 && 
+           this.triangles.length > 0 &&
+           this.sourceKeyPoints.length === this.targetKeyPoints.length;
+  }
+  
+  /**
+   * Debug utility: Log current triangulation state
+   */
+  debugLogState() {
+    console.log('[TriangulationMorph] === Debug State ===');
+    console.log('[TriangulationMorph] Config:', this.config);
+    console.log('[TriangulationMorph] Source image:', this.sourceImage ? `${this.sourceImage.width}x${this.sourceImage.height}` : 'null');
+    console.log('[TriangulationMorph] Target image:', this.targetImage ? `${this.targetImage.width}x${this.targetImage.height}` : 'null');
+    console.log('[TriangulationMorph] Source key points:', this.sourceKeyPoints.length);
+    console.log('[TriangulationMorph] Target key points:', this.targetKeyPoints.length);
+    console.log('[TriangulationMorph] Triangles:', this.triangles.length);
+    console.log('[TriangulationMorph] Is ready:', this.isReady());
+    
+    // Sample first few key points for inspection
+    if (this.sourceKeyPoints.length > 0) {
+      console.log('[TriangulationMorph] Sample source key points:', this.sourceKeyPoints.slice(0, 3));
+    }
+    if (this.targetKeyPoints.length > 0) {
+      console.log('[TriangulationMorph] Sample target key points:', this.targetKeyPoints.slice(0, 3));
+    }
+    if (this.triangles.length > 0) {
+      console.log('[TriangulationMorph] Sample triangles:', this.triangles.slice(0, 3));
+    }
+    console.log('[TriangulationMorph] ==================');
   }
 }

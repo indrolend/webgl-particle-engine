@@ -218,6 +218,7 @@ export class HybridEngine extends ParticleEngine {
     if (this.triangulationConfig.enabled && 
         (mode === 'triangulation' || mode === 'hybrid') &&
         this.triangulationMorph &&
+        this.triangulationMorph.isReady() &&
         this.triangulationImages.source &&
         this.triangulationImages.target) {
       
@@ -229,6 +230,11 @@ export class HybridEngine extends ParticleEngine {
       
       this.triangulationRenderer.clear(0, 0, 0, 0);
       this.triangulationRenderer.render(morphData, progress, 'source', 'target');
+    } else if (this.triangulationConfig.enabled && 
+               (mode === 'triangulation' || mode === 'hybrid') &&
+               (!this.triangulationMorph || !this.triangulationMorph.isReady())) {
+      // Triangulation not ready - clear to prevent artifacts
+      this.triangulationRenderer.clear(0, 0, 0, 0);
     }
     
     // Render particles (if enabled)
