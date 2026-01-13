@@ -29,6 +29,21 @@ export class ParticleSystem {
     this.IMAGE_PADDING_FACTOR = 0.9; // 90% to add padding
     this.PARTICLE_DISTRIBUTION_OFFSET = 2;
     
+    // Transition timing constants
+    this.TRANSITION_ACTIVE_DURATION = 0.6; // 60% active movement window
+    this.TRANSITION_MAX_DELAY = 0.4; // 40% maximum delay for staggered effect
+    this.TRANSITION_INTERPOLATION_BOOST = 2; // Multiplier for more responsive transitions
+    this.CONVERGENCE_DURATION_MS = 3000; // Initial convergence animation duration
+    
+    // Dispersal effect constants
+    this.DISPERSAL_DISTANCE_MULTIPLIER = 50; // How far particles scatter initially
+    this.NOISE_COORDINATE_SCALE = 0.1; // Scale factor for noise coordinate calculation
+    
+    // Noise generation constant
+    // Large prime-like number commonly used in shader noise functions
+    // Provides good pseudo-random distribution when used with sine function
+    this.NOISE_MULTIPLIER = 43758.5453123;
+    
     console.log('[ParticleSystem] Initialized with config:', this.config);
   }
 
@@ -54,7 +69,12 @@ export class ParticleSystem {
       targetY: y,
       targetR: options.r !== undefined ? options.r : Math.random(),
       targetG: options.g !== undefined ? options.g : Math.random(),
-      targetB: options.b !== undefined ? options.b : Math.random()
+      targetB: options.b !== undefined ? options.b : Math.random(),
+      // Enhanced transition properties for dispersal effect
+      originX: options.originX !== undefined ? options.originX : x,
+      originY: options.originY !== undefined ? options.originY : y,
+      noiseValue: options.noiseValue !== undefined ? options.noiseValue : Math.random(),
+      transitionDelay: options.transitionDelay !== undefined ? options.transitionDelay : 0
     };
   }
 
@@ -168,6 +188,64 @@ export class ParticleSystem {
   }
 
   /**
+   * Simple 1D Perlin-like noise function for pseudo-random values
+   * 
+   * Used for particle dispersal and transition timing to create organic,
+   * smooth variations in particle behavior.
+   * 
+   * @param {number} p - Input coordinate for noise generation
+   * @returns {number} Smooth interpolated noise value between 0 and 1
+   */
+  noise(p) {
+    const fl = Math.floor(p);
+    const fc = p - fl;
+    const rand1 = this.rand(fl);
+    const rand2 = this.rand(fl + 1.0);
+    return rand1 + (rand2 - rand1) * fc;
+  }
+
+  /**
+   * Deterministic pseudo-random number generator based on sine function
+   * 
+   * Produces consistent, repeatable random-looking values for the same input.
+   * Used as a building block for the noise function.
+   * 
+   * @param {number} n - Seed value for random generation
+   * @returns {number} Pseudo-random value between 0 and 1
+   */
+  rand(n) {
+    return Math.abs(Math.sin(n * this.NOISE_MULTIPLIER));
+  }
+
+  /**
+   * Calculate dispersed position for particle dispersal effect
+   * Particles start from far away positions and converge to form images
+   */
+  calculateDispersedPosition(x, y, width, height) {
+    // Create directional variation based on position (alternating pattern)
+    const modX = (Math.floor(x) % 2 !== 0) ? 1 : -1;
+    const modY = (Math.floor(y) % 2 !== 0) ? 1 : -1;
+    
+    // Use noise for organic dispersal pattern
+    const noiseX = this.noise(x * this.NOISE_COORDINATE_SCALE) * this.DISPERSAL_DISTANCE_MULTIPLIER * modX;
+    const noiseY = this.noise(y * this.NOISE_COORDINATE_SCALE) * this.DISPERSAL_DISTANCE_MULTIPLIER * modY;
+    
+    return {
+      x: x + noiseX,
+      y: y + noiseY
+    };
+  }
+
+  /**
+   * Calculate noise-based transition delay for a particle
+   * Used to create staggered, wave-like transitions
+   */
+  calculateParticleTransitionDelay(pixel) {
+    const noiseValue = this.noise(pixel.x * this.NOISE_COORDINATE_SCALE + pixel.y * this.NOISE_COORDINATE_SCALE);
+    return noiseValue * this.TRANSITION_MAX_DELAY;
+  }
+
+  /**
    * Extract pixel data from an image with optimized sampling for particle representation
    * 
    * This method intelligently samples images to create high-quality particle formations:
@@ -255,15 +333,15 @@ export class ParticleSystem {
   }
 
   /**
-   * Initialize particles from an image for the first display
+   * Initialize particles from an image with dispersal effect
    * 
-   * This creates the initial particle formation that represents the source image.
-   * Particles are positioned and colored to accurately represent the image pixels.
+   * This creates particles that start from scattered positions and will
+   * converge to form the image. This creates a dramatic entrance effect.
    * 
    * @param {HTMLImageElement} image - The source image element
    */
   initializeFromImage(image) {
-    console.log('[ParticleSystem] Initializing particles from image for display...');
+    console.log('[ParticleSystem] Initializing particles from image with dispersal effect...');
     
     const imageData = this.extractImageData(image, this.config.particleCount);
     const pixels = imageData.pixels;
@@ -279,42 +357,62 @@ export class ParticleSystem {
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
     
-    // Create particles with minimal initial velocity for stable image display
+    // Create particles with dispersed starting positions
     for (let i = 0; i < pixels.length; i++) {
       const pixel = pixels[i];
-      const x = offsetX + pixel.x * scale;
-      const y = offsetY + pixel.y * scale;
+      const targetX = offsetX + pixel.x * scale;
+      const targetY = offsetY + pixel.y * scale;
+      
+      // Calculate dispersed starting position
+      const dispersed = this.calculateDispersedPosition(
+        targetX, targetY, this.width, this.height
+      );
+      
+      // Generate noise value for this particle (used for transition delay)
+      const noiseValue = this.noise(pixel.x * this.NOISE_COORDINATE_SCALE + pixel.y * this.NOISE_COORDINATE_SCALE);
       
       this.particles.push(this.createParticle(
-        x, y, 
-        (Math.random() - 0.5) * this.MIN_INITIAL_VELOCITY_RANGE,  // Minimal x velocity
-        (Math.random() - 0.5) * this.MIN_INITIAL_VELOCITY_RANGE,  // Minimal y velocity
+        dispersed.x, dispersed.y,  // Start from dispersed position
+        (Math.random() - 0.5) * this.MIN_INITIAL_VELOCITY_RANGE,
+        (Math.random() - 0.5) * this.MIN_INITIAL_VELOCITY_RANGE,
         {
           r: pixel.r,
           g: pixel.g,
           b: pixel.b,
-          alpha: pixel.alpha
+          alpha: pixel.alpha,
+          originX: dispersed.x,
+          originY: dispersed.y,
+          noiseValue: noiseValue,
+          transitionDelay: 0
         }
       ));
+      
+      // Set target to the actual image position
+      const particle = this.particles[this.particles.length - 1];
+      particle.targetX = targetX;
+      particle.targetY = targetY;
     }
     
-    console.log(`[ParticleSystem] Created ${this.particles.length} particles representing the image`);
+    // Automatically start transition to converge particles into image
+    console.log(`[ParticleSystem] Created ${this.particles.length} dispersed particles`);
+    console.log('[ParticleSystem] Starting automatic convergence transition...');
+    this._startTransition(this.CONVERGENCE_DURATION_MS);
   }
 
   /**
-   * Transition particles to a target image with seamless morphing
+   * Transition particles to a target image with enhanced dispersal effect
    * 
-   * This method creates smooth, visually appealing transitions between images by:
-   * - Mapping particles to target image pixels
-   * - Interpolating both position and color
-   * - Handling particle count mismatches gracefully
-   * - Maintaining aspect ratio and centering
+   * This method creates dramatic transitions between images by:
+   * - First dispersing particles outward
+   * - Then converging them to the new image formation
+   * - Using staggered timing for wave-like transitions
+   * - Interpolating both position and color smoothly
    * 
    * @param {HTMLImageElement} image - The target image to morph into
    * @param {number} duration - Transition duration in milliseconds (default: 2000ms)
    */
   transitionToImage(image, duration = 2000) {
-    console.log(`[ParticleSystem] Starting seamless transition to target image (${duration}ms)...`);
+    console.log(`[ParticleSystem] Starting enhanced transition to target image (${duration}ms)...`);
     
     this._startTransition(duration);
     
@@ -330,7 +428,7 @@ export class ParticleSystem {
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
     
-    // Handle particle-to-pixel mapping for seamless transitions
+    // Handle particle-to-pixel mapping with enhanced dispersal effect
     if (this.particles.length > pixels.length) {
       // More particles than pixels: distribute particles across available pixels
       console.log(`[ParticleSystem] Distributing ${this.particles.length} particles across ${pixels.length} pixels...`);
@@ -340,23 +438,32 @@ export class ParticleSystem {
         const pixelIndex = i % pixels.length;
         const pixel = pixels[pixelIndex];
         
-        const x = offsetX + pixel.x * scale;
-        const y = offsetY + pixel.y * scale;
+        const targetX = offsetX + pixel.x * scale;
+        const targetY = offsetY + pixel.y * scale;
         
-        // Distribute particles with increasing offsets to avoid stacking
-        // Logic: When we have more particles than pixels, we cycle through pixels
-        // For each "round" through the pixel array, increase the random offset
-        // Example: particles 0-999 use pixels 0-499 with offset 0
-        //          particles 1000-1999 use pixels 0-499 with offset 2
-        //          particles 2000-2999 use pixels 0-499 with offset 4, etc.
-        const distributionFactor = Math.floor(i / pixels.length);  // Which "round" through pixels
+        // Calculate dispersed intermediate position for transition effect
+        const dispersed = this.calculateDispersedPosition(
+          targetX, targetY, this.width, this.height
+        );
+        
+        // Update particle origin to current position (for dispersal phase)
+        particle.originX = particle.x;
+        particle.originY = particle.y;
+        
+        // Set dispersed position as intermediate target
+        // The update loop will handle the two-phase transition
+        const distributionFactor = Math.floor(i / pixels.length);
         const randomOffset = distributionFactor * this.PARTICLE_DISTRIBUTION_OFFSET;
         
-        particle.targetX = x + (Math.random() - 0.5) * randomOffset;
-        particle.targetY = y + (Math.random() - 0.5) * randomOffset;
+        particle.targetX = targetX + (Math.random() - 0.5) * randomOffset;
+        particle.targetY = targetY + (Math.random() - 0.5) * randomOffset;
         particle.targetR = pixel.r;
         particle.targetG = pixel.g;
         particle.targetB = pixel.b;
+        
+        // Update noise value and delay for staggered effect
+        particle.noiseValue = this.noise(pixel.x * this.NOISE_COORDINATE_SCALE + pixel.y * this.NOISE_COORDINATE_SCALE);
+        particle.transitionDelay = particle.noiseValue * this.TRANSITION_MAX_DELAY;
       }
     } else {
       // Equal or fewer particles than pixels: direct 1-to-1 mapping
@@ -366,18 +473,26 @@ export class ParticleSystem {
         const particle = this.particles[i];
         const pixel = pixels[i];
         
-        const x = offsetX + pixel.x * scale;
-        const y = offsetY + pixel.y * scale;
+        const targetX = offsetX + pixel.x * scale;
+        const targetY = offsetY + pixel.y * scale;
         
-        particle.targetX = x;
-        particle.targetY = y;
+        // Update particle origin for dispersal phase
+        particle.originX = particle.x;
+        particle.originY = particle.y;
+        
+        particle.targetX = targetX;
+        particle.targetY = targetY;
         particle.targetR = pixel.r;
         particle.targetG = pixel.g;
         particle.targetB = pixel.b;
+        
+        // Update noise value and delay for staggered effect
+        particle.noiseValue = this.noise(pixel.x * this.NOISE_COORDINATE_SCALE + pixel.y * this.NOISE_COORDINATE_SCALE);
+        particle.transitionDelay = particle.noiseValue * this.TRANSITION_MAX_DELAY;
       }
     }
     
-    console.log('[ParticleSystem] Target positions and colors set for seamless morphing');
+    console.log('[ParticleSystem] Target positions and colors set for enhanced morphing');
   }
 
   _startTransition(duration) {
@@ -484,18 +599,32 @@ export class ParticleSystem {
       }
     }
     
-    // Update particles with optimized interpolation for image morphing
+    // Update particles with enhanced staggered interpolation
     for (let i = 0; i < this.particles.length; i++) {
       const particle = this.particles[i];
       
       if (this.isTransitioning) {
-        // Enhanced easing function for smoother image transitions
-        // Using ease-in-out-cubic provides a more natural, fluid morph effect
-        const t = this.easeInOutCubic(this.transitionProgress);
+        // Calculate per-particle progress with staggered delay
+        // This creates a wave-like transition effect
+        const duration = this.TRANSITION_ACTIVE_DURATION; // Active transition duration
+        const delay = particle.transitionDelay || 0; // Delay based on noise
+        const end = delay + duration;
+        const durationDelta = end - delay;
         
-        // Adaptive interpolation using class constant for consistency
-        // This creates a smooth acceleration and deceleration effect
-        const factor = t * this.INTERPOLATION_FACTOR;
+        // Smoothstep function for smooth acceleration/deceleration
+        // Guard against division by zero
+        const rawProgress = durationDelta > 0 
+          ? Math.max(0, Math.min(1, (this.transitionProgress - delay) / durationDelta))
+          : 1; // If no duration, consider it complete
+        
+        // Apply easing to the particle's individual progress
+        const particleProgress = this.smoothStep(rawProgress);
+        
+        // Enhanced easing for smoother transitions
+        const t = this.easeInOutCubic(particleProgress);
+        
+        // Adaptive interpolation with configurable boost for responsive movement
+        const factor = t * this.INTERPOLATION_FACTOR * this.TRANSITION_INTERPOLATION_BOOST;
         
         // Interpolate position with enhanced smoothness
         particle.x = particle.x + (particle.targetX - particle.x) * factor;
@@ -527,6 +656,16 @@ export class ParticleSystem {
     return t < 0.5
       ? 4 * t * t * t
       : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  /**
+   * Smooth step function for natural easing
+   * Similar to GLSL smoothstep
+   */
+  smoothStep(t) {
+    if (t <= 0) return 0;
+    if (t >= 1) return 1;
+    return t * t * (3 - 2 * t);
   }
 
   getParticles() {
