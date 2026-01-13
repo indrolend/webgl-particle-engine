@@ -30,6 +30,10 @@ if [ -f morph.html ]; then
   cp morph.html public/
 fi
 
+if [ -f triangulation-demo.html ]; then
+  cp triangulation-demo.html public/
+fi
+
 # Copy JavaScript files needed by index.html
 echo "Copying JavaScript files..."
 if [ -f morph-ui.js ]; then
@@ -38,6 +42,10 @@ fi
 
 if [ -f webgl-engine.js ]; then
   cp webgl-engine.js public/
+fi
+
+if [ -f triangulation-demo.js ]; then
+  cp triangulation-demo.js public/
 fi
 
 # Copy src directory (excluding Worker entry point)
@@ -65,10 +73,21 @@ else
   exit 1
 fi
 
+# Copy HybridEngine if exists
+if [ -f src/HybridEngine.js ]; then
+  cp src/HybridEngine.js public/src/
+fi
+
 # Copy presets directory if exists
 if [ -d src/presets ]; then
   mkdir -p public/src/presets
   cp -r src/presets/* public/src/presets/
+fi
+
+# Copy triangulation directory if exists
+if [ -d src/triangulation ]; then
+  mkdir -p public/src/triangulation
+  cp -r src/triangulation/* public/src/triangulation/
 fi
 
 echo "Build complete! Files are ready in ./public directory"
