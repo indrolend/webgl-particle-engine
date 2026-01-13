@@ -343,8 +343,13 @@ export class ParticleSystem {
         const x = offsetX + pixel.x * scale;
         const y = offsetY + pixel.y * scale;
         
-        // Add slight variation when reusing pixels to avoid stacking
-        const distributionFactor = Math.floor(i / pixels.length);
+        // Distribute particles with increasing offsets to avoid stacking
+        // Logic: When we have more particles than pixels, we cycle through pixels
+        // For each "round" through the pixel array, increase the random offset
+        // Example: particles 0-999 use pixels 0-499 with offset 0
+        //          particles 1000-1999 use pixels 0-499 with offset 2
+        //          particles 2000-2999 use pixels 0-499 with offset 4, etc.
+        const distributionFactor = Math.floor(i / pixels.length);  // Which "round" through pixels
         const randomOffset = distributionFactor * this.PARTICLE_DISTRIBUTION_OFFSET;
         
         particle.targetX = x + (Math.random() - 0.5) * randomOffset;
