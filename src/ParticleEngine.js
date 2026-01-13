@@ -198,7 +198,7 @@ export class ParticleEngine {
   updateConfig(newConfig) {
     console.log('[ParticleEngine] Updating configuration:', newConfig);
     
-    if (newConfig.particleCount !== undefined || newConfig.speed !== undefined) {
+    if (newConfig.particleCount !== undefined || newConfig.speed !== undefined || newConfig.gravity !== undefined) {
       this.particleSystem.updateConfig(newConfig);
     }
     
