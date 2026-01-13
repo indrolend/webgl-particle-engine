@@ -17,8 +17,9 @@ export class ParticleSystem {
     this.isTransitioning = false;
     this.transitionProgress = 0;
     
-    // Interpolation factor for smooth transitions
-    this.INTERPOLATION_FACTOR = 0.1;
+    // Transition and animation constants for image morphing optimization
+    this.INTERPOLATION_FACTOR = 0.15;        // Enhanced from 0.1 for smoother convergence
+    this.DRIFT_FACTOR = 0.1;                 // Reduced drift to maintain image structure
     
     // Image processing constants
     this.MIN_GRID_DIMENSION = 10;
@@ -486,9 +487,9 @@ export class ParticleSystem {
         // Using ease-in-out-cubic provides a more natural, fluid morph effect
         const t = this.easeInOutCubic(this.transitionProgress);
         
-        // Adaptive interpolation factor based on transition progress
+        // Adaptive interpolation using class constant for consistency
         // This creates a smooth acceleration and deceleration effect
-        const factor = t * 0.15;  // Increased from 0.1 for faster convergence
+        const factor = t * this.INTERPOLATION_FACTOR;
         
         // Interpolate position with enhanced smoothness
         particle.x = particle.x + (particle.targetX - particle.x) * factor;
@@ -499,9 +500,9 @@ export class ParticleSystem {
         particle.g = particle.g + (particle.targetG - particle.g) * factor;
         particle.b = particle.b + (particle.targetB - particle.b) * factor;
       } else {
-        // Free movement (minimal drift to maintain image structure)
-        particle.x += particle.vx * deltaTime * this.config.speed * 0.1;
-        particle.y += particle.vy * deltaTime * this.config.speed * 0.1;
+        // Free movement with reduced drift to maintain image structure
+        particle.x += particle.vx * deltaTime * this.config.speed * this.DRIFT_FACTOR;
+        particle.y += particle.vy * deltaTime * this.config.speed * this.DRIFT_FACTOR;
         
         // Bounce off edges
         if (particle.x < 0 || particle.x > this.width) {
