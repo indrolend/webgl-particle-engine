@@ -12,11 +12,17 @@ export class KeyPointManager {
    * Generate automatic grid-based key points for an image
    * @param {number} width - Image width
    * @param {number} height - Image height
-   * @param {number} gridSize - Number of points per row/column (default: 8)
+   * @param {number} gridSize - Number of points per row/column (default: 8, minimum: 2)
    * @returns {Array} Array of key points [{x, y}, ...]
    */
   generateGridKeyPoints(width, height, gridSize = 8) {
     console.log(`[KeyPointManager] Generating ${gridSize}x${gridSize} grid key points for ${width}x${height}`);
+    
+    // Ensure minimum grid size of 2
+    if (gridSize < 2) {
+      console.warn(`[KeyPointManager] Grid size ${gridSize} is too small, using minimum of 2`);
+      gridSize = 2;
+    }
     
     const points = [];
     
