@@ -153,7 +153,7 @@ export class TriangulationRenderer {
     const texture = this.gl.createTexture();
     this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
     
-    // Set texture parameters
+    // Set texture parameters - use CLAMP_TO_EDGE to prevent wrapping artifacts
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
@@ -176,6 +176,7 @@ export class TriangulationRenderer {
     };
     
     console.log(`[TriangulationRenderer] Texture created: ${id} (${image.width}x${image.height})`);
+    console.log(`[TriangulationRenderer] Texture settings: CLAMP_TO_EDGE, LINEAR filtering`);
   }
 
   /**
@@ -254,6 +255,7 @@ export class TriangulationRenderer {
     // Build vertex data for all triangles
     const positionData = [];
     const texCoordData = [];
+    let skippedTriangles = 0;
 
     for (const tri of triangles) {
       const [i0, i1, i2] = tri;
@@ -262,6 +264,7 @@ export class TriangulationRenderer {
       if (i0 >= positions.length || i1 >= positions.length || i2 >= positions.length ||
           i0 >= texCoordPoints.length || i1 >= texCoordPoints.length || i2 >= texCoordPoints.length) {
         console.warn(`[TriangulationRenderer] Invalid triangle indices: [${i0}, ${i1}, ${i2}], skipping`);
+        skippedTriangles++;
         continue;
       }
       
@@ -269,6 +272,7 @@ export class TriangulationRenderer {
       if (!positions[i0] || !positions[i1] || !positions[i2] ||
           !texCoordPoints[i0] || !texCoordPoints[i1] || !texCoordPoints[i2]) {
         console.warn(`[TriangulationRenderer] Missing position or texCoord data for triangle [${i0}, ${i1}, ${i2}], skipping`);
+        skippedTriangles++;
         continue;
       }
       
@@ -288,6 +292,10 @@ export class TriangulationRenderer {
       const v2 = Math.max(0, Math.min(1, texCoordPoints[i2].y / height));
       
       texCoordData.push(u0, v0, u1, v1, u2, v2);
+    }
+    
+    if (skippedTriangles > 0) {
+      console.warn(`[TriangulationRenderer] Skipped ${skippedTriangles} invalid triangles out of ${triangles.length}`);
     }
 
     // Validate we have data to render
