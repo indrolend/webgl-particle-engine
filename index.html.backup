@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Image Morph - Particle Transition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        h1 {
+            font-size: 42px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #aaa;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .upload-section {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .image-upload {
+            flex: 1;
+            min-width: 250px;
+            max-width: 350px;
+            background: rgba(20, 20, 35, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .image-upload h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .preview-container {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .preview-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .preview-placeholder {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(20, 20, 35, 0.6);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            max-width: 100%;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        #morphButton {
+            padding: 20px 60px;
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(245, 87, 108, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #morphButton:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 12px 35px rgba(245, 87, 108, 0.8);
+        }
+
+        #morphButton:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        #morphButton:disabled {
+            background: linear-gradient(135deg, #555 0%, #444 100%);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .status-message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .status-message.info {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+            display: block;
+        }
+
+        .status-message.error {
+            background: rgba(255, 87, 108, 0.1);
+            border: 1px solid rgba(255, 87, 108, 0.3);
+            color: #ff576c;
+            display: block;
+        }
+
+        .status-message.success {
+            background: rgba(67, 233, 123, 0.1);
+            border: 1px solid rgba(67, 233, 123, 0.3);
+            color: #43e97b;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+            }
+
+            .upload-section {
+                flex-direction: column;
+            }
+
+            .image-upload {
+                max-width: 100%;
+            }
+
+            #morphButton {
+                padding: 15px 40px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <h1>🎨 WebGL Image Morph</h1>
+            <p class="subtitle">Upload two images and watch them morph using particle transitions</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="image-upload">
+                <h3>📷 Image 1</h3>
+                <div class="file-input-wrapper">
+                    <input type="file" id="image1Input" accept="image/*">
+                    <label for="image1Input" class="file-label">Choose Image 1</label>
+                </div>
+                <div class="preview-container" id="preview1">
+                    <div class="preview-placeholder">No image selected</div>
+                </div>
+            </div>
+
+            <div class="image-upload">
+                <h3>📷 Image 2</h3>
+                <div class="file-input-wrapper">
+                    <input type="file" id="image2Input" accept="image/*">
+                    <label for="image2Input" class="file-label">Choose Image 2</label>
+                </div>
+                <div class="preview-container" id="preview2">
+                    <div class="preview-placeholder">No image selected</div>
+                </div>
+            </div>
+        </div>
+
+        <button id="morphButton" disabled>Morph ✨</button>
+
+        <div id="statusMessage" class="status-message"></div>
+
+        <div class="canvas-container">
+            <canvas id="canvas" width="1000" height="600"></canvas>
+        </div>
+    </div>
+
+    <script type="module" src="./morph-ui.js"></script>
+</body>
+</html>
