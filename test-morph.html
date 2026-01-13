@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test WebGL Image Morph</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        canvas {
+            border: 2px solid #667eea;
+            display: block;
+            margin: 20px auto;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">WebGL Image Morph Test</h1>
+    <canvas id="canvas" width="1000" height="600"></canvas>
+    <div class="controls">
+        <button id="initBtn">Initialize from Circle Image</button>
+        <button id="morphBtn" disabled>Morph to Star Image</button>
+        <button id="backBtn" disabled>Morph Back to Circle</button>
+    </div>
+    <div id="status" style="text-align: center; margin: 20px;"></div>
+
+    <script type="module">
+        import { ParticleEngine } from './webgl-engine.js';
+
+        const canvas = document.getElementById('canvas');
+        const initBtn = document.getElementById('initBtn');
+        const morphBtn = document.getElementById('morphBtn');
+        const backBtn = document.getElementById('backBtn');
+        const status = document.getElementById('status');
+
+        let engine = null;
+        let image1 = null;
+        let image2 = null;
+        let currentImage = 0;
+
+        function updateStatus(msg) {
+            status.textContent = msg;
+            console.log(msg);
+        }
+
+        // Load images
+        updateStatus('Loading test images...');
+        
+        image1 = new Image();
+        image1.onload = () => {
+            updateStatus('Image 1 loaded (Circle)');
+            checkImagesLoaded();
+        };
+        image1.onerror = () => {
+            updateStatus('Failed to load image 1');
+        };
+        image1.src = 'test-image-1.svg';
+
+        image2 = new Image();
+        image2.onload = () => {
+            updateStatus('Image 2 loaded (Star)');
+            checkImagesLoaded();
+        };
+        image2.onerror = () => {
+            updateStatus('Failed to load image 2');
+        };
+        image2.src = 'test-image-2.svg';
+
+        function checkImagesLoaded() {
+            if (image1.complete && image2.complete) {
+                initBtn.disabled = false;
+                updateStatus('Both images loaded! Click "Initialize" to start.');
+            }
+        }
+
+        initBtn.addEventListener('click', () => {
+            updateStatus('Initializing particle engine...');
+            
+            engine = new ParticleEngine(canvas, {
+                particleCount: 2000,
+                speed: 1.0,
+                autoResize: false
+            });
+
+            updateStatus('Creating particles from Circle image with dispersal effect...');
+            engine.initializeFromImage(image1);
+            engine.start();
+            currentImage = 1;
+
+            initBtn.disabled = true;
+            morphBtn.disabled = false;
+            
+            setTimeout(() => {
+                updateStatus('Particles converged! Ready to morph.');
+            }, 3500);
+        });
+
+        morphBtn.addEventListener('click', () => {
+            updateStatus('Morphing to Star image...');
+            engine.transitionToImage(image2, 2000);
+            currentImage = 2;
+            morphBtn.disabled = true;
+            backBtn.disabled = false;
+            
+            setTimeout(() => {
+                updateStatus('Morph complete! You can morph back to Circle.');
+            }, 2500);
+        });
+
+        backBtn.addEventListener('click', () => {
+            updateStatus('Morphing back to Circle image...');
+            engine.transitionToImage(image1, 2000);
+            currentImage = 1;
+            morphBtn.disabled = false;
+            backBtn.disabled = true;
+            
+            setTimeout(() => {
+                updateStatus('Morph complete! You can morph to Star again.');
+            }, 2500);
+        });
+    </script>
+</body>
+</html>

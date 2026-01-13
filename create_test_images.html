@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Test Images</title>
+</head>
+<body>
+    <canvas id="canvas1" width="400" height="400"></canvas>
+    <canvas id="canvas2" width="400" height="400"></canvas>
+    <script>
+        // Create Image 1 - Circle with gradient
+        const canvas1 = document.getElementById('canvas1');
+        const ctx1 = canvas1.getContext('2d');
+        const gradient1 = ctx1.createRadialGradient(200, 200, 50, 200, 200, 200);
+        gradient1.addColorStop(0, '#FF6B6B');
+        gradient1.addColorStop(1, '#4ECDC4');
+        ctx1.fillStyle = gradient1;
+        ctx1.beginPath();
+        ctx1.arc(200, 200, 150, 0, Math.PI * 2);
+        ctx1.fill();
+        
+        // Create Image 2 - Star shape
+        const canvas2 = document.getElementById('canvas2');
+        const ctx2 = canvas2.getContext('2d');
+        const gradient2 = ctx2.createLinearGradient(0, 0, 400, 400);
+        gradient2.addColorStop(0, '#667EEA');
+        gradient2.addColorStop(1, '#F093FB');
+        ctx2.fillStyle = gradient2;
+        ctx2.beginPath();
+        for (let i = 0; i < 5; i++) {
+            const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+            const x = 200 + Math.cos(angle) * 150;
+            const y = 200 + Math.sin(angle) * 150;
+            if (i === 0) ctx2.moveTo(x, y);
+            else ctx2.lineTo(x, y);
+        }
+        ctx2.closePath();
+        ctx2.fill();
+        
+        // Save images
+        setTimeout(() => {
+            const link1 = document.createElement('a');
+            link1.download = 'test-image-1.png';
+            link1.href = canvas1.toDataURL();
+            link1.click();
+            
+            setTimeout(() => {
+                const link2 = document.createElement('a');
+                link2.download = 'test-image-2.png';
+                link2.href = canvas2.toDataURL();
+                link2.click();
+            }, 500);
+        }, 1000);
+    </script>
+</body>
+</html>
