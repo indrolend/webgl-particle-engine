@@ -79,8 +79,17 @@ export class TriangulationRenderer {
       varying vec2 v_texCoord;
       
       void main() {
-        vec4 texColor = texture2D(u_texture, v_texCoord);
-        gl_FragColor = vec4(texColor.rgb, texColor.a * u_alpha);
+        // Clamp texture coordinates to valid range [0, 1] to prevent artifacts
+        vec2 clampedCoord = clamp(v_texCoord, 0.0, 1.0);
+        
+        // Check for invalid coordinates (NaN or out of reasonable bounds)
+        if (any(isnan(v_texCoord)) || any(lessThan(v_texCoord, vec2(-0.1))) || any(greaterThan(v_texCoord, vec2(1.1)))) {
+          // Render neutral gray for invalid coordinates instead of black
+          gl_FragColor = vec4(0.5, 0.5, 0.5, u_alpha * 0.3);
+        } else {
+          vec4 texColor = texture2D(u_texture, clampedCoord);
+          gl_FragColor = vec4(texColor.rgb, texColor.a * u_alpha);
+        }
       }
     `;
 
@@ -248,6 +257,20 @@ export class TriangulationRenderer {
     for (const tri of triangles) {
       const [i0, i1, i2] = tri;
       
+      // Validate triangle indices
+      if (i0 >= positions.length || i1 >= positions.length || i2 >= positions.length ||
+          i0 >= texCoordPoints.length || i1 >= texCoordPoints.length || i2 >= texCoordPoints.length) {
+        console.warn(`[TriangulationRenderer] Invalid triangle indices: [${i0}, ${i1}, ${i2}], skipping`);
+        continue;
+      }
+      
+      // Validate positions and texCoordPoints exist
+      if (!positions[i0] || !positions[i1] || !positions[i2] ||
+          !texCoordPoints[i0] || !texCoordPoints[i1] || !texCoordPoints[i2]) {
+        console.warn(`[TriangulationRenderer] Missing position or texCoord data for triangle [${i0}, ${i1}, ${i2}], skipping`);
+        continue;
+      }
+      
       // Positions (interpolated world coordinates)
       positionData.push(
         positions[i0].x, positions[i0].y,
@@ -255,12 +278,27 @@ export class TriangulationRenderer {
         positions[i2].x, positions[i2].y
       );
       
-      // Texture coordinates (normalized 0-1)
-      texCoordData.push(
-        texCoordPoints[i0].x / width, texCoordPoints[i0].y / height,
-        texCoordPoints[i1].x / width, texCoordPoints[i1].y / height,
-        texCoordPoints[i2].x / width, texCoordPoints[i2].y / height
-      );
+      // Texture coordinates (normalized 0-1) with clamping to ensure valid range
+      const u0 = Math.max(0, Math.min(1, texCoordPoints[i0].x / width));
+      const v0 = Math.max(0, Math.min(1, texCoordPoints[i0].y / height));
+      const u1 = Math.max(0, Math.min(1, texCoordPoints[i1].x / width));
+      const v1 = Math.max(0, Math.min(1, texCoordPoints[i1].y / height));
+      const u2 = Math.max(0, Math.min(1, texCoordPoints[i2].x / width));
+      const v2 = Math.max(0, Math.min(1, texCoordPoints[i2].y / height));
+      
+      texCoordData.push(u0, v0, u1, v1, u2, v2);
+    }
+
+    // Validate we have data to render
+    if (positionData.length === 0 || texCoordData.length === 0) {
+      console.warn('[TriangulationRenderer] No valid triangles to render');
+      return;
+    }
+    
+    // Validate data consistency
+    if (positionData.length !== texCoordData.length) {
+      console.error('[TriangulationRenderer] Position and texCoord data mismatch');
+      return;
     }
 
     // Upload position data
@@ -275,8 +313,9 @@ export class TriangulationRenderer {
     this.gl.enableVertexAttribArray(this.locations.texCoord);
     this.gl.vertexAttribPointer(this.locations.texCoord, 2, this.gl.FLOAT, false, 0, 0);
 
-    // Draw triangles
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, triangles.length * 3);
+    // Draw triangles (vertices / 2 coordinates per vertex)
+    const vertexCount = positionData.length / 2;
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, vertexCount);
   }
 
   /**
@@ -326,5 +365,62 @@ export class TriangulationRenderer {
     }
 
     console.log('[TriangulationRenderer] Resources cleaned up');
+  }
+  
+  /**
+   * Debug utility: Render triangulation grid wireframe
+   * @param {Array} triangles - Triangle indices
+   * @param {Array} positions - Vertex positions
+   * @param {string} color - Line color (hex)
+   * @param {number} lineWidth - Line width (default: 1)
+   */
+  renderDebugWireframe(triangles, positions, color = '#00ff00', lineWidth = 1) {
+    if (!triangles || !positions || triangles.length === 0) {
+      console.warn('[TriangulationRenderer] No triangulation data for debug wireframe');
+      return;
+    }
+    
+    console.log(`[TriangulationRenderer] Rendering debug wireframe: ${triangles.length} triangles`);
+    
+    // Parse hex color
+    const r = parseInt(color.slice(1, 3), 16) / 255;
+    const g = parseInt(color.slice(3, 5), 16) / 255;
+    const b = parseInt(color.slice(5, 7), 16) / 255;
+    
+    // Use canvas 2D context for wireframe (simpler than WebGL lines)
+    const ctx = this.canvas.getContext('2d', { willReadFrequently: false });
+    if (!ctx) {
+      console.warn('[TriangulationRenderer] Cannot get 2D context for debug wireframe');
+      return;
+    }
+    
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    
+    // Draw each triangle
+    for (const tri of triangles) {
+      const [i0, i1, i2] = tri;
+      
+      if (i0 >= positions.length || i1 >= positions.length || i2 >= positions.length) {
+        continue;
+      }
+      
+      const p0 = positions[i0];
+      const p1 = positions[i1];
+      const p2 = positions[i2];
+      
+      if (!p0 || !p1 || !p2) {
+        continue;
+      }
+      
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.closePath();
+      ctx.stroke();
+    }
+    
+    console.log('[TriangulationRenderer] Debug wireframe rendered');
   }
 }
