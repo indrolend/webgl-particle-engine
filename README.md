@@ -7,6 +7,7 @@ A high-performance WebGL-based particle system with smooth animated transitions,
 - **🎨 Image Morphing**: Seamless particle-based transitions between images with high visual quality
 - **🔺 Triangulation Morphing**: Advanced Delaunay triangulation-based image morphing with smooth mesh interpolation
 - **🎭 Hybrid Rendering**: Combine particle and triangulation effects for stunning visual transitions
+- **💥 Hybrid Transition Preset**: Multi-phase transitions with explosion, recombination, and blend effects
 - **⚡ WebGL Rendering**: Hardware-accelerated rendering for smooth 60 FPS performance
 - **🖼️ Image-Based Particles**: Upload images and create particle formations from pixel data
 - **✨ Smooth Transitions**: Animated transitions with optimized easing for natural morphing effects
@@ -348,6 +349,38 @@ const engine = new HybridEngine(canvas, {
 Switch between rendering modes at runtime.
 ```javascript
 engine.setRenderMode('particles');      // Particles only
+engine.setRenderMode('triangulation');  // Triangulation only
+engine.setRenderMode('hybrid');         // Both combined
+```
+
+#### `startHybridTransition(sourceImage, targetImage, config)`
+Initiate an advanced multi-phase transition with explosion and recombination effects.
+```javascript
+const img1 = new Image();
+const img2 = new Image();
+
+// Load images...
+img1.src = 'circle.png';
+img2.src = 'star.png';
+
+// Start hybrid transition with custom configuration
+engine.startHybridTransition(img1, img2, {
+    explosionIntensity: 150,        // Explosion force (50-300)
+    explosionTime: 800,             // Explosion duration in ms (300-2000)
+    recombinationDuration: 2000,    // Time to recombine into target shape (1000-4000)
+    recombinationChaos: 0.3,        // Chaotic movement factor (0-1)
+    vacuumStrength: 0.15,           // Gravitational pull strength (0-1)
+    blendDuration: 1500,            // Blend to triangulation duration (500-3000)
+    particleFadeRate: 0.7           // Particle fade speed during blend (0-1)
+});
+```
+
+**Transition Phases:**
+1. **Explosion**: Particles scatter in random directions with adjustable intensity
+2. **Recombination**: Particles are pulled together by vacuum force to form target image
+3. **Blend**: Gradual crossfade from particle rendering to triangulation rendering
+
+#### `updateTriangulationConfig(config)`
 engine.setRenderMode('triangulation');  // Triangulation only
 engine.setRenderMode('hybrid');         // Both combined
 ```
