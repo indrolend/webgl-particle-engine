@@ -1,15 +1,18 @@
 # WebGL Particle Transition Engine
 
-A high-performance WebGL-based particle system with smooth animated transitions, specializing in seamless image morphing effects. Features a modular architecture with detailed logging and both focused and comprehensive interfaces.
+A high-performance WebGL-based particle system with smooth animated transitions, specializing in seamless image morphing effects. Features a modular architecture with detailed logging, both focused and comprehensive interfaces, and **advanced triangulation-based morphing**.
 
 ## ✨ Features
 
 - **🎨 Image Morphing**: Seamless particle-based transitions between images with high visual quality
-- **⚡ WebGL Rendering**: Hardware-accelerated particle rendering for smooth 60 FPS performance
+- **🔺 Triangulation Morphing**: Advanced Delaunay triangulation-based image morphing with smooth mesh interpolation
+- **🎭 Hybrid Rendering**: Combine particle and triangulation effects for stunning visual transitions
+- **⚡ WebGL Rendering**: Hardware-accelerated rendering for smooth 60 FPS performance
 - **🖼️ Image-Based Particles**: Upload images and create particle formations from pixel data
 - **✨ Smooth Transitions**: Animated transitions with optimized easing for natural morphing effects
+- **🎯 Customizable Key Points**: Grid-based or feature detection-based triangulation
 - **Multiple Patterns**: Grid, Circle, Spiral, and Random formations (for advanced use)
-- **⚙️ Configurable**: Adjustable particle count, speed, and size
+- **⚙️ Configurable**: Adjustable particle count, speed, size, and triangulation parameters
 - **🎯 Focused Interface**: Dedicated image morphing UI (main page) for streamlined workflow
 - **🐛 Debug Interface**: Interactive HTML panel with real-time controls and logging
 - **📦 Modular Design**: Clean, maintainable code structure in `src/` directory
@@ -39,11 +42,34 @@ php -S localhost:8000
 
 3. Open your browser and navigate to:
 ```
-http://localhost:8000/              # 🎨 Main page - Image morphing interface
-http://localhost:8000/index.html    # 🎨 Main page - Image morphing interface (same as above)
-http://localhost:8000/debug.html    # 🐛 Full debug interface with all features
-http://localhost:8000/landing.html  # 🏠 Original landing page with links
+http://localhost:8000/                        # 🎨 Main page - Image morphing interface
+http://localhost:8000/index.html              # 🎨 Main page - Image morphing interface (same as above)
+http://localhost:8000/triangulation-demo.html # 🔺 Triangulation morphing demo with hybrid effects
+http://localhost:8000/debug.html              # 🐛 Full debug interface with all features
+http://localhost:8000/landing.html            # 🏠 Original landing page with links
 ```
+
+## 🔺 Triangulation-Based Image Morphing
+
+The engine now includes an advanced **triangulation-based morphing system** that complements the existing particle effects. This feature uses Delaunay triangulation to create smooth, mesh-based image transitions.
+
+### Key Features
+
+- **Delaunay Triangulation**: Automatic mesh generation using the Bowyer-Watson algorithm
+- **Customizable Key Points**: Choose between grid-based or feature detection methods
+- **Affine Interpolation**: Smooth triangle-to-triangle morphing with texture mapping
+- **Hybrid Rendering**: Combine particle and triangulation effects for unique visuals
+- **WebGL Accelerated**: High-performance rendering with custom shaders
+- **Real-time Control**: Switch between particles, triangulation, or hybrid modes on the fly
+
+### Demo
+
+Visit the **Triangulation Demo** page (`triangulation-demo.html`) to explore:
+- Interactive controls for switching render modes (Particles / Triangulation / Hybrid)
+- Adjustable grid size for triangulation density
+- Choice between grid-based or feature detection key point methods
+- Real-time FPS and performance metrics
+- Blend opacity controls for hybrid rendering
 
 ## 🎨 Image Morphing
 
@@ -258,6 +284,132 @@ Clean up resources and stop the engine.
 engine.destroy();
 ```
 
+## 🔺 Hybrid Engine API (Triangulation + Particles)
+
+The `HybridEngine` extends `ParticleEngine` with advanced triangulation-based morphing capabilities. It supports three rendering modes: particles only, triangulation only, or hybrid (both combined).
+
+### Basic Usage
+
+```javascript
+import { HybridEngine } from './src/HybridEngine.js';
+
+const canvas = document.getElementById('canvas');
+const engine = new HybridEngine(canvas, {
+    particleCount: 2000,
+    speed: 1.0,
+    enableTriangulation: true,
+    triangulationMode: 'hybrid',      // 'particles', 'triangulation', or 'hybrid'
+    keyPointMethod: 'grid',           // 'grid' or 'feature'
+    gridSize: 8,                      // Grid dimensions (4-16)
+    particleOpacity: 0.5,             // Particle opacity in hybrid mode (0-1)
+    triangleOpacity: 0.5              // Triangle opacity in hybrid mode (0-1)
+});
+
+// Load and initialize from first image
+const img1 = new Image();
+img1.onload = () => {
+    engine.initializeFromImage(img1);
+    engine.start();
+};
+img1.src = 'image1.png';
+
+// Transition to second image with hybrid morphing
+const img2 = new Image();
+img2.onload = () => {
+    engine.transitionToImage(img2, 2000); // Both particles and triangulation morph
+};
+img2.src = 'image2.png';
+```
+
+### Configuration Options
+
+```javascript
+const engine = new HybridEngine(canvas, {
+    // Standard particle options (inherited from ParticleEngine)
+    particleCount: 2000,
+    speed: 1.0,
+    autoResize: false,
+    
+    // Triangulation-specific options
+    enableTriangulation: true,        // Enable triangulation system
+    triangulationMode: 'hybrid',      // Render mode: 'particles', 'triangulation', 'hybrid'
+    keyPointMethod: 'grid',           // Key point detection: 'grid' or 'feature'
+    gridSize: 8,                      // Grid size for 'grid' method (4-16 recommended)
+    featurePointCount: 64,            // Point count for 'feature' method
+    blendMode: 'crossfade',           // Blend mode: 'crossfade' or 'overlay'
+    particleOpacity: 0.5,             // Particle opacity in hybrid mode
+    triangleOpacity: 0.5              // Triangle opacity in hybrid mode
+});
+```
+
+### Additional API Methods
+
+#### `setRenderMode(mode)`
+Switch between rendering modes at runtime.
+```javascript
+engine.setRenderMode('particles');      // Particles only
+engine.setRenderMode('triangulation');  // Triangulation only
+engine.setRenderMode('hybrid');         // Both combined
+```
+
+#### `updateTriangulationConfig(config)`
+Update triangulation settings.
+```javascript
+engine.updateTriangulationConfig({
+    gridSize: 12,
+    keyPointMethod: 'feature',
+    particleOpacity: 0.7
+});
+```
+
+#### `getTriangulationConfig()`
+Get current triangulation configuration.
+```javascript
+const config = engine.getTriangulationConfig();
+console.log(config.mode, config.gridSize);
+```
+
+### Key Point Detection Methods
+
+#### Grid Method
+Creates a uniform grid of key points across the image. Recommended for most use cases.
+- **Pros**: Predictable, consistent triangulation; good for geometric images
+- **Cons**: Doesn't adapt to image features
+- **Grid Size**: 4-16 (8 recommended for balance of detail and performance)
+
+```javascript
+engine.updateTriangulationConfig({
+    keyPointMethod: 'grid',
+    gridSize: 8  // 8x8 grid = ~64 key points
+});
+```
+
+#### Feature Detection Method
+Detects edges and features in the image using Sobel edge detection. Recommended for photos with distinct features.
+- **Pros**: Adapts to image content; preserves important features
+- **Cons**: Less predictable; may vary between images
+- **Point Count**: 32-128 (64 recommended)
+
+```javascript
+engine.updateTriangulationConfig({
+    keyPointMethod: 'feature',
+    featurePointCount: 64
+});
+```
+
+### Performance Considerations
+
+- **Grid Size**: Higher values create more triangles and detail but reduce performance
+  - Low detail (4x4): ~16 key points, ~20 triangles
+  - Medium detail (8x8): ~64 key points, ~100 triangles
+  - High detail (16x16): ~256 key points, ~400 triangles
+
+- **Hybrid Mode**: Rendering both particles and triangulation uses more GPU resources
+  - Adjust `particleOpacity` and `triangleOpacity` to balance visual impact
+  - Consider using 'triangulation' mode alone for lower-end devices
+
+- **Particle Count**: With hybrid rendering, 1000-2000 particles provide good balance
+
 ## 🖼️ Image-Based Particles
 
 The engine supports creating particle formations from uploaded images. This feature extracts pixel data from images and maps particles to visible pixels, creating stunning visual effects.
@@ -367,22 +519,31 @@ The `debug.html` file provides an interactive interface for testing and debuggin
 ```
 webgl-particle-engine/
 ├── src/
-│   ├── ParticleEngine.js      # Main engine coordinator
-│   ├── ParticleSystem.js      # Particle management and transitions
-│   ├── Renderer.js            # WebGL rendering
-│   └── presets/               # Animation presets
-│       ├── Preset.js          # Base preset class
-│       ├── PresetManager.js   # Preset management system
-│       ├── SchoolOfFishPreset.js  # School of Fish implementation
-│       └── index.js           # Module exports
-├── examples/                  # Example implementations
+│   ├── ParticleEngine.js           # Main engine coordinator
+│   ├── HybridEngine.js             # Extended engine with triangulation support
+│   ├── ParticleSystem.js           # Particle management and transitions
+│   ├── Renderer.js                 # WebGL particle rendering
+│   ├── presets/                    # Animation presets
+│   │   ├── Preset.js               # Base preset class
+│   │   ├── PresetManager.js        # Preset management system
+│   │   ├── SchoolOfFishPreset.js   # School of Fish implementation
+│   │   └── index.js                # Module exports
+│   └── triangulation/              # Triangulation morphing system
+│       ├── KeyPointManager.js      # Key point detection (grid/feature)
+│       ├── DelaunayTriangulator.js # Delaunay triangulation algorithm
+│       ├── TriangulationMorph.js   # Core morphing logic
+│       ├── TriangulationRenderer.js # WebGL triangle rendering
+│       └── index.js                # Module exports
+├── examples/                       # Example implementations
 │   └── school-of-fish-demo.html
-├── public/                    # Static assets (if needed)
-├── index.html                # Main page - Image morphing interface
-├── morph.html                # Alternative entry point (same as index.html)
-├── landing.html              # Original landing page with links to demos
-├── debug.html                # Interactive debug interface
-└── README.md                 # Documentation
+├── public/                         # Built files for deployment
+├── index.html                      # Main page - Particle morphing interface
+├── triangulation-demo.html         # Triangulation morphing demo
+├── morph.html                      # Alternative entry point
+├── landing.html                    # Landing page with links to demos
+├── debug.html                      # Interactive debug interface
+├── build.sh                        # Build script for deployment
+└── README.md                       # Documentation
 ```
 
 ## 🎨 Architecture
@@ -395,6 +556,13 @@ Main engine class that coordinates the renderer and particle system. Handles:
 - FPS tracking
 - High-level API
 
+### HybridEngine.js
+Extended engine that adds triangulation morphing capabilities:
+- Extends ParticleEngine with triangulation support
+- Manages dual rendering modes (particles, triangulation, hybrid)
+- Synchronizes particle and mesh transitions
+- Provides unified API for both rendering systems
+
 ### ParticleSystem.js
 Manages particle states and transitions. Features:
 - Multiple pattern generators
@@ -404,7 +572,7 @@ Manages particle states and transitions. Features:
 - Configurable parameters
 
 ### Renderer.js
-WebGL rendering implementation. Handles:
+WebGL particle rendering implementation. Handles:
 - WebGL context setup
 - Shader compilation and linking
 - Buffer management
@@ -416,6 +584,17 @@ Modular animation preset architecture:
 - **PresetManager.js**: Centralized preset registration and activation
 - **SchoolOfFishPreset.js**: Flocking algorithm implementation with explosion, swarming, and reformation phases
 - Easily extensible for custom behaviors
+
+### Triangulation System
+Advanced mesh-based image morphing:
+- **KeyPointManager.js**: Detects and manages key points for triangulation
+  - Grid method: Uniform point distribution
+  - Feature method: Edge-based detection using Sobel operator
+- **DelaunayTriangulator.js**: Self-contained Bowyer-Watson triangulation algorithm
+- **TriangulationMorph.js**: Core morphing logic with affine transformations
+- **TriangulationRenderer.js**: WebGL renderer for textured triangular meshes
+  - Custom shaders for texture mapping
+  - Smooth interpolation between source and target images
 
 ## 🌐 Deployment
 

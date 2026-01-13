@@ -1,0 +1,13 @@
+{
+  "name": "webgl-particle-engine",
+  "version": "1.0.0",
+  "description": "WebGL Particle Transition Engine with Triangulation Morphing",
+  "type": "module",
+  "scripts": {
+    "serve": "python3 -m http.server 8000"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "author": "",
+  "license": "MIT"
+}
