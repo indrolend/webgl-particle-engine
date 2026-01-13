@@ -5,6 +5,9 @@
  */
 
 export class ViewTransitionsHelper {
+  // Time to wait for transition to initialize before resolving (in ms)
+  static TRANSITION_START_DELAY = 100;
+
   constructor() {
     this.isSupported = this.checkSupport();
     console.log(`[ViewTransitions] API supported: ${this.isSupported}`);
@@ -81,7 +84,7 @@ export class ViewTransitionsHelper {
 
   /**
    * Create a cross-document transition (for navigation)
-   * Note: This requires browser support for cross-document transitions
+   * Note: Cross-document transitions require Chrome 126+ or equivalent
    * @param {string} url - Target URL
    */
   navigateWithTransition(url) {
@@ -91,14 +94,11 @@ export class ViewTransitionsHelper {
       return;
     }
 
-    // Check for cross-document transition support
-    if ('navigation' in window && window.navigation.addEventListener) {
-      console.log('[ViewTransitions] Attempting cross-document transition');
-      window.location.href = url;
-    } else {
-      console.log('[ViewTransitions] Cross-document transitions not supported');
-      window.location.href = url;
-    }
+    // Note: Cross-document transitions are experimental and require
+    // specific browser support. This is a basic implementation that
+    // attempts to use the feature but falls back gracefully.
+    console.log('[ViewTransitions] Attempting navigation to:', url);
+    window.location.href = url;
   }
 
   /**
@@ -166,8 +166,10 @@ export function integrateViewTransitions(engine, viewTransitions) {
     
     await viewTransitions.transition(() => {
       originalTransition(pattern, duration);
-      // Wait for transition to start
-      return new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for particle system to initialize the transition
+      return new Promise(resolve => 
+        setTimeout(resolve, ViewTransitionsHelper.TRANSITION_START_DELAY)
+      );
     });
   };
 
@@ -176,8 +178,10 @@ export function integrateViewTransitions(engine, viewTransitions) {
     
     await viewTransitions.transition(() => {
       originalTransitionToImage(image, duration);
-      // Wait for transition to start
-      return new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for particle system to initialize the transition
+      return new Promise(resolve => 
+        setTimeout(resolve, ViewTransitionsHelper.TRANSITION_START_DELAY)
+      );
     });
   };
 
