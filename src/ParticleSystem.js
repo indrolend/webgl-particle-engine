@@ -9,7 +9,8 @@ export class ParticleSystem {
       particleCount: config.particleCount || 1000,
       speed: config.speed || 1.0,
       minSize: config.minSize || 2,
-      maxSize: config.maxSize || 8
+      maxSize: config.maxSize || 8,
+      gravity: config.gravity || 0
     };
     
     this.width = 800;
@@ -465,6 +466,9 @@ export class ParticleSystem {
         particle.g = particle.g + (particle.targetG - particle.g) * factor;
         particle.b = particle.b + (particle.targetB - particle.b) * factor;
       } else {
+        // Apply gravity
+        particle.vy += this.config.gravity * deltaTime;
+        
         // Free movement
         particle.x += particle.vx * deltaTime * this.config.speed;
         particle.y += particle.vy * deltaTime * this.config.speed;

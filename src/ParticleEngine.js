@@ -5,6 +5,7 @@
 import { Renderer } from './Renderer.js';
 import { ParticleSystem } from './ParticleSystem.js';
 import { PresetManager } from './presets/PresetManager.js';
+import { BehaviorManager } from './ParticleBehaviors.js';
 
 export class ParticleEngine {
   constructor(canvas, config = {}) {
@@ -44,6 +45,10 @@ export class ParticleEngine {
     // Initialize preset manager
     this.presetManager = new PresetManager();
     console.log('[ParticleEngine] Preset manager initialized');
+    
+    // Initialize behavior manager
+    this.behaviorManager = new BehaviorManager();
+    console.log('[ParticleEngine] Behavior manager initialized');
     
     // Setup auto-resize if enabled
     if (this.config.autoResize) {
@@ -187,8 +192,12 @@ export class ParticleEngine {
       this.particleSystem.update(deltaTime);
     }
     
-    // Render particles
+    // Apply behaviors to particles
     const particles = this.particleSystem.getParticles();
+    const dimensions = { width: this.canvas.width, height: this.canvas.height };
+    this.behaviorManager.applyToAll(particles, deltaTime, dimensions);
+    
+    // Render particles
     this.renderer.render(particles);
     
     // Continue animation loop
@@ -198,7 +207,7 @@ export class ParticleEngine {
   updateConfig(newConfig) {
     console.log('[ParticleEngine] Updating configuration:', newConfig);
     
-    if (newConfig.particleCount !== undefined || newConfig.speed !== undefined) {
+    if (newConfig.particleCount !== undefined || newConfig.speed !== undefined || newConfig.gravity !== undefined) {
       this.particleSystem.updateConfig(newConfig);
     }
     
@@ -281,11 +290,44 @@ export class ParticleEngine {
     return this.fps;
   }
 
+  /**
+   * Add a behavior to the particle system
+   * @param {ParticleBehavior} behavior - Behavior to add
+   */
+  addBehavior(behavior) {
+    this.behaviorManager.addBehavior(behavior);
+  }
+
+  /**
+   * Remove a behavior by name
+   * @param {string} behaviorName - Name of behavior to remove
+   */
+  removeBehavior(behaviorName) {
+    this.behaviorManager.removeBehavior(behaviorName);
+  }
+
+  /**
+   * Clear all behaviors
+   */
+  clearBehaviors() {
+    this.behaviorManager.clearBehaviors();
+  }
+
+  /**
+   * Get a behavior by name
+   * @param {string} behaviorName - Name of behavior
+   * @returns {ParticleBehavior|undefined}
+   */
+  getBehavior(behaviorName) {
+    return this.behaviorManager.getBehavior(behaviorName);
+  }
+
   destroy() {
     console.log('[ParticleEngine] Destroying engine...');
     
     this.stop();
     this.presetManager.deactivateCurrentPreset();
+    this.behaviorManager.clearBehaviors();
     this.renderer.destroy();
     
     console.log('[ParticleEngine] Engine destroyed');

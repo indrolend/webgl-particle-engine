@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebGL Particle Engine - Debug</title>
+    <title>WebGL Particle Engine - Simplified</title>
     <style>
         * {
             margin: 0;
@@ -41,42 +41,101 @@
         }
 
         .controls {
-            width: 320px;
-            background: rgba(20, 20, 35, 0.9);
-            padding: 20px;
+            width: 280px;
+            background: rgba(20, 20, 35, 0.95);
+            padding: 30px 20px;
             overflow-y: auto;
             border-left: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
         }
 
         h1 {
             font-size: 24px;
-            margin-bottom: 10px;
             color: #00d4ff;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 10px;
         }
 
         h2 {
-            font-size: 18px;
-            margin-top: 20px;
-            margin-bottom: 10px;
+            font-size: 16px;
             color: #00d4ff;
             border-bottom: 1px solid rgba(0, 212, 255, 0.3);
-            padding-bottom: 5px;
-        }
-
-        .button-group {
+            padding-bottom: 8px;
             margin-bottom: 15px;
         }
 
-        button {
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .value {
+            color: #00d4ff;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
             width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.6);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.6);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            position: relative;
             padding: 12px;
-            margin-bottom: 8px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
@@ -98,91 +157,8 @@
             transform: none;
         }
 
-        .btn-init {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
-        }
-
-        .btn-init:hover {
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
-        }
-
-        .btn-transition {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
-        }
-
-        .btn-transition:hover {
-            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.6);
-        }
-
-        .btn-control {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-            box-shadow: 0 4px 15px rgba(67, 233, 123, 0.4);
-        }
-
-        .btn-control:hover {
-            box-shadow: 0 6px 20px rgba(67, 233, 123, 0.6);
-        }
-
-        .btn-stop {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            box-shadow: 0 4px 15px rgba(250, 112, 154, 0.4);
-        }
-
-        .btn-stop:hover {
-            box-shadow: 0 6px 20px rgba(250, 112, 154, 0.6);
-        }
-
-        .info {
-            background: rgba(0, 212, 255, 0.1);
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 20px;
-            border: 1px solid rgba(0, 212, 255, 0.3);
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .info-label {
-            color: #aaa;
-        }
-
-        .info-value {
-            color: #00d4ff;
-            font-weight: 600;
-        }
-
-        .config-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 13px;
-            color: #aaa;
-        }
-
-        input[type="number"],
-        input[type="range"] {
-            width: 100%;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-            color: white;
-            font-size: 14px;
-        }
-
-        input[type="range"] {
-            padding: 0;
-            height: 8px;
+        button.full-width {
+            grid-column: 1 / -1;
         }
 
         input[type="file"] {
@@ -193,7 +169,6 @@
             border-radius: 4px;
             color: white;
             font-size: 12px;
-            margin-bottom: 10px;
             cursor: pointer;
         }
 
@@ -209,8 +184,8 @@
 
         .image-preview {
             width: 100%;
-            max-height: 150px;
-            margin-bottom: 10px;
+            max-height: 120px;
+            margin-top: 10px;
             border-radius: 4px;
             overflow: hidden;
             display: none;
@@ -230,9 +205,9 @@
         }
 
         .image-info {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 5px 10px;
-            font-size: 11px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 4px 8px;
+            font-size: 10px;
             color: #00d4ff;
             position: absolute;
             bottom: 0;
@@ -240,37 +215,91 @@
             right: 0;
         }
 
-        .range-value {
-            text-align: right;
-            color: #00d4ff;
-            font-weight: 600;
-            margin-top: 5px;
+        #morphButton {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(245, 87, 108, 0.6);
+            z-index: 1000;
+            transition: all 0.3s ease;
         }
 
-        #log {
-            background: rgba(0, 0, 0, 0.5);
+        #morphButton:hover {
+            transform: translateX(-50%) scale(1.1);
+            box-shadow: 0 12px 35px rgba(245, 87, 108, 0.8);
+        }
+
+        #morphButton:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        #morphButton:disabled {
+            background: #333;
+            cursor: not-allowed;
+            opacity: 0.5;
+            transform: translateX(-50%);
+        }
+
+        .target-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .target-badge.badge-a {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        }
+
+        .target-badge.badge-b {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a3b8 100%);
+            right: 28px;
+        }
+
+        .info {
+            background: rgba(0, 212, 255, 0.1);
             padding: 15px;
             border-radius: 6px;
-            max-height: 200px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            line-height: 1.4;
-            margin-top: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
         }
 
-        .log-entry {
-            margin-bottom: 5px;
-            word-wrap: break-word;
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
         }
 
-        .log-time {
-            color: #888;
+        .info-item:last-child {
+            margin-bottom: 0;
         }
 
-        .log-message {
-            color: #0f0;
+        .info-label {
+            color: #aaa;
+        }
+
+        .info-value {
+            color: #00d4ff;
+            font-weight: 600;
         }
 
         @media (max-width: 768px) {
@@ -280,13 +309,13 @@
 
             .controls {
                 width: 100%;
-                max-height: 40vh;
+                max-height: 50vh;
                 border-left: none;
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
             }
 
             .canvas-container {
-                height: 60vh;
+                height: 50vh;
             }
         }
     </style>
@@ -298,66 +327,94 @@
         </div>
 
         <div class="controls">
-            <h1>🎨 Particle Engine</h1>
-            <p style="color: #888; font-size: 13px; margin-bottom: 20px;">WebGL Particle Transition Engine Debug Panel</p>
-
-            <h2>⚙️ Configuration</h2>
-            <div class="config-group">
-                <label for="particleCount">Particle Count:</label>
-                <input type="range" id="particleCount" min="100" max="5000" step="100" value="1000">
-                <div class="range-value" id="particleCountValue">1000</div>
+            <div>
+                <h1>🎨 Particle Engine</h1>
+                <p class="subtitle">Simplified Control Panel</p>
             </div>
 
-            <div class="config-group">
-                <label for="speed">Speed Multiplier:</label>
-                <input type="range" id="speed" min="0.1" max="3" step="0.1" value="1">
-                <div class="range-value" id="speedValue">1.0</div>
+            <div>
+                <h2>⚙️ Particle Controls</h2>
+                
+                <div class="control-group">
+                    <label>
+                        <span>Size</span>
+                        <span class="value" id="sizeValue">2-8</span>
+                    </label>
+                    <input type="range" id="particleSize" min="1" max="20" step="1" value="8">
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        <span>Speed</span>
+                        <span class="value" id="speedValue">1.0</span>
+                    </label>
+                    <input type="range" id="speed" min="0.1" max="3" step="0.1" value="1">
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        <span>Gravity</span>
+                        <span class="value" id="gravityValue">0.0</span>
+                    </label>
+                    <input type="range" id="gravity" min="-50" max="50" step="5" value="0">
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        <span>Count</span>
+                        <span class="value" id="particleCountValue">1000</span>
+                    </label>
+                    <input type="range" id="particleCount" min="100" max="5000" step="100" value="1000">
+                </div>
             </div>
 
-            <h2>🚀 Initialize</h2>
-            <div class="button-group">
-                <button class="btn-init" onclick="initializeEngine()">Initialize Engine</button>
-                <button class="btn-init" onclick="initPattern('random')">Random Pattern</button>
-                <button class="btn-init" onclick="initPattern('grid')">Grid Pattern</button>
-                <button class="btn-init" onclick="initPattern('circle')">Circle Pattern</button>
-                <button class="btn-init" onclick="initPattern('spiral')">Spiral Pattern</button>
+            <div>
+                <h2>🎭 Behavior Mode</h2>
+                
+                <div class="control-group">
+                    <select id="behaviorMode" onchange="changeBehaviorMode()">
+                        <option value="none">None (Default)</option>
+                        <option value="attraction">Attraction</option>
+                        <option value="repulsion">Repulsion</option>
+                        <option value="randomDrift">Random Drift</option>
+                        <option value="rotation">Rotation</option>
+                        <option value="cyclone">Cyclone</option>
+                        <option value="color">Color Cycle</option>
+                    </select>
+                </div>
             </div>
 
-            <h2>🖼️ Image Upload</h2>
-            <div class="config-group">
-                <label for="image1Upload">Image 1:</label>
-                <input type="file" id="image1Upload" accept="image/*" onchange="handleImageUpload(1, event)">
-                <div id="image1Preview" class="image-preview"></div>
-                <button class="btn-init" onclick="initFromImage(1)" id="initImage1Btn" disabled>Initialize from Image 1</button>
-            </div>
-            
-            <div class="config-group">
-                <label for="image2Upload">Image 2:</label>
-                <input type="file" id="image2Upload" accept="image/*" onchange="handleImageUpload(2, event)">
-                <div id="image2Preview" class="image-preview"></div>
-                <button class="btn-transition" onclick="transitionToImage(2)" id="transitionImage2Btn" disabled>Transition to Image 2</button>
+            <div>
+                <h2>🎯 Transition Targets</h2>
+                
+                <div class="button-group">
+                    <button onclick="selectTarget('grid', event)" data-target="grid">Grid</button>
+                    <button onclick="selectTarget('circle', event)" data-target="circle">Circle</button>
+                    <button onclick="selectTarget('spiral', event)" data-target="spiral">Spiral</button>
+                    <button onclick="selectTarget('random', event)" data-target="random">Random</button>
+                </div>
             </div>
 
-            <h2>✨ Transitions</h2>
-            <div class="button-group">
-                <button class="btn-transition" onclick="transition('grid')">→ Grid</button>
-                <button class="btn-transition" onclick="transition('circle')">→ Circle</button>
-                <button class="btn-transition" onclick="transition('spiral')">→ Spiral</button>
-                <button class="btn-transition" onclick="transition('random')">→ Random</button>
-            </div>
-
-            <h2>🎮 Controls</h2>
-            <div class="button-group">
-                <button class="btn-control" onclick="startEngine()">▶ Start</button>
-                <button class="btn-stop" onclick="stopEngine()">⏸ Stop</button>
-                <button class="btn-control" onclick="updateConfig()">Apply Config</button>
-                <button class="btn-stop" onclick="clearLog()">Clear Log</button>
+            <div>
+                <h2>🖼️ Images</h2>
+                
+                <div class="control-group">
+                    <input type="file" id="image1Upload" accept="image/*" onchange="handleImageUpload(1, event)">
+                    <div id="image1Preview" class="image-preview"></div>
+                    <button class="full-width" onclick="selectTarget('image1', event)" id="imageBtn1" data-target="image1" disabled>Use Image 1</button>
+                </div>
+                
+                <div class="control-group">
+                    <input type="file" id="image2Upload" accept="image/*" onchange="handleImageUpload(2, event)">
+                    <div id="image2Preview" class="image-preview"></div>
+                    <button class="full-width" onclick="selectTarget('image2', event)" id="imageBtn2" data-target="image2" disabled>Use Image 2</button>
+                </div>
             </div>
 
             <div class="info">
                 <div class="info-item">
                     <span class="info-label">Status:</span>
-                    <span class="info-value" id="status">Not Initialized</span>
+                    <span class="info-value" id="status">Running</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Particles:</span>
@@ -368,68 +425,71 @@
                     <span class="info-value" id="fps">0</span>
                 </div>
             </div>
-
-            <h2>📋 Debug Log</h2>
-            <div id="log"></div>
         </div>
     </div>
 
+    <!-- Morph Button -->
+    <button id="morphButton" onclick="triggerMorph()">MORPH</button>
+
     <script type="module">
         import { ParticleEngine } from './src/ParticleEngine.js';
+        import { ViewTransitionsHelper, integrateViewTransitions } from './src/ViewTransitionsHelper.js';
+        import { 
+            AttractionBehavior, 
+            RepulsionBehavior, 
+            RandomDriftBehavior, 
+            RotationBehavior, 
+            CycloneBehavior, 
+            ColorBehavior 
+        } from './src/ParticleBehaviors.js';
 
         let engine = null;
         const canvas = document.getElementById('particleCanvas');
-        const logElement = document.getElementById('log');
-        const maxLogEntries = 50;
+        const viewTransitions = new ViewTransitionsHelper();
 
-        // Store uploaded images on window object for global access
+        // Apply view transition styles
+        ViewTransitionsHelper.applyTransitionStyles();
+
+        // Store uploaded images
         window.uploadedImages = {
             1: null,
             2: null
         };
 
-        // Intercept console.log for debug display
-        const originalLog = console.log;
-        console.log = function(...args) {
-            originalLog.apply(console, args);
-            addLogEntry(args.join(' '));
-        };
+        // A/B target selection state
+        let targetA = null;
+        let targetB = null;
+        let currentTarget = 'A';
 
-        const originalError = console.error;
-        console.error = function(...args) {
-            originalError.apply(console, args);
-            addLogEntry('[ERROR] ' + args.join(' '), 'error');
-        };
+        // Initialize engine
+        function initEngine() {
+            try {
+                console.log('Initializing Particle Engine...');
+                
+                engine = new ParticleEngine(canvas, {
+                    particleCount: 1000,
+                    speed: 1.0,
+                    gravity: 0,
+                    autoResize: false
+                });
 
-        const originalWarn = console.warn;
-        console.warn = function(...args) {
-            originalWarn.apply(console, args);
-            addLogEntry('[WARN] ' + args.join(' '), 'warn');
-        };
+                // Integrate View Transitions API
+                integrateViewTransitions(engine, viewTransitions);
+                
+                // Prepare canvas for view transitions
+                viewTransitions.prepareElement(canvas, 'particle-canvas');
 
-        function addLogEntry(message, type = 'info') {
-            const time = new Date().toLocaleTimeString();
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            
-            let color = '#0f0';
-            if (type === 'error') color = '#f55';
-            if (type === 'warn') color = '#fa0';
-            
-            entry.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-message" style="color: ${color}">${message}</span>`;
-            
-            logElement.insertBefore(entry, logElement.firstChild);
-            
-            // Keep only last N entries
-            while (logElement.children.length > maxLogEntries) {
-                logElement.removeChild(logElement.lastChild);
+                // Initialize with random pattern
+                engine.initializeParticles('random');
+                engine.start();
+                
+                console.log('Engine initialized and started!');
+            } catch (error) {
+                console.error('Failed to initialize engine:', error);
             }
         }
 
-        function updateStatus(status) {
-            document.getElementById('status').textContent = status;
-        }
-
+        // Update info display
         function updateInfo() {
             if (engine) {
                 document.getElementById('particleCountDisplay').textContent = engine.getParticleCount();
@@ -440,130 +500,58 @@
         // Update info every 100ms
         setInterval(updateInfo, 100);
 
-        // Range input handlers
-        document.getElementById('particleCount').addEventListener('input', (e) => {
-            document.getElementById('particleCountValue').textContent = e.target.value;
-        });
-
-        document.getElementById('speed').addEventListener('input', (e) => {
-            document.getElementById('speedValue').textContent = parseFloat(e.target.value).toFixed(1);
-        });
-
-        // Global functions for button handlers
-        window.initializeEngine = function() {
-            try {
-                if (engine) {
-                    console.log('Destroying existing engine...');
-                    engine.destroy();
-                }
-
-                const particleCount = parseInt(document.getElementById('particleCount').value);
-                const speed = parseFloat(document.getElementById('speed').value);
-
-                console.log(`Creating new engine with ${particleCount} particles, speed ${speed}...`);
-                
-                engine = new ParticleEngine(canvas, {
-                    particleCount: particleCount,
-                    speed: speed,
-                    autoResize: false
-                });
-
-                engine.initializeParticles('random');
-                engine.start();
-                
-                updateStatus('Running');
-                console.log('Engine initialized and started!');
-            } catch (error) {
-                console.error('Failed to initialize engine:', error.message);
-                updateStatus('Error');
-            }
-        };
-
-        window.initPattern = function(pattern) {
-            try {
-                if (!engine) {
-                    console.warn('Engine not initialized. Call Initialize Engine first.');
-                    return;
-                }
-
-                engine.initializeParticles(pattern);
-                console.log(`Initialized with ${pattern} pattern`);
-            } catch (error) {
-                console.error('Failed to initialize pattern:', error.message);
-            }
-        };
-
-        window.transition = function(pattern) {
-            try {
-                if (!engine) {
-                    console.warn('Engine not initialized. Call Initialize Engine first.');
-                    return;
-                }
-
-                engine.transition(pattern, 2000);
-                console.log(`Transitioning to ${pattern}...`);
-            } catch (error) {
-                console.error('Failed to transition:', error.message);
-            }
-        };
-
-        window.startEngine = function() {
-            try {
-                if (!engine) {
-                    console.warn('Engine not initialized. Call Initialize Engine first.');
-                    return;
-                }
-
-                engine.start();
-                updateStatus('Running');
-                console.log('Engine started');
-            } catch (error) {
-                console.error('Failed to start engine:', error.message);
-            }
-        };
-
-        window.stopEngine = function() {
-            try {
-                if (!engine) {
-                    console.warn('Engine not initialized.');
-                    return;
-                }
-
-                engine.stop();
-                updateStatus('Stopped');
-                console.log('Engine stopped');
-            } catch (error) {
-                console.error('Failed to stop engine:', error.message);
-            }
-        };
-
-        window.updateConfig = function() {
-            try {
-                if (!engine) {
-                    console.warn('Engine not initialized.');
-                    return;
-                }
-
-                const particleCount = parseInt(document.getElementById('particleCount').value);
-                const speed = parseFloat(document.getElementById('speed').value);
-
+        // Particle size control
+        document.getElementById('particleSize').addEventListener('input', (e) => {
+            const maxSize = parseInt(e.target.value);
+            const minSize = Math.max(1, Math.floor(maxSize / 4));
+            document.getElementById('sizeValue').textContent = `${minSize}-${maxSize}`;
+            
+            if (engine) {
                 engine.updateConfig({
-                    particleCount: particleCount,
-                    speed: speed
+                    minSize: minSize,
+                    maxSize: maxSize
                 });
-
-                console.log('Configuration updated');
-            } catch (error) {
-                console.error('Failed to update config:', error.message);
+                // Update existing particle sizes
+                const particles = engine.particleSystem.getParticles();
+                particles.forEach(particle => {
+                    particle.size = minSize + Math.random() * (maxSize - minSize);
+                });
             }
-        };
+        });
 
-        window.clearLog = function() {
-            logElement.innerHTML = '';
-            console.log('Log cleared');
-        };
+        // Speed control
+        document.getElementById('speed').addEventListener('input', (e) => {
+            const speed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = speed.toFixed(1);
+            
+            if (engine) {
+                engine.updateConfig({ speed: speed });
+            }
+        });
 
-        // Image upload handlers
+        // Gravity control
+        document.getElementById('gravity').addEventListener('input', (e) => {
+            const gravity = parseInt(e.target.value);
+            document.getElementById('gravityValue').textContent = gravity.toFixed(1);
+            
+            if (engine) {
+                engine.updateConfig({ gravity: gravity });
+            }
+        });
+
+        // Particle count control
+        document.getElementById('particleCount').addEventListener('input', (e) => {
+            const count = parseInt(e.target.value);
+            document.getElementById('particleCountValue').textContent = count;
+            
+            if (engine) {
+                engine.updateConfig({ particleCount: count });
+                // Reinitialize particles with new count
+                engine.initializeParticles('random');
+            }
+        });
+
+        // Image upload handler
         window.handleImageUpload = function(imageNum, event) {
             const file = event.target.files[0];
             
@@ -572,14 +560,12 @@
                 return;
             }
 
-            // Validate file type
             if (!file.type.startsWith('image/')) {
-                console.error(`Invalid file type: ${file.type}. Please upload an image file.`);
-                addLogEntry(`[ERROR] Invalid file type: ${file.type}. Please upload an image file.`, 'error');
+                console.error(`Invalid file type: ${file.type}`);
                 return;
             }
 
-            console.log(`Loading Image ${imageNum}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+            console.log(`Loading Image ${imageNum}: ${file.name}`);
 
             const reader = new FileReader();
             
@@ -587,10 +573,8 @@
                 const img = new Image();
                 
                 img.onload = function() {
-                    // Store the image
                     window.uploadedImages[imageNum] = img;
                     
-                    // Update preview
                     const previewDiv = document.getElementById(`image${imageNum}Preview`);
                     previewDiv.innerHTML = `
                         <img src="${e.target.result}" alt="Image ${imageNum}">
@@ -598,19 +582,13 @@
                     `;
                     previewDiv.classList.add('active');
                     
-                    // Enable appropriate button
-                    if (imageNum === 1) {
-                        document.getElementById('initImage1Btn').disabled = false;
-                    } else {
-                        document.getElementById('transitionImage2Btn').disabled = false;
-                    }
+                    document.getElementById(`imageBtn${imageNum}`).disabled = false;
                     
-                    console.log(`Image ${imageNum} loaded successfully: ${img.width}x${img.height}px`);
+                    console.log(`Image ${imageNum} loaded: ${img.width}x${img.height}px`);
                 };
                 
                 img.onerror = function() {
                     console.error(`Failed to load Image ${imageNum}`);
-                    addLogEntry(`[ERROR] Failed to load Image ${imageNum}. Please try a different file.`, 'error');
                 };
                 
                 img.src = e.target.result;
@@ -618,57 +596,160 @@
             
             reader.onerror = function() {
                 console.error(`Failed to read file for Image ${imageNum}`);
-                addLogEntry(`[ERROR] Failed to read file for Image ${imageNum}. Please try again.`, 'error');
             };
             
             reader.readAsDataURL(file);
         };
 
-        window.initFromImage = function(imageNum) {
-            try {
+        // Target selection system
+        window.selectTarget = function(targetId, event) {
+            event.preventDefault();
+            const button = event.currentTarget;
+            
+            const hasA = button.querySelector('.target-badge.badge-a');
+            const hasB = button.querySelector('.target-badge.badge-b');
+            
+            // Cycle: none -> A -> B -> AB -> none
+            if (!hasA && !hasB) {
+                addBadge(button, 'A');
+                if (targetA && targetA !== targetId) {
+                    removeBadgeFromTarget(targetA, 'A');
+                }
+                targetA = targetId;
+            } else if (hasA && !hasB) {
+                hasA.remove();
+                addBadge(button, 'B');
+                if (targetB && targetB !== targetId) {
+                    removeBadgeFromTarget(targetB, 'B');
+                }
+                targetA = null;
+                targetB = targetId;
+            } else if (!hasA && hasB) {
+                addBadge(button, 'A');
+                if (targetA && targetA !== targetId) {
+                    removeBadgeFromTarget(targetA, 'A');
+                }
+                targetA = targetId;
+            } else {
+                hasA.remove();
+                hasB.remove();
+                if (targetA === targetId) targetA = null;
+                if (targetB === targetId) targetB = null;
+            }
+            
+            console.log(`Targets: A=${targetA}, B=${targetB}`);
+        };
+
+        function addBadge(button, type) {
+            const badge = document.createElement('span');
+            badge.className = `target-badge badge-${type.toLowerCase()}`;
+            badge.textContent = type;
+            button.appendChild(badge);
+        }
+
+        function removeBadgeFromTarget(targetId, type) {
+            const button = document.querySelector(`[data-target="${targetId}"]`);
+            if (button) {
+                const badge = button.querySelector(`.target-badge.badge-${type.toLowerCase()}`);
+                if (badge) badge.remove();
+            }
+        }
+
+        // Trigger morph transition
+        window.triggerMorph = function() {
+            if (!engine) {
+                console.warn('Engine not initialized');
+                return;
+            }
+
+            let target = null;
+            
+            if (currentTarget === 'A' && targetB) {
+                target = targetB;
+                currentTarget = 'B';
+            } else if (currentTarget === 'B' && targetA) {
+                target = targetA;
+                currentTarget = 'A';
+            } else if (targetA) {
+                target = targetA;
+                currentTarget = 'A';
+            } else if (targetB) {
+                target = targetB;
+                currentTarget = 'B';
+            } else {
+                console.warn('No targets selected');
+                return;
+            }
+            
+            performTransition(target);
+        };
+
+        function performTransition(targetId) {
+            if (!engine) return;
+            
+            if (targetId.startsWith('image')) {
+                const imageNum = targetId === 'image1' ? 1 : 2;
                 const image = window.uploadedImages[imageNum];
-                
-                if (!image) {
-                    console.warn(`Image ${imageNum} not loaded`);
-                    return;
+                if (image) {
+                    console.log(`Transitioning to ${targetId}`);
+                    engine.transitionToImage(image, 2000);
                 }
+            } else {
+                console.log(`Transitioning to ${targetId}`);
+                engine.transition(targetId, 2000);
+            }
+        }
 
-                if (!engine) {
-                    console.log('Engine not initialized, creating new engine...');
-                    initializeEngine();
-                }
+        // Behavior mode change handler
+        window.changeBehaviorMode = function() {
+            if (!engine) {
+                console.warn('Engine not initialized');
+                return;
+            }
 
-                console.log(`Initializing particles from Image ${imageNum}...`);
-                engine.initializeFromImage(image);
-                console.log('Particles initialized from image');
-            } catch (error) {
-                console.error('Failed to initialize from image:', error.message);
+            const mode = document.getElementById('behaviorMode').value;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Clear existing behaviors
+            engine.clearBehaviors();
+
+            switch (mode) {
+                case 'attraction':
+                    console.log('Enabling Attraction behavior');
+                    engine.addBehavior(new AttractionBehavior(centerX, centerY, 30, 400));
+                    break;
+                case 'repulsion':
+                    console.log('Enabling Repulsion behavior');
+                    engine.addBehavior(new RepulsionBehavior(centerX, centerY, 50, 300));
+                    break;
+                case 'randomDrift':
+                    console.log('Enabling Random Drift behavior');
+                    engine.addBehavior(new RandomDriftBehavior(5));
+                    break;
+                case 'rotation':
+                    console.log('Enabling Rotation behavior');
+                    engine.addBehavior(new RotationBehavior(centerX, centerY, 0.3));
+                    break;
+                case 'cyclone':
+                    console.log('Enabling Cyclone behavior');
+                    engine.addBehavior(new CycloneBehavior(centerX, centerY, 30, 400));
+                    break;
+                case 'color':
+                    console.log('Enabling Color Cycle behavior');
+                    engine.addBehavior(new ColorBehavior());
+                    break;
+                case 'none':
+                default:
+                    console.log('No behavior active');
+                    break;
             }
         };
 
-        window.transitionToImage = function(imageNum) {
-            try {
-                if (!engine) {
-                    console.warn('Engine not initialized. Call Initialize Engine first.');
-                    return;
-                }
-
-                const image = window.uploadedImages[imageNum];
-                
-                if (!image) {
-                    console.warn(`Image ${imageNum} not loaded`);
-                    return;
-                }
-
-                console.log(`Transitioning to Image ${imageNum}...`);
-                engine.transitionToImage(image, 2000);
-            } catch (error) {
-                console.error('Failed to transition to image:', error.message);
-            }
-        };
-
-        // Initial log message
-        addLogEntry('Debug panel loaded. Click "Initialize Engine" to start.');
+        // Auto-initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            initEngine();
+        });
     </script>
 </body>
 </html>

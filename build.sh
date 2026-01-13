@@ -47,5 +47,28 @@ else
   exit 1
 fi
 
+if [ -f src/ViewTransitionsHelper.js ]; then
+  cp src/ViewTransitionsHelper.js public/src/
+else
+  echo "Warning: src/ViewTransitionsHelper.js not found"
+  exit 1
+fi
+
+if [ -f src/ParticleBehaviors.js ]; then
+  cp src/ParticleBehaviors.js public/src/
+else
+  echo "Warning: src/ParticleBehaviors.js not found"
+  exit 1
+fi
+
+# Copy presets directory
+echo "Copying presets directory..."
+mkdir -p public/src/presets
+if [ -d src/presets ]; then
+  cp -r src/presets/* public/src/presets/
+else
+  echo "Warning: src/presets directory not found"
+fi
+
 echo "Build complete! Files are ready in ./public directory"
 echo "To deploy: npx wrangler pages deploy ./public --project-name=webgl-particle-engine"
