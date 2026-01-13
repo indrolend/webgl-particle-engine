@@ -78,15 +78,21 @@ export class TriangulationRenderer {
       
       varying vec2 v_texCoord;
       
+      // Constants for coordinate validation
+      const float COORD_MIN_THRESHOLD = -0.1;
+      const float COORD_MAX_THRESHOLD = 1.1;
+      const vec3 FALLBACK_COLOR = vec3(0.5, 0.5, 0.5);
+      const float FALLBACK_ALPHA = 0.3;
+      
       void main() {
         // Clamp texture coordinates to valid range [0, 1] to prevent artifacts
         vec2 clampedCoord = clamp(v_texCoord, 0.0, 1.0);
         
         // Check for invalid coordinates (out of reasonable bounds)
         // Note: NaN checks not available in WebGL 1.0, but clamping handles most cases
-        if (any(lessThan(v_texCoord, vec2(-0.1))) || any(greaterThan(v_texCoord, vec2(1.1)))) {
+        if (any(lessThan(v_texCoord, vec2(COORD_MIN_THRESHOLD))) || any(greaterThan(v_texCoord, vec2(COORD_MAX_THRESHOLD)))) {
           // Render neutral gray for invalid coordinates instead of black
-          gl_FragColor = vec4(0.5, 0.5, 0.5, u_alpha * 0.3);
+          gl_FragColor = vec4(FALLBACK_COLOR, u_alpha * FALLBACK_ALPHA);
         } else {
           vec4 texColor = texture2D(u_texture, clampedCoord);
           gl_FragColor = vec4(texColor.rgb, texColor.a * u_alpha);
@@ -377,36 +383,25 @@ export class TriangulationRenderer {
   }
   
   /**
-   * Debug utility: Render triangulation grid wireframe
+   * Debug utility: Get triangulation wireframe data for visualization
+   * Returns data that can be rendered on a separate debug canvas
+   * Note: Do not call this to render on the WebGL canvas as it would create a context conflict
+   * 
    * @param {Array} triangles - Triangle indices
    * @param {Array} positions - Vertex positions
-   * @param {string} color - Line color (hex)
-   * @param {number} lineWidth - Line width (default: 1)
+   * @returns {Object} Wireframe data {edges: [[x1, y1, x2, y2], ...], triangleCount: number}
    */
-  renderDebugWireframe(triangles, positions, color = '#00ff00', lineWidth = 1) {
+  getDebugWireframeData(triangles, positions) {
     if (!triangles || !positions || triangles.length === 0) {
       console.warn('[TriangulationRenderer] No triangulation data for debug wireframe');
-      return;
+      return { edges: [], triangleCount: 0 };
     }
     
-    console.log(`[TriangulationRenderer] Rendering debug wireframe: ${triangles.length} triangles`);
+    console.log(`[TriangulationRenderer] Generating debug wireframe data: ${triangles.length} triangles`);
     
-    // Parse hex color
-    const r = parseInt(color.slice(1, 3), 16) / 255;
-    const g = parseInt(color.slice(3, 5), 16) / 255;
-    const b = parseInt(color.slice(5, 7), 16) / 255;
+    const edges = [];
     
-    // Use canvas 2D context for wireframe (simpler than WebGL lines)
-    const ctx = this.canvas.getContext('2d', { willReadFrequently: false });
-    if (!ctx) {
-      console.warn('[TriangulationRenderer] Cannot get 2D context for debug wireframe');
-      return;
-    }
-    
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
-    
-    // Draw each triangle
+    // Extract edges from each triangle
     for (const tri of triangles) {
       const [i0, i1, i2] = tri;
       
@@ -422,14 +417,13 @@ export class TriangulationRenderer {
         continue;
       }
       
-      ctx.beginPath();
-      ctx.moveTo(p0.x, p0.y);
-      ctx.lineTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.closePath();
-      ctx.stroke();
+      // Add three edges of the triangle
+      edges.push([p0.x, p0.y, p1.x, p1.y]);
+      edges.push([p1.x, p1.y, p2.x, p2.y]);
+      edges.push([p2.x, p2.y, p0.x, p0.y]);
     }
     
-    console.log('[TriangulationRenderer] Debug wireframe rendered');
+    console.log('[TriangulationRenderer] Debug wireframe data generated:', edges.length, 'edges');
+    return { edges, triangleCount: triangles.length };
   }
 }
