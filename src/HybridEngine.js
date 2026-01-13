@@ -214,9 +214,6 @@ export class HybridEngine extends ParticleEngine {
     const mode = this.triangulationConfig.mode;
     const particles = this.particleSystem.getParticles();
     
-    // Clear canvas
-    this.renderer.clear(0, 0, 0, 1);
-    
     // Render triangulation (if enabled and active)
     if (this.triangulationConfig.enabled && 
         (mode === 'triangulation' || mode === 'hybrid') &&
