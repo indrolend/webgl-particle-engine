@@ -21,6 +21,9 @@ export class KeyPointManager {
     const points = [];
     
     // Use width-1 and height-1 to stay within image bounds for texture sampling
+    // This prevents out-of-bounds texture reads but may slightly shrink the visible area.
+    // Trade-off: Ensures all pixels are within [0, width-1] x [0, height-1] bounds,
+    // which is important for proper texture coordinate normalization (0-1 range).
     const maxX = width - 1;
     const maxY = height - 1;
     

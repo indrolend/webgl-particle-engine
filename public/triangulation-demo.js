@@ -230,6 +230,12 @@ function handleGridSizeChange() {
  */
 function handleMethodChange() {
     const method = keyPointMethodSelect.value;
+    const methodValue = document.getElementById('methodValue');
+    
+    // Update displayed value
+    if (methodValue) {
+        methodValue.textContent = method.charAt(0).toUpperCase() + method.slice(1);
+    }
     
     if (engine) {
         engine.updateTriangulationConfig({ keyPointMethod: method });
