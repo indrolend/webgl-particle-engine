@@ -369,6 +369,22 @@
             </div>
 
             <div>
+                <h2>🎭 Behavior Mode</h2>
+                
+                <div class="control-group">
+                    <select id="behaviorMode" onchange="changeBehaviorMode()">
+                        <option value="none">None (Default)</option>
+                        <option value="attraction">Attraction</option>
+                        <option value="repulsion">Repulsion</option>
+                        <option value="randomDrift">Random Drift</option>
+                        <option value="rotation">Rotation</option>
+                        <option value="cyclone">Cyclone</option>
+                        <option value="color">Color Cycle</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
                 <h2>🎯 Transition Targets</h2>
                 
                 <div class="button-group">
@@ -418,6 +434,14 @@
     <script type="module">
         import { ParticleEngine } from './src/ParticleEngine.js';
         import { ViewTransitionsHelper, integrateViewTransitions } from './src/ViewTransitionsHelper.js';
+        import { 
+            AttractionBehavior, 
+            RepulsionBehavior, 
+            RandomDriftBehavior, 
+            RotationBehavior, 
+            CycloneBehavior, 
+            ColorBehavior 
+        } from './src/ParticleBehaviors.js';
 
         let engine = null;
         const canvas = document.getElementById('particleCanvas');
@@ -675,6 +699,52 @@
                 engine.transition(targetId, 2000);
             }
         }
+
+        // Behavior mode change handler
+        window.changeBehaviorMode = function() {
+            if (!engine) {
+                console.warn('Engine not initialized');
+                return;
+            }
+
+            const mode = document.getElementById('behaviorMode').value;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Clear existing behaviors
+            engine.clearBehaviors();
+
+            switch (mode) {
+                case 'attraction':
+                    console.log('Enabling Attraction behavior');
+                    engine.addBehavior(new AttractionBehavior(centerX, centerY, 30, 400));
+                    break;
+                case 'repulsion':
+                    console.log('Enabling Repulsion behavior');
+                    engine.addBehavior(new RepulsionBehavior(centerX, centerY, 50, 300));
+                    break;
+                case 'randomDrift':
+                    console.log('Enabling Random Drift behavior');
+                    engine.addBehavior(new RandomDriftBehavior(5));
+                    break;
+                case 'rotation':
+                    console.log('Enabling Rotation behavior');
+                    engine.addBehavior(new RotationBehavior(centerX, centerY, 0.3));
+                    break;
+                case 'cyclone':
+                    console.log('Enabling Cyclone behavior');
+                    engine.addBehavior(new CycloneBehavior(centerX, centerY, 30, 400));
+                    break;
+                case 'color':
+                    console.log('Enabling Color Cycle behavior');
+                    engine.addBehavior(new ColorBehavior());
+                    break;
+                case 'none':
+                default:
+                    console.log('No behavior active');
+                    break;
+            }
+        };
 
         // Auto-initialize on page load
         window.addEventListener('DOMContentLoaded', () => {
