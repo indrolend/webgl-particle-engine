@@ -112,6 +112,8 @@
             initBtn.disabled = true;
             morphBtn.disabled = false;
             
+            // Wait for convergence animation to complete
+            // CONVERGENCE_DURATION_MS (3000) + 500ms buffer
             setTimeout(() => {
                 updateStatus('Particles converged! Ready to morph.');
             }, 3500);

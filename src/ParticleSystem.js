@@ -39,7 +39,9 @@ export class ParticleSystem {
     this.DISPERSAL_DISTANCE_MULTIPLIER = 50; // How far particles scatter initially
     this.NOISE_COORDINATE_SCALE = 0.1; // Scale factor for noise coordinate calculation
     
-    // Noise generation constant (large prime-like number for good distribution)
+    // Noise generation constant
+    // Large prime-like number commonly used in shader noise functions
+    // Provides good pseudo-random distribution when used with sine function
     this.NOISE_MULTIPLIER = 43758.5453123;
     
     console.log('[ParticleSystem] Initialized with config:', this.config);
@@ -186,8 +188,13 @@ export class ParticleSystem {
   }
 
   /**
-   * Simple noise function for pseudo-random values
-   * Used for particle dispersal and transition timing
+   * Simple 1D Perlin-like noise function for pseudo-random values
+   * 
+   * Used for particle dispersal and transition timing to create organic,
+   * smooth variations in particle behavior.
+   * 
+   * @param {number} p - Input coordinate for noise generation
+   * @returns {number} Smooth interpolated noise value between 0 and 1
    */
   noise(p) {
     const fl = Math.floor(p);
@@ -198,7 +205,13 @@ export class ParticleSystem {
   }
 
   /**
-   * Pseudo-random number generator for consistent noise
+   * Deterministic pseudo-random number generator based on sine function
+   * 
+   * Produces consistent, repeatable random-looking values for the same input.
+   * Used as a building block for the noise function.
+   * 
+   * @param {number} n - Seed value for random generation
+   * @returns {number} Pseudo-random value between 0 and 1
    */
   rand(n) {
     return Math.abs(Math.sin(n * this.NOISE_MULTIPLIER));
@@ -596,11 +609,13 @@ export class ParticleSystem {
         const duration = this.TRANSITION_ACTIVE_DURATION; // Active transition duration
         const delay = particle.transitionDelay || 0; // Delay based on noise
         const end = delay + duration;
+        const durationDelta = end - delay;
         
         // Smoothstep function for smooth acceleration/deceleration
-        const rawProgress = Math.max(0, Math.min(1, 
-          (this.transitionProgress - delay) / (end - delay)
-        ));
+        // Guard against division by zero
+        const rawProgress = durationDelta > 0 
+          ? Math.max(0, Math.min(1, (this.transitionProgress - delay) / durationDelta))
+          : 1; // If no duration, consider it complete
         
         // Apply easing to the particle's individual progress
         const particleProgress = this.smoothStep(rawProgress);
