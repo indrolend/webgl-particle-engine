@@ -29,6 +29,14 @@ export class ParticleSystem {
     this.IMAGE_PADDING_FACTOR = 0.9; // 90% to add padding
     this.PARTICLE_DISTRIBUTION_OFFSET = 2;
     
+    // Transition timing constants
+    this.TRANSITION_ACTIVE_DURATION = 0.6; // 60% active movement window
+    this.TRANSITION_MAX_DELAY = 0.4; // 40% maximum delay for staggered effect
+    this.TRANSITION_INTERPOLATION_BOOST = 2; // Multiplier for more responsive transitions
+    
+    // Noise generation constant (large prime-like number for good distribution)
+    this.NOISE_MULTIPLIER = 43758.5453123;
+    
     console.log('[ParticleSystem] Initialized with config:', this.config);
   }
 
@@ -188,7 +196,7 @@ export class ParticleSystem {
    * Pseudo-random number generator for consistent noise
    */
   rand(n) {
-    return Math.abs(Math.sin(n * 43758.5453123) % 1.0);
+    return Math.abs(Math.sin(n * this.NOISE_MULTIPLIER) % 1.0);
   }
 
   /**
@@ -199,8 +207,8 @@ export class ParticleSystem {
     const multiplier = 50; // Distance factor for dispersal
     
     // Create directional variation based on position
-    const modX = (x % 2) > 1 ? 1 : -1;
-    const modY = (y % 2) > 1 ? 1 : -1;
+    const modX = (x % 2) >= 1 ? 1 : -1;
+    const modY = (y % 2) >= 1 ? 1 : -1;
     
     // Use noise for organic dispersal pattern
     const noiseX = this.noise(x * 0.1) * multiplier * modX;
@@ -430,7 +438,7 @@ export class ParticleSystem {
         
         // Update noise value and delay for staggered effect
         particle.noiseValue = this.noise(pixel.x * 0.1 + pixel.y * 0.1);
-        particle.transitionDelay = particle.noiseValue * 0.4; // 40% of transition can be delay
+        particle.transitionDelay = particle.noiseValue * this.TRANSITION_MAX_DELAY;
       }
     } else {
       // Equal or fewer particles than pixels: direct 1-to-1 mapping
@@ -455,7 +463,7 @@ export class ParticleSystem {
         
         // Update noise value and delay for staggered effect
         particle.noiseValue = this.noise(pixel.x * 0.1 + pixel.y * 0.1);
-        particle.transitionDelay = particle.noiseValue * 0.4; // 40% of transition can be delay
+        particle.transitionDelay = particle.noiseValue * this.TRANSITION_MAX_DELAY;
       }
     }
     
@@ -573,7 +581,7 @@ export class ParticleSystem {
       if (this.isTransitioning) {
         // Calculate per-particle progress with staggered delay
         // This creates a wave-like transition effect
-        const duration = 0.6; // Active transition duration (60% of total)
+        const duration = this.TRANSITION_ACTIVE_DURATION; // Active transition duration
         const delay = particle.transitionDelay || 0; // Delay based on noise
         const end = delay + duration;
         
@@ -588,8 +596,8 @@ export class ParticleSystem {
         // Enhanced easing for smoother transitions
         const t = this.easeInOutCubic(particleProgress);
         
-        // Adaptive interpolation with stronger effect during transition
-        const factor = t * this.INTERPOLATION_FACTOR * 2; // Double factor for more responsive movement
+        // Adaptive interpolation with configurable boost for responsive movement
+        const factor = t * this.INTERPOLATION_FACTOR * this.TRANSITION_INTERPOLATION_BOOST;
         
         // Interpolate position with enhanced smoothness
         particle.x = particle.x + (particle.targetX - particle.x) * factor;
