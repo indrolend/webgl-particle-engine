@@ -20,6 +20,7 @@ export class ParticleSystem {
     // Transition and animation constants for image morphing optimization
     this.INTERPOLATION_FACTOR = 0.15;        // Enhanced from 0.1 for smoother convergence
     this.DRIFT_FACTOR = 0.1;                 // Reduced drift to maintain image structure
+    this.MIN_INITIAL_VELOCITY_RANGE = 0.5;   // Minimal initial velocity for stable display
     
     // Image processing constants
     this.MIN_GRID_DIMENSION = 10;
@@ -286,8 +287,8 @@ export class ParticleSystem {
       
       this.particles.push(this.createParticle(
         x, y, 
-        (Math.random() - 0.5) * 0.5,  // Minimal x velocity
-        (Math.random() - 0.5) * 0.5,  // Minimal y velocity
+        (Math.random() - 0.5) * this.MIN_INITIAL_VELOCITY_RANGE,  // Minimal x velocity
+        (Math.random() - 0.5) * this.MIN_INITIAL_VELOCITY_RANGE,  // Minimal y velocity
         {
           r: pixel.r,
           g: pixel.g,

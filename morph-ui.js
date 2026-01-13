@@ -20,6 +20,13 @@
 import { ParticleEngine } from './webgl-engine.js';
 
 // ============================================================================
+// Configuration Constants
+// ============================================================================
+const PARTICLE_COUNT = 2000;           // Optimized for detailed image representation
+const TRANSITION_DURATION = 2000;      // Milliseconds for smooth image morphing
+const STATUS_UPDATE_DELAY = 2100;      // Delay for status message after transition
+
+// ============================================================================
 // State Management - Image Morphing Only
 // ============================================================================
 // This application maintains state for exactly two images and tracks which
@@ -112,8 +119,8 @@ function handleImageUpload(event, previewContainer, imageIndex) {
 /**
  * Initialize WebGL particle engine optimized for image morphing
  * 
- * Configuration is specifically tuned for high-quality image transitions:
- * - 2000 particles for detailed image representation
+ * Configuration uses constants defined at module level for consistency:
+ * - PARTICLE_COUNT (2000) for detailed image representation
  * - Speed 1.0 for smooth, natural transitions
  * - autoResize disabled to maintain consistent image aspect ratios
  */
@@ -122,9 +129,9 @@ function initializeEngine() {
         console.log('[MorphUI] Initializing particle engine for image morphing...');
         
         engine = new ParticleEngine(canvas, {
-            particleCount: 2000,      // Optimized for detailed image representation
-            speed: 1.0,               // Balanced speed for smooth transitions
-            autoResize: false         // Fixed size to preserve image aspect ratios
+            particleCount: PARTICLE_COUNT,  // Use constant for consistency
+            speed: 1.0,                     // Balanced speed for smooth transitions
+            autoResize: false               // Fixed size to preserve image aspect ratios
         });
         
         console.log('[MorphUI] Engine initialized successfully');
@@ -175,22 +182,22 @@ function handleMorphClick() {
         // Transition from Image 1 to Image 2
         console.log('[MorphUI] Transitioning to Image 2...');
         showStatus('Morphing to Image 2...', 'info');
-        engine.transitionToImage(image2, 2000);  // 2s transition for smoothness
+        engine.transitionToImage(image2, TRANSITION_DURATION);
         currentImageIndex = 1;
         
         setTimeout(() => {
             showStatus('Transition to Image 2 complete! Click "Morph" to go back.', 'success');
-        }, 2100);
+        }, STATUS_UPDATE_DELAY);
     } else {
         // Transition from Image 2 back to Image 1
         console.log('[MorphUI] Transitioning back to Image 1...');
         showStatus('Morphing back to Image 1...', 'info');
-        engine.transitionToImage(image1, 2000);  // 2s transition for smoothness
+        engine.transitionToImage(image1, TRANSITION_DURATION);
         currentImageIndex = 0;
         
         setTimeout(() => {
             showStatus('Transition to Image 1 complete! Click "Morph" to switch again.', 'success');
-        }, 2100);
+        }, STATUS_UPDATE_DELAY);
     }
 }
 
