@@ -1,14 +1,33 @@
 /**
- * Morph UI - User Interface Logic for Image Morphing
- * Handles image uploads, validation, and morph button events
+ * Morph UI - Dedicated Image Morphing Interface
+ * 
+ * This module provides a streamlined, image-focused interface for creating
+ * seamless particle-based transitions between two images. It is specifically
+ * designed to handle only image-to-image morphing, without extending to
+ * other website elements like pages, menus, or sections.
+ * 
+ * Key Features:
+ * - Image upload and validation
+ * - WebGL particle initialization from images
+ * - Smooth bidirectional transitions between two images
+ * - Real-time status feedback
+ * 
+ * Workflow:
+ * 1. User uploads two images
+ * 2. First click initializes particles from Image 1
+ * 3. Subsequent clicks toggle smooth transitions between the images
  */
 import { ParticleEngine } from './webgl-engine.js';
 
-// State management
-let image1 = null;
-let image2 = null;
-let engine = null;
-let currentImageIndex = 0; // 0 = image1, 1 = image2
+// ============================================================================
+// State Management - Image Morphing Only
+// ============================================================================
+// This application maintains state for exactly two images and tracks which
+// image is currently displayed. No pattern-based states are maintained.
+let image1 = null;                  // First uploaded image
+let image2 = null;                  // Second uploaded image
+let engine = null;                  // WebGL particle engine instance
+let currentImageIndex = 0;          // Current display: 0 = image1, 1 = image2
 
 // DOM elements
 const image1Input = document.getElementById('image1Input');
@@ -91,16 +110,21 @@ function handleImageUpload(event, previewContainer, imageIndex) {
 }
 
 /**
- * Initialize WebGL particle engine
+ * Initialize WebGL particle engine optimized for image morphing
+ * 
+ * Configuration is specifically tuned for high-quality image transitions:
+ * - 2000 particles for detailed image representation
+ * - Speed 1.0 for smooth, natural transitions
+ * - autoResize disabled to maintain consistent image aspect ratios
  */
 function initializeEngine() {
     try {
-        console.log('[MorphUI] Initializing particle engine...');
+        console.log('[MorphUI] Initializing particle engine for image morphing...');
         
         engine = new ParticleEngine(canvas, {
-            particleCount: 2000,
-            speed: 1.0,
-            autoResize: false
+            particleCount: 2000,      // Optimized for detailed image representation
+            speed: 1.0,               // Balanced speed for smooth transitions
+            autoResize: false         // Fixed size to preserve image aspect ratios
         });
         
         console.log('[MorphUI] Engine initialized successfully');
@@ -113,23 +137,30 @@ function initializeEngine() {
 }
 
 /**
- * Handle morph button click
+ * Handle morph button click - Core image transition logic
+ * 
+ * This function orchestrates the image morphing workflow:
+ * 1. First click: Initialize particles from Image 1
+ * 2. Subsequent clicks: Toggle between Image 1 and Image 2
+ * 
+ * All transitions use a 2000ms duration for smooth, visually appealing morphs.
+ * The function only handles image-to-image transitions, never patterns.
  */
 function handleMorphClick() {
     console.log('[MorphUI] Morph button clicked');
     
+    // Safety check: ensure both images are loaded
     if (!image1 || !image2) {
         showStatus('Please upload both images first.', 'error');
         return;
     }
     
-    // Initialize engine on first click
+    // First-time initialization: Create engine and load Image 1
     if (!engine) {
         if (!initializeEngine()) {
             return;
         }
         
-        // Initialize particles from first image
         console.log('[MorphUI] Initializing particles from Image 1...');
         engine.initializeFromImage(image1);
         engine.start();
@@ -139,20 +170,22 @@ function handleMorphClick() {
         return;
     }
     
-    // Toggle between images
+    // Toggle between the two images with smooth transitions
     if (currentImageIndex === 0) {
+        // Transition from Image 1 to Image 2
         console.log('[MorphUI] Transitioning to Image 2...');
         showStatus('Morphing to Image 2...', 'info');
-        engine.transitionToImage(image2, 2000);
+        engine.transitionToImage(image2, 2000);  // 2s transition for smoothness
         currentImageIndex = 1;
         
         setTimeout(() => {
             showStatus('Transition to Image 2 complete! Click "Morph" to go back.', 'success');
         }, 2100);
     } else {
+        // Transition from Image 2 back to Image 1
         console.log('[MorphUI] Transitioning back to Image 1...');
         showStatus('Morphing back to Image 1...', 'info');
-        engine.transitionToImage(image1, 2000);
+        engine.transitionToImage(image1, 2000);  // 2s transition for smoothness
         currentImageIndex = 0;
         
         setTimeout(() => {
