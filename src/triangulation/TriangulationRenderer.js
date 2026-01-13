@@ -82,8 +82,9 @@ export class TriangulationRenderer {
         // Clamp texture coordinates to valid range [0, 1] to prevent artifacts
         vec2 clampedCoord = clamp(v_texCoord, 0.0, 1.0);
         
-        // Check for invalid coordinates (NaN or out of reasonable bounds)
-        if (any(isnan(v_texCoord)) || any(lessThan(v_texCoord, vec2(-0.1))) || any(greaterThan(v_texCoord, vec2(1.1)))) {
+        // Check for invalid coordinates (out of reasonable bounds)
+        // Note: NaN checks not available in WebGL 1.0, but clamping handles most cases
+        if (any(lessThan(v_texCoord, vec2(-0.1))) || any(greaterThan(v_texCoord, vec2(1.1)))) {
           // Render neutral gray for invalid coordinates instead of black
           gl_FragColor = vec4(0.5, 0.5, 0.5, u_alpha * 0.3);
         } else {
