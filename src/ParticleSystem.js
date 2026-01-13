@@ -33,6 +33,11 @@ export class ParticleSystem {
     this.TRANSITION_ACTIVE_DURATION = 0.6; // 60% active movement window
     this.TRANSITION_MAX_DELAY = 0.4; // 40% maximum delay for staggered effect
     this.TRANSITION_INTERPOLATION_BOOST = 2; // Multiplier for more responsive transitions
+    this.CONVERGENCE_DURATION_MS = 3000; // Initial convergence animation duration
+    
+    // Dispersal effect constants
+    this.DISPERSAL_DISTANCE_MULTIPLIER = 50; // How far particles scatter initially
+    this.NOISE_COORDINATE_SCALE = 0.1; // Scale factor for noise coordinate calculation
     
     // Noise generation constant (large prime-like number for good distribution)
     this.NOISE_MULTIPLIER = 43758.5453123;
@@ -204,20 +209,27 @@ export class ParticleSystem {
    * Particles start from far away positions and converge to form images
    */
   calculateDispersedPosition(x, y, width, height) {
-    const multiplier = 50; // Distance factor for dispersal
-    
     // Create directional variation based on position
     const modX = (x % 2) >= 1 ? 1 : -1;
     const modY = (y % 2) >= 1 ? 1 : -1;
     
     // Use noise for organic dispersal pattern
-    const noiseX = this.noise(x * 0.1) * multiplier * modX;
-    const noiseY = this.noise(y * 0.1) * multiplier * modY;
+    const noiseX = this.noise(x * this.NOISE_COORDINATE_SCALE) * this.DISPERSAL_DISTANCE_MULTIPLIER * modX;
+    const noiseY = this.noise(y * this.NOISE_COORDINATE_SCALE) * this.DISPERSAL_DISTANCE_MULTIPLIER * modY;
     
     return {
       x: x + noiseX,
       y: y + noiseY
     };
+  }
+
+  /**
+   * Calculate noise-based transition delay for a particle
+   * Used to create staggered, wave-like transitions
+   */
+  calculateParticleTransitionDelay(pixel) {
+    const noiseValue = this.noise(pixel.x * this.NOISE_COORDINATE_SCALE + pixel.y * this.NOISE_COORDINATE_SCALE);
+    return noiseValue * this.TRANSITION_MAX_DELAY;
   }
 
   /**
@@ -344,7 +356,7 @@ export class ParticleSystem {
       );
       
       // Generate noise value for this particle (used for transition delay)
-      const noiseValue = this.noise(pixel.x * 0.1 + pixel.y * 0.1);
+      const noiseValue = this.noise(pixel.x * this.NOISE_COORDINATE_SCALE + pixel.y * this.NOISE_COORDINATE_SCALE);
       
       this.particles.push(this.createParticle(
         dispersed.x, dispersed.y,  // Start from dispersed position
@@ -371,7 +383,7 @@ export class ParticleSystem {
     // Automatically start transition to converge particles into image
     console.log(`[ParticleSystem] Created ${this.particles.length} dispersed particles`);
     console.log('[ParticleSystem] Starting automatic convergence transition...');
-    this._startTransition(3000); // 3 second convergence
+    this._startTransition(this.CONVERGENCE_DURATION_MS);
   }
 
   /**
@@ -437,7 +449,7 @@ export class ParticleSystem {
         particle.targetB = pixel.b;
         
         // Update noise value and delay for staggered effect
-        particle.noiseValue = this.noise(pixel.x * 0.1 + pixel.y * 0.1);
+        particle.noiseValue = this.noise(pixel.x * this.NOISE_COORDINATE_SCALE + pixel.y * this.NOISE_COORDINATE_SCALE);
         particle.transitionDelay = particle.noiseValue * this.TRANSITION_MAX_DELAY;
       }
     } else {
@@ -462,7 +474,7 @@ export class ParticleSystem {
         particle.targetB = pixel.b;
         
         // Update noise value and delay for staggered effect
-        particle.noiseValue = this.noise(pixel.x * 0.1 + pixel.y * 0.1);
+        particle.noiseValue = this.noise(pixel.x * this.NOISE_COORDINATE_SCALE + pixel.y * this.NOISE_COORDINATE_SCALE);
         particle.transitionDelay = particle.noiseValue * this.TRANSITION_MAX_DELAY;
       }
     }
