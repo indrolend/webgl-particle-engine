@@ -54,6 +54,13 @@ else
   exit 1
 fi
 
+if [ -f src/ParticleBehaviors.js ]; then
+  cp src/ParticleBehaviors.js public/src/
+else
+  echo "Warning: src/ParticleBehaviors.js not found"
+  exit 1
+fi
+
 # Copy presets directory
 echo "Copying presets directory..."
 mkdir -p public/src/presets
