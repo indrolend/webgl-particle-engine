@@ -38,7 +38,9 @@ php -S localhost:8000
 
 3. Open your browser and navigate to:
 ```
-http://localhost:8000/debug.html
+http://localhost:8000/morph.html    # Simple image morphing interface
+http://localhost:8000/debug.html    # Full debug interface
+http://localhost:8000/index.html    # Landing page
 ```
 
 ## 📖 Usage
@@ -296,6 +298,27 @@ The debug interface (`debug.html`) includes a dedicated **Image Upload** section
 3. Initialize particles from Image 1
 4. Smoothly transition to Image 2
 5. View debug logs showing extraction and particle creation details
+
+## 🎨 Image Morph Interface
+
+The `morph.html` file provides a simple, focused interface specifically for image morphing:
+
+### Features:
+- **Dual Image Upload**: Upload two images with live preview
+- **One-Click Morphing**: Single "Morph" button to toggle between images
+- **Smooth Transitions**: 2-second particle transitions with WebGL rendering
+- **Status Messages**: Real-time feedback on upload and transition status
+- **Clean UI**: Minimalist, centered design for optimal user experience
+
+### Usage:
+1. Open `morph.html` in your browser
+2. Click "Choose Image 1" and select your first image
+3. Click "Choose Image 2" and select your second image
+4. Click the "Morph ✨" button to initialize particles from Image 1
+5. Click "Morph" again to transition to Image 2
+6. Keep clicking to toggle between the two images
+
+The interface uses 2000 particles by default for smooth, high-quality morphing effects. The WebGL engine automatically handles image scaling, aspect ratio preservation, and particle distribution.
 
 ## 🎮 Debug Interface
 
