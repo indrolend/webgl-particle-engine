@@ -17,8 +17,10 @@ export class ParticleSystem {
     this.isTransitioning = false;
     this.transitionProgress = 0;
     
-    // Interpolation factor for smooth transitions
-    this.INTERPOLATION_FACTOR = 0.1;
+    // Transition and animation constants for image morphing optimization
+    this.INTERPOLATION_FACTOR = 0.15;        // Enhanced from 0.1 for smoother convergence
+    this.DRIFT_FACTOR = 0.1;                 // Reduced drift to maintain image structure
+    this.MIN_INITIAL_VELOCITY_RANGE = 0.5;   // Minimal initial velocity for stable display
     
     // Image processing constants
     this.MIN_GRID_DIMENSION = 10;
@@ -166,49 +168,58 @@ export class ParticleSystem {
   }
 
   /**
-   * Extract pixel data from an image
-   * @param {HTMLImageElement} image - The image element
+   * Extract pixel data from an image with optimized sampling for particle representation
+   * 
+   * This method intelligently samples images to create high-quality particle formations:
+   * - Maintains aspect ratio for accurate image representation
+   * - Optimizes grid size based on particle count for efficiency
+   * - Filters low-opacity pixels to focus on visible content
+   * - Preserves color fidelity for seamless transitions
+   * 
+   * @param {HTMLImageElement} image - The source image element
    * @param {number} maxParticles - Maximum number of particles to create
-   * @returns {Object} - Contains pixels array and dimensions
+   * @returns {Object} Contains pixels array and image dimensions
    */
   extractImageData(image, maxParticles = 5000) {
-    console.log('[ParticleSystem] Extracting image data...');
+    console.log('[ParticleSystem] Extracting image data for particle mapping...');
     
-    // Create offscreen canvas
+    // Create offscreen canvas for image processing
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // Calculate grid dimensions to limit particle count
+    // Calculate optimal grid dimensions to match particle count while maintaining aspect ratio
     const aspectRatio = image.width / image.height;
     let gridWidth, gridHeight;
     
     if (aspectRatio >= 1) {
-      // Landscape or square
+      // Landscape or square: scale width first
       gridWidth = Math.floor(Math.sqrt(maxParticles * aspectRatio));
       gridHeight = Math.floor(gridWidth / aspectRatio);
     } else {
-      // Portrait
+      // Portrait: scale height first
       gridHeight = Math.floor(Math.sqrt(maxParticles / aspectRatio));
       gridWidth = Math.floor(gridHeight * aspectRatio);
     }
     
-    // Ensure minimum dimensions
+    // Enforce dimension constraints for optimal performance and quality
     gridWidth = Math.max(this.MIN_GRID_DIMENSION, Math.min(gridWidth, this.MAX_GRID_DIMENSION));
     gridHeight = Math.max(this.MIN_GRID_DIMENSION, Math.min(gridHeight, this.MAX_GRID_DIMENSION));
     
     canvas.width = gridWidth;
     canvas.height = gridHeight;
     
-    // Draw scaled image
+    // Draw scaled image with high-quality rendering
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(image, 0, 0, gridWidth, gridHeight);
     
-    // Get pixel data
+    // Extract pixel data
     const imageData = ctx.getImageData(0, 0, gridWidth, gridHeight);
     const data = imageData.data;
     
     const pixels = [];
     
-    // Sample pixels from the grid
+    // Sample pixels from the grid, preserving color and position data
     for (let y = 0; y < gridHeight; y++) {
       for (let x = 0; x < gridWidth; x++) {
         const idx = (y * gridWidth + x) * 4;
@@ -217,7 +228,7 @@ export class ParticleSystem {
         const b = data[idx + 2] / 255;
         const a = data[idx + 3] / 255;
         
-        // Only include pixels with sufficient opacity
+        // Only include pixels with sufficient opacity for visible representation
         if (a > this.MIN_OPACITY_THRESHOLD) {
           pixels.push({
             x: x,
@@ -231,7 +242,8 @@ export class ParticleSystem {
       }
     }
     
-    console.log(`[ParticleSystem] Extracted ${pixels.length} pixels from ${gridWidth}x${gridHeight} grid`);
+    console.log(`[ParticleSystem] Extracted ${pixels.length} visible pixels from ${gridWidth}x${gridHeight} grid`);
+    console.log(`[ParticleSystem] Original image: ${image.width}x${image.height}, Aspect ratio: ${aspectRatio.toFixed(2)}`);
     
     return {
       pixels: pixels,
@@ -243,11 +255,15 @@ export class ParticleSystem {
   }
 
   /**
-   * Initialize particles from an image
-   * @param {HTMLImageElement} image - The image element
+   * Initialize particles from an image for the first display
+   * 
+   * This creates the initial particle formation that represents the source image.
+   * Particles are positioned and colored to accurately represent the image pixels.
+   * 
+   * @param {HTMLImageElement} image - The source image element
    */
   initializeFromImage(image) {
-    console.log('[ParticleSystem] Initializing particles from image...');
+    console.log('[ParticleSystem] Initializing particles from image for display...');
     
     const imageData = this.extractImageData(image, this.config.particleCount);
     const pixels = imageData.pixels;
@@ -259,17 +275,20 @@ export class ParticleSystem {
     const scaleY = this.height / imageData.gridHeight;
     const scale = Math.min(scaleX, scaleY) * this.IMAGE_PADDING_FACTOR;
     
-    // Calculate offset to center the image
+    // Calculate offset to center the image on canvas
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
     
+    // Create particles with minimal initial velocity for stable image display
     for (let i = 0; i < pixels.length; i++) {
       const pixel = pixels[i];
       const x = offsetX + pixel.x * scale;
       const y = offsetY + pixel.y * scale;
       
       this.particles.push(this.createParticle(
-        x, y, 0, 0,
+        x, y, 
+        (Math.random() - 0.5) * this.MIN_INITIAL_VELOCITY_RANGE,  // Minimal x velocity
+        (Math.random() - 0.5) * this.MIN_INITIAL_VELOCITY_RANGE,  // Minimal y velocity
         {
           r: pixel.r,
           g: pixel.g,
@@ -279,16 +298,23 @@ export class ParticleSystem {
       ));
     }
     
-    console.log(`[ParticleSystem] Created ${this.particles.length} particles from image`);
+    console.log(`[ParticleSystem] Created ${this.particles.length} particles representing the image`);
   }
 
   /**
-   * Transition particles to an image
-   * @param {HTMLImageElement} image - The target image element
-   * @param {number} duration - Transition duration in milliseconds
+   * Transition particles to a target image with seamless morphing
+   * 
+   * This method creates smooth, visually appealing transitions between images by:
+   * - Mapping particles to target image pixels
+   * - Interpolating both position and color
+   * - Handling particle count mismatches gracefully
+   * - Maintaining aspect ratio and centering
+   * 
+   * @param {HTMLImageElement} image - The target image to morph into
+   * @param {number} duration - Transition duration in milliseconds (default: 2000ms)
    */
   transitionToImage(image, duration = 2000) {
-    console.log(`[ParticleSystem] Starting transition to image (${duration}ms)...`);
+    console.log(`[ParticleSystem] Starting seamless transition to target image (${duration}ms)...`);
     
     this._startTransition(duration);
     
@@ -300,13 +326,14 @@ export class ParticleSystem {
     const scaleY = this.height / imageData.gridHeight;
     const scale = Math.min(scaleX, scaleY) * this.IMAGE_PADDING_FACTOR;
     
-    // Calculate offset to center the image
+    // Calculate offset to center the target image
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
     
-    // If we have more particles than pixels, distribute them
+    // Handle particle-to-pixel mapping for seamless transitions
     if (this.particles.length > pixels.length) {
-      console.log(`[ParticleSystem] More particles (${this.particles.length}) than pixels (${pixels.length}), distributing...`);
+      // More particles than pixels: distribute particles across available pixels
+      console.log(`[ParticleSystem] Distributing ${this.particles.length} particles across ${pixels.length} pixels...`);
       
       for (let i = 0; i < this.particles.length; i++) {
         const particle = this.particles[i];
@@ -316,8 +343,14 @@ export class ParticleSystem {
         const x = offsetX + pixel.x * scale;
         const y = offsetY + pixel.y * scale;
         
-        // Add slight random offset when reusing pixels
-        const randomOffset = (i / pixels.length) * this.PARTICLE_DISTRIBUTION_OFFSET;
+        // Distribute particles with increasing offsets to avoid stacking
+        // Logic: When we have more particles than pixels, we cycle through pixels
+        // For each "round" through the pixel array, increase the random offset
+        // Example: particles 0-999 use pixels 0-499 with offset 0
+        //          particles 1000-1999 use pixels 0-499 with offset 2
+        //          particles 2000-2999 use pixels 0-499 with offset 4, etc.
+        const distributionFactor = Math.floor(i / pixels.length);  // Which "round" through pixels
+        const randomOffset = distributionFactor * this.PARTICLE_DISTRIBUTION_OFFSET;
         
         particle.targetX = x + (Math.random() - 0.5) * randomOffset;
         particle.targetY = y + (Math.random() - 0.5) * randomOffset;
@@ -326,7 +359,9 @@ export class ParticleSystem {
         particle.targetB = pixel.b;
       }
     } else {
-      // Map particles to pixels
+      // Equal or fewer particles than pixels: direct 1-to-1 mapping
+      console.log(`[ParticleSystem] Mapping ${this.particles.length} particles to image pixels...`);
+      
       for (let i = 0; i < this.particles.length; i++) {
         const particle = this.particles[i];
         const pixel = pixels[i];
@@ -341,6 +376,8 @@ export class ParticleSystem {
         particle.targetB = pixel.b;
       }
     }
+    
+    console.log('[ParticleSystem] Target positions and colors set for seamless morphing');
   }
 
   _startTransition(duration) {
@@ -447,27 +484,31 @@ export class ParticleSystem {
       }
     }
     
-    // Update particles
+    // Update particles with optimized interpolation for image morphing
     for (let i = 0; i < this.particles.length; i++) {
       const particle = this.particles[i];
       
       if (this.isTransitioning) {
-        // Smooth easing function (ease-in-out)
+        // Enhanced easing function for smoother image transitions
+        // Using ease-in-out-cubic provides a more natural, fluid morph effect
         const t = this.easeInOutCubic(this.transitionProgress);
+        
+        // Adaptive interpolation using class constant for consistency
+        // This creates a smooth acceleration and deceleration effect
         const factor = t * this.INTERPOLATION_FACTOR;
         
-        // Interpolate position
+        // Interpolate position with enhanced smoothness
         particle.x = particle.x + (particle.targetX - particle.x) * factor;
         particle.y = particle.y + (particle.targetY - particle.y) * factor;
         
-        // Interpolate color
+        // Interpolate color with synchronized timing for seamless visual transition
         particle.r = particle.r + (particle.targetR - particle.r) * factor;
         particle.g = particle.g + (particle.targetG - particle.g) * factor;
         particle.b = particle.b + (particle.targetB - particle.b) * factor;
       } else {
-        // Free movement
-        particle.x += particle.vx * deltaTime * this.config.speed;
-        particle.y += particle.vy * deltaTime * this.config.speed;
+        // Free movement with reduced drift to maintain image structure
+        particle.x += particle.vx * deltaTime * this.config.speed * this.DRIFT_FACTOR;
+        particle.y += particle.vy * deltaTime * this.config.speed * this.DRIFT_FACTOR;
         
         // Bounce off edges
         if (particle.x < 0 || particle.x > this.width) {
@@ -495,5 +536,125 @@ export class ParticleSystem {
   updateConfig(newConfig) {
     this.config = { ...this.config, ...newConfig };
     console.log('[ParticleSystem] Config updated:', this.config);
+  }
+
+  /**
+   * Generate target positions for a pattern
+   * @param {string} pattern - Pattern name ('grid', 'circle', 'spiral', 'random')
+   * @param {number} count - Number of targets to generate
+   * @returns {Array} Array of target objects {x, y, r, g, b}
+   */
+  generateTargets(pattern, count) {
+    const targets = [];
+    
+    switch (pattern) {
+      case 'grid':
+        const cols = Math.ceil(Math.sqrt(count));
+        const rows = Math.ceil(count / cols);
+        const spacingX = this.width / (cols + 1);
+        const spacingY = this.height / (rows + 1);
+        
+        for (let i = 0; i < count; i++) {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          targets.push({
+            x: spacingX * (col + 1),
+            y: spacingY * (row + 1),
+            r: 0.3 + (col / cols) * 0.7,
+            g: 0.5,
+            b: 0.8 - (row / rows) * 0.5
+          });
+        }
+        break;
+        
+      case 'circle':
+        const centerX = this.width / 2;
+        const centerY = this.height / 2;
+        const radius = Math.min(this.width, this.height) * 0.35;
+        
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2;
+          const hue = i / count;
+          targets.push({
+            x: centerX + Math.cos(angle) * radius,
+            y: centerY + Math.sin(angle) * radius,
+            r: Math.abs(Math.cos(hue * Math.PI * 2)),
+            g: Math.abs(Math.sin(hue * Math.PI * 2)),
+            b: Math.abs(Math.cos(hue * Math.PI * 2 + Math.PI / 2))
+          });
+        }
+        break;
+        
+      case 'spiral':
+        const spiralCenterX = this.width / 2;
+        const spiralCenterY = this.height / 2;
+        const maxRadius = Math.min(this.width, this.height) * 0.4;
+        
+        for (let i = 0; i < count; i++) {
+          const t = i / count;
+          const angle = t * Math.PI * 8;
+          const r = t * maxRadius;
+          targets.push({
+            x: spiralCenterX + Math.cos(angle) * r,
+            y: spiralCenterY + Math.sin(angle) * r,
+            r: 0.8 - t * 0.4,
+            g: 0.4 + t * 0.4,
+            b: 0.9
+          });
+        }
+        break;
+        
+      case 'random':
+      default:
+        for (let i = 0; i < count; i++) {
+          targets.push({
+            x: Math.random() * this.width,
+            y: Math.random() * this.height,
+            r: Math.random() * 0.5 + 0.5,
+            g: Math.random() * 0.5 + 0.3,
+            b: Math.random() * 0.8 + 0.2
+          });
+        }
+        break;
+    }
+    
+    return targets;
+  }
+
+  /**
+   * Convert image data to target array for preset-based transitions
+   * 
+   * This helper method transforms extracted image pixel data into a format
+   * suitable for the preset system's transition mechanisms. It maintains
+   * aspect ratio and proper centering.
+   * 
+   * @param {Object} imageData - Image data object from extractImageData()
+   * @returns {Array} Array of target objects with {x, y, r, g, b} properties
+   */
+  imageDataToTargets(imageData) {
+    const targets = [];
+    const pixels = imageData.pixels;
+    
+    // Calculate scaling to fit canvas while preserving aspect ratio
+    const scaleX = this.width / imageData.gridWidth;
+    const scaleY = this.height / imageData.gridHeight;
+    const scale = Math.min(scaleX, scaleY) * this.IMAGE_PADDING_FACTOR;
+    
+    // Calculate offset to center the image on canvas
+    const offsetX = (this.width - imageData.gridWidth * scale) / 2;
+    const offsetY = (this.height - imageData.gridHeight * scale) / 2;
+    
+    // Transform each pixel into a target position with color
+    for (let pixel of pixels) {
+      targets.push({
+        x: offsetX + pixel.x * scale,
+        y: offsetY + pixel.y * scale,
+        r: pixel.r,
+        g: pixel.g,
+        b: pixel.b
+      });
+    }
+    
+    return targets;
   }
 }

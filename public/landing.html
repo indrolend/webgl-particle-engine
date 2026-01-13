@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Particle Transition Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 800px;
+            padding: 40px;
+            background: rgba(20, 20, 35, 0.8);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        p {
+            font-size: 18px;
+            color: #aaa;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        a {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        a:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .github-link {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .github-link:hover {
+            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.6);
+        }
+
+        .features {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            text-align: left;
+        }
+
+        .feature {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feature h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .feature p {
+            font-size: 14px;
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 36px;
+            }
+
+            p {
+                font-size: 16px;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            a {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="background-canvas"></canvas>
+
+    <div class="content">
+        <h1>🎨 WebGL Particle Engine</h1>
+        <p>
+            A high-performance WebGL-based particle system with smooth animated transitions.
+            Experience hardware-accelerated rendering with multiple patterns and smooth transitions.
+        </p>
+
+        <div class="buttons">
+            <a href="index.html">🎨 Image Morph Demo</a>
+            <a href="debug.html">🚀 Launch Debug Interface</a>
+            <a href="https://github.com/indrolend/webgl-particle-engine" class="github-link">📦 View on GitHub</a>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <h3>⚡ WebGL Powered</h3>
+                <p>Hardware-accelerated rendering for smooth 60 FPS performance</p>
+            </div>
+            <div class="feature">
+                <h3>🎯 Multiple Patterns</h3>
+                <p>Grid, Circle, Spiral, and Random formations</p>
+            </div>
+            <div class="feature">
+                <h3>✨ Smooth Transitions</h3>
+                <p>Animated transitions with easing between patterns</p>
+            </div>
+            <div class="feature">
+                <h3>⚙️ Configurable</h3>
+                <p>Adjustable particle count, speed, and size</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ParticleEngine } from './src/ParticleEngine.js';
+
+        const canvas = document.getElementById('background-canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const engine = new ParticleEngine(canvas, {
+            particleCount: 800,
+            speed: 0.5,
+            autoResize: false
+        });
+
+        engine.initializeParticles('random');
+        engine.start();
+
+        // Cycle through patterns
+        let patternIndex = 0;
+        const patterns = ['grid', 'circle', 'spiral', 'random'];
+        
+        setInterval(() => {
+            patternIndex = (patternIndex + 1) % patterns.length;
+            engine.transition(patterns[patternIndex], 3000);
+        }, 6000);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            engine.resize(canvas.width, canvas.height);
+        });
+    </script>
+</body>
+</html>
