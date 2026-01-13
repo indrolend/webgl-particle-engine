@@ -26,7 +26,14 @@ export class DelaunayTriangulator {
 
     const bl = dx * dx + dy * dy;
     const cl = ex * ex + ey * ey;
-    const d = 0.5 / (dx * ey - dy * ex);
+    const det = dx * ey - dy * ex;
+    
+    // Check for degenerate triangle (collinear points)
+    if (Math.abs(det) < 1e-10) {
+      return null; // Return null for degenerate triangles
+    }
+    
+    const d = 0.5 / det;
 
     const x = ax + (ey * bl - dy * cl) * d;
     const y = ay + (dx * cl - ex * bl) * d;
@@ -100,6 +107,9 @@ export class DelaunayTriangulator {
           allPoints[tri[1]],
           allPoints[tri[2]]
         );
+
+        // Skip degenerate triangles
+        if (circle === null) continue;
 
         if (this.inCircle(point, circle)) {
           badTriangles.push(j);

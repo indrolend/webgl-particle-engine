@@ -234,21 +234,22 @@ export class HybridEngine extends ParticleEngine {
     // Render particles (if enabled)
     if (mode === 'particles' || mode === 'hybrid') {
       // Adjust particle opacity in hybrid mode
-      const originalAlpha = particles.length > 0 ? particles[0].alpha : 1.0;
+      const originalAlphas = new Map();
       
       if (mode === 'hybrid' && this.triangulationConfig.enabled) {
-        // Reduce particle opacity when blending with triangulation
-        particles.forEach(p => {
+        // Store original alpha values and reduce particle opacity when blending with triangulation
+        particles.forEach((p, i) => {
+          originalAlphas.set(i, p.alpha);
           p.alpha = p.alpha * this.triangulationConfig.particleOpacity;
         });
       }
       
       this.renderer.render(particles);
       
-      // Restore original alpha
+      // Restore original alpha values
       if (mode === 'hybrid' && this.triangulationConfig.enabled) {
-        particles.forEach(p => {
-          p.alpha = originalAlpha;
+        particles.forEach((p, i) => {
+          p.alpha = originalAlphas.get(i);
         });
       }
     }
