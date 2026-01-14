@@ -570,10 +570,10 @@ export class HybridTransitionPreset extends Preset {
     // If not in explosion, start from beginning
     if (this.phase === PHASE.IDLE) {
       this.startExplosion(particles, { width: 0, height: 0 });
-    } else if (this.phase === 'explosion') {
+    } else if (this.phase === PHASE.EXPLOSION) {
       // Let explosion finish naturally
       return;
-    } else if (this.phase === 'recombination' || this.phase === PHASE.BLEND) {
+    } else if (this.phase === PHASE.RECOMBINATION || this.phase === PHASE.BLEND) {
       // Already in later phases, adjust targets
       this.startRecombination(particles, targets);
     }
@@ -586,9 +586,9 @@ export class HybridTransitionPreset extends Preset {
   getBlendProgress() {
     if (this.phase === PHASE.BLEND) {
       return this.blendProgress;
-    } else if (this.phase === 'reverseBlend') {
+    } else if (this.phase === PHASE.REVERSE_BLEND) {
       return this.blendProgress; // Already inverted in update
-    } else if (this.phase === 'solidify') {
+    } else if (this.phase === PHASE.SOLIDIFY) {
       return 1.0 - this.blendProgress; // Invert for solidify
     } else if (this.phase === PHASE.SOLIDIFIED) {
       return 1.0; // Full triangulation
