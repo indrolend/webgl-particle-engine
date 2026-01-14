@@ -43,6 +43,7 @@ php -S localhost:8000
 
 3. Open your browser and navigate to:
 ```
+http://localhost:8000/minimal-example.html     # ⚡ Minimal WebGL example - No dependencies, no UI
 http://localhost:8000/                        # 🎨 Main page - Image morphing interface
 http://localhost:8000/index.html              # 🎨 Main page - Image morphing interface (same as above)
 http://localhost:8000/triangulation-demo.html # 🔺 Triangulation morphing demo with hybrid effects
@@ -78,7 +79,24 @@ The **primary focus** of this engine is seamless image-to-image transitions usin
 
 ## 📖 Usage
 
-### Basic Usage
+### Minimal Example (No Dependencies)
+
+For testing WebGL animation without modular dependencies or UI configurations, see [`minimal-example.html`](minimal-example.html).
+
+This standalone example demonstrates:
+- ✅ Pure WebGL particle animation in a single HTML file
+- ✅ No external module dependencies (everything inline)
+- ✅ No complex UI controls or configurations
+- ✅ Self-contained shader code and particle physics
+- ✅ Automatic animation on load
+
+Perfect for:
+- 🧪 Testing WebGL functionality
+- 📚 Learning WebGL particle basics
+- 🔧 Debugging rendering issues
+- 🚀 Quick prototyping
+
+### Basic Usage with Modules
 
 ```html
 <!DOCTYPE html>
@@ -570,6 +588,7 @@ webgl-particle-engine/
 ├── examples/                       # Example implementations
 │   └── school-of-fish-demo.html
 ├── public/                         # Built files for deployment
+├── minimal-example.html            # Minimal WebGL example (no dependencies)
 ├── index.html                      # Main page - Particle morphing interface
 ├── triangulation-demo.html         # Triangulation morphing demo
 ├── morph.html                      # Alternative entry point
