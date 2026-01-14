@@ -446,9 +446,6 @@
                     </div>
 
                     <button id="morphButton" disabled>Start Morph ✨</button>
-                    <button id="hybridTransitionButton" disabled style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                        🌟 Hybrid Transition (Explosion + Blend)
-                    </button>
                 </div>
 
                 <div class="control-group" id="hybridTransitionConfig" style="display: none;">
@@ -493,7 +490,12 @@
                         <button class="mode-btn" id="modeParticles">Particles</button>
                         <button class="mode-btn" id="modeTriangulation">Triangulation</button>
                     </div>
-                    <button class="mode-btn active" id="modeHybrid" style="width: 100%;">Hybrid (Both)</button>
+                </div>
+
+                <div class="control-group">
+                    <button class="mode-btn" id="modeHybrid" disabled style="width: 100%; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        🌟 Hybrid Transition (Explosion + Blend)
+                    </button>
                 </div>
 
                 <div class="control-group">
@@ -694,9 +696,9 @@
                     morphButton.textContent = 'Start Morph ✨';
                     
                     // Enable hybrid transition button
-                    const hybridButton = document.getElementById('hybridTransitionButton');
-                    if (hybridButton) {
-                        hybridButton.disabled = false;
+                    const modeHybrid = document.getElementById('modeHybrid');
+                    if (modeHybrid) {
+                        modeHybrid.disabled = false;
                     }
                     
                     // Show hybrid transition config
@@ -742,36 +744,6 @@
                 morphButton.textContent = 'Morph to Image 2 →';
                 showStatus('Morphing to Image 1...', 'info');
             }
-        });
-
-        // Hybrid Transition button handler
-        const hybridTransitionButton = document.getElementById('hybridTransitionButton');
-        hybridTransitionButton.addEventListener('click', () => {
-            if (!engine || !image1 || !image2) return;
-            
-            // Get configuration values
-            const config = {
-                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
-                explosionTime: parseInt(document.getElementById('explosionTime').value),
-                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value),
-                blendDuration: parseInt(document.getElementById('blendDuration').value),
-                recombinationChaos: 0.3,
-                vacuumStrength: 0.15,
-                particleFadeRate: 0.7
-            };
-            
-            // Initialize with image1 if not already done
-            if (currentImageIndex === 0) {
-                engine.initializeFromImage(image1);
-                currentImageIndex = 1;
-            }
-            
-            // Start the hybrid transition
-            engine.setRenderMode('hybrid');
-            engine.startHybridTransition(image1, image2, config);
-            engine.start();
-            
-            showStatus('🌟 Hybrid transition started: Explosion → Recombination → Blend', 'success');
         });
 
         // Hybrid transition sliders
@@ -821,41 +793,33 @@
         modeParticles.addEventListener('click', () => setRenderMode('particles'));
         modeTriangulation.addEventListener('click', () => setRenderMode('triangulation'));
         
-        // Hybrid button triggers multi-phase hybrid transition when images are loaded
+        // Hybrid Transition button - triggers multi-phase transition (explosion → recombination → blend)
         modeHybrid.addEventListener('click', () => {
-            if (!engine) return;
+            if (!engine || !image1 || !image2) return;
             
-            // If both images are loaded, trigger the hybrid transition
-            if (image1 && image2) {
-                // Get configuration values
-                const config = {
-                    explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
-                    explosionTime: parseInt(document.getElementById('explosionTime').value),
-                    recombinationDuration: parseInt(document.getElementById('recombinationDuration').value),
-                    blendDuration: parseInt(document.getElementById('blendDuration').value),
-                    recombinationChaos: 0.3,
-                    vacuumStrength: 0.15,
-                    particleFadeRate: 0.7
-                };
-                
-                // Initialize with image1 if not already done
-                if (currentImageIndex === 0) {
-                    engine.initializeFromImage(image1);
-                    engine.start();
-                    currentImageIndex = 1;
-                }
-                
-                // Start the hybrid transition
-                engine.startHybridTransition(image1, image2, config);
-                
-                // Update render mode and active button state
-                setRenderMode('hybrid');
-                
-                showStatus('🌟 Hybrid transition started: Explosion → Recombination → Blend', 'success');
-            } else {
-                // If images aren't loaded, just switch render mode
-                setRenderMode('hybrid');
+            // Get configuration values
+            const config = {
+                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
+                explosionTime: parseInt(document.getElementById('explosionTime').value),
+                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value),
+                blendDuration: parseInt(document.getElementById('blendDuration').value),
+                recombinationChaos: 0.3,
+                vacuumStrength: 0.15,
+                particleFadeRate: 0.7
+            };
+            
+            // Initialize with image1 if not already done
+            if (currentImageIndex === 0) {
+                engine.initializeFromImage(image1);
+                engine.start();
+                currentImageIndex = 1;
             }
+            
+            // Start the hybrid transition
+            engine.setRenderMode('hybrid');
+            engine.startHybridTransition(image1, image2, config);
+            
+            showStatus('🌟 Hybrid transition started: Explosion → Recombination → Blend', 'success');
         });
 
         // Triangulation controls
