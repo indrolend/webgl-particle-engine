@@ -142,10 +142,12 @@
 
         // Set up vertex attributes once
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW); // Allocate buffer storage
         gl.enableVertexAttribArray(positionLocation);
         gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, colors, gl.DYNAMIC_DRAW); // Allocate buffer storage
         gl.enableVertexAttribArray(colorLocation);
         gl.vertexAttribPointer(colorLocation, 4, gl.FLOAT, false, 0, 0);
 
@@ -159,12 +161,12 @@
                 p.x += p.vx;
                 p.y += p.vy;
                 
-                // Bounce off edges
-                if (p.x < 0 || p.x > canvas.width) {
+                // Bounce off edges (with proper boundary checks)
+                if (p.x <= 0 || p.x >= canvas.width) {
                     p.vx *= -1;
                     p.x = Math.max(0, Math.min(canvas.width, p.x));
                 }
-                if (p.y < 0 || p.y > canvas.height) {
+                if (p.y <= 0 || p.y >= canvas.height) {
                     p.vy *= -1;
                     p.y = Math.max(0, Math.min(canvas.height, p.y));
                 }
@@ -181,13 +183,13 @@
                 colors[i * 4 + 3] = p.a;
             }
 
-            // Update position buffer
+            // Update position buffer (use bufferSubData for better performance)
             gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, positions);
 
             // Update color buffer
             gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, colors, gl.DYNAMIC_DRAW);
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, colors);
 
             // Clear and render
             gl.clearColor(0.05, 0.05, 0.05, 1.0);
