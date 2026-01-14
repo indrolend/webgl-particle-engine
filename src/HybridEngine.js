@@ -215,16 +215,49 @@ export class HybridEngine extends ParticleEngine {
     const mode = this.triangulationConfig.mode;
     const particles = this.particleSystem.getParticles();
     
-    // Check if HybridTransitionPreset is active and in blend phase
+    // Check if HybridTransitionPreset is active and get current phase info
     let dynamicTriangleOpacity = this.triangulationConfig.triangleOpacity;
     let dynamicParticleOpacity = this.triangulationConfig.particleOpacity;
+    let currentPhase = 'idle';
     
     if (this.presetManager.hasActivePreset()) {
       const activePreset = this.presetManager.getActivePreset();
       if (activePreset && typeof activePreset.getBlendProgress === 'function') {
         const blendProgress = activePreset.getBlendProgress();
-        if (blendProgress > 0) {
-          // During blend phase, increase triangulation opacity as particles fade
+        currentPhase = activePreset.getCurrentPhase ? activePreset.getCurrentPhase() : 'idle';
+        
+        // Adjust opacity based on phase for seamless triangulation integration
+        if (currentPhase === 'explosion') {
+          // Start with triangulation visible, fade to particles
+          dynamicTriangleOpacity = Math.max(0, 1.0 - (Date.now() - activePreset.phaseStartTime) / activePreset.config.explosionTime);
+          dynamicParticleOpacity = Math.min(1.0, (Date.now() - activePreset.phaseStartTime) / (activePreset.config.explosionTime * 0.5));
+        } else if (currentPhase === 'recombination') {
+          // Particles only
+          dynamicTriangleOpacity = 0;
+          dynamicParticleOpacity = 1.0;
+        } else if (currentPhase === 'blend') {
+          // Fade particles, show triangulation
+          dynamicTriangleOpacity = blendProgress;
+          dynamicParticleOpacity = Math.max(0.1, 1.0 - blendProgress * 0.7);
+        } else if (currentPhase === 'solidified') {
+          // Full triangulation
+          dynamicTriangleOpacity = 1.0;
+          dynamicParticleOpacity = 0;
+        } else if (currentPhase === 'reverseBlend') {
+          // Triangulation fades, particles appear
+          dynamicTriangleOpacity = blendProgress;
+          dynamicParticleOpacity = Math.max(0.3, 1.0 - blendProgress * 0.5);
+        } else if (currentPhase === 'reverseRecombination' || currentPhase === 'reverseExplosion') {
+          // Particles only
+          dynamicTriangleOpacity = 0;
+          dynamicParticleOpacity = 1.0;
+        } else if (currentPhase === 'solidify') {
+          // Particles fade, triangulation shows
+          const solidifyProgress = (Date.now() - activePreset.phaseStartTime) / activePreset.config.blendDuration;
+          dynamicTriangleOpacity = Math.min(1.0, solidifyProgress);
+          dynamicParticleOpacity = Math.max(0, 1.0 - solidifyProgress);
+        } else if (blendProgress > 0) {
+          // Fallback for blend progress
           dynamicTriangleOpacity = blendProgress;
           dynamicParticleOpacity = Math.max(0.1, 1.0 - blendProgress * 0.7);
         }
@@ -237,7 +270,8 @@ export class HybridEngine extends ParticleEngine {
         this.triangulationMorph &&
         this.triangulationMorph.isReady() &&
         this.triangulationImages.source &&
-        this.triangulationImages.target) {
+        this.triangulationImages.target &&
+        dynamicTriangleOpacity > 0.01) {
       
       const morphData = this.triangulationMorph.getTriangulationData();
       let progress = this.triangulationTransition.progress;
@@ -260,7 +294,7 @@ export class HybridEngine extends ParticleEngine {
     }
     
     // Render particles (if enabled)
-    if (mode === 'particles' || mode === 'hybrid') {
+    if ((mode === 'particles' || mode === 'hybrid') && dynamicParticleOpacity > 0.01) {
       // Adjust particle opacity in hybrid mode
       if (mode === 'hybrid' && this.triangulationConfig.enabled) {
         // Clear and reuse cache for original alpha values
@@ -366,6 +400,119 @@ export class HybridEngine extends ParticleEngine {
     preset.targets = targets;
     
     console.log('[HybridEngine] Hybrid transition preset activated');
+  }
+
+  /**
+   * Start reverse hybrid transition (back to source image)
+   * @param {Object} config - Transition configuration
+   */
+  startReverseHybridTransition(config = {}) {
+    console.log('[HybridEngine] Starting reverse hybrid transition...');
+    
+    const activePreset = this.presetManager.getActivePreset();
+    if (!activePreset || typeof activePreset.startReverseTransition !== 'function') {
+      console.warn('[HybridEngine] No active HybridTransitionPreset to reverse');
+      return;
+    }
+    
+    const particles = this.particleSystem.getParticles();
+    
+    // Swap source and target for reverse transition
+    if (this.triangulationImages.source && this.triangulationImages.target) {
+      const temp = this.triangulationImages.source;
+      this.triangulationImages.source = this.triangulationImages.target;
+      this.triangulationImages.target = temp;
+      
+      // Re-initialize triangulation morph for reverse
+      this.triangulationMorph.setImages(
+        this.triangulationImages.source,
+        this.triangulationImages.target
+      );
+      
+      this.triangulationRenderer.createTexture(this.triangulationImages.source, 'source');
+      this.triangulationRenderer.createTexture(this.triangulationImages.target, 'target');
+      
+      // Restart triangulation transition
+      this.triangulationTransition = {
+        isActive: true,
+        progress: 0,
+        duration: config.blendDuration || 1500,
+        startTime: performance.now()
+      };
+    }
+    
+    // Start reverse on preset
+    activePreset.startReverseTransition(particles);
+    
+    console.log('[HybridEngine] Reverse hybrid transition started');
+  }
+
+  /**
+   * Cycle between two images continuously
+   * @param {HTMLImageElement} image1 
+   * @param {HTMLImageElement} image2 
+   * @param {Object} config 
+   */
+  startCycleTransition(image1, image2, config = {}) {
+    console.log('[HybridEngine] Starting cycle transition...');
+    
+    const defaultConfig = {
+      ...config,
+      cycleDelay: config.cycleDelay || 1000 // Delay between cycles
+    };
+    
+    let cycleDirection = 'forward';
+    let cycleTimeout = null;
+    
+    const cycleStep = () => {
+      const activePreset = this.presetManager.getActivePreset();
+      if (!activePreset) return;
+      
+      const currentPhase = activePreset.getCurrentPhase();
+      
+      // Wait for solidified or idle state before cycling
+      if (currentPhase === 'solidified' || currentPhase === 'idle') {
+        cycleTimeout = setTimeout(() => {
+          if (cycleDirection === 'forward') {
+            this.startReverseHybridTransition(defaultConfig);
+            cycleDirection = 'reverse';
+          } else {
+            // Swap back and start forward
+            const temp = this.triangulationImages.source;
+            this.triangulationImages.source = this.triangulationImages.target;
+            this.triangulationImages.target = temp;
+            
+            this.startHybridTransition(image1, image2, defaultConfig);
+            cycleDirection = 'forward';
+          }
+          
+          requestAnimationFrame(cycleStep);
+        }, defaultConfig.cycleDelay);
+      } else {
+        // Still transitioning, check again
+        requestAnimationFrame(cycleStep);
+      }
+    };
+    
+    // Store cycle timeout for cleanup
+    this.cycleTimeout = cycleTimeout;
+    
+    // Start first transition
+    this.startHybridTransition(image1, image2, defaultConfig);
+    requestAnimationFrame(cycleStep);
+    
+    console.log('[HybridEngine] Cycle transition initiated');
+  }
+
+  /**
+   * Stop cycle transition
+   */
+  stopCycleTransition() {
+    if (this.cycleTimeout) {
+      clearTimeout(this.cycleTimeout);
+      this.cycleTimeout = null;
+      console.log('[HybridEngine] Cycle transition stopped');
+    }
   }
 
   /**
