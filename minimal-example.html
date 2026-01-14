@@ -89,13 +89,19 @@
         const vertexShader = compileShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
         const fragmentShader = compileShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
         
+        if (!vertexShader || !fragmentShader) {
+            throw new Error('Failed to compile shaders');
+        }
+        
         const program = gl.createProgram();
         gl.attachShader(program, vertexShader);
         gl.attachShader(program, fragmentShader);
         gl.linkProgram(program);
         
         if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            console.error('Program link error:', gl.getProgramInfoLog(program));
+            const error = gl.getProgramInfoLog(program);
+            gl.deleteProgram(program);
+            throw new Error('Program link error: ' + error);
         }
         
         gl.useProgram(program);
