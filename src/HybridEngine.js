@@ -228,34 +228,57 @@ export class HybridEngine extends ParticleEngine {
         
         // Adjust opacity based on phase for seamless triangulation integration
         if (currentPhase === 'explosion') {
-          // Start with triangulation visible, fade to particles
-          dynamicTriangleOpacity = Math.max(0, 1.0 - (Date.now() - activePreset.phaseStartTime) / activePreset.config.explosionTime);
-          dynamicParticleOpacity = Math.min(1.0, (Date.now() - activePreset.phaseStartTime) / (activePreset.config.explosionTime * 0.5));
+          // Start with full triangulation (solid image), gradually fade as particles disperse
+          const explosionProgress = (Date.now() - activePreset.phaseStartTime) / activePreset.config.explosionTime;
+          const easedProgress = this.easeInOutCubic(Math.min(1.0, explosionProgress));
+          
+          // Triangulation fades out smoothly (solid → semi-transparent)
+          dynamicTriangleOpacity = Math.max(0.2, 1.0 - (easedProgress * 0.8)); // Keep some triangulation visible
+          // Particles fade in gradually
+          dynamicParticleOpacity = Math.min(1.0, easedProgress * 1.5);
         } else if (currentPhase === 'recombination') {
-          // Particles only
-          dynamicTriangleOpacity = 0;
-          dynamicParticleOpacity = 1.0;
+          // During recombination, show both particles and faint triangulation for smoother transition
+          const recombProgress = (Date.now() - activePreset.phaseStartTime) / activePreset.config.recombinationDuration;
+          const easedProgress = this.easeInOutCubic(Math.min(1.0, recombProgress));
+          
+          // Gradually increase triangulation as particles form the target shape
+          dynamicTriangleOpacity = Math.min(0.4, easedProgress * 0.4); // Build up triangulation
+          dynamicParticleOpacity = 1.0; // Keep particles fully visible
         } else if (currentPhase === 'blend') {
-          // Fade particles, show triangulation
-          dynamicTriangleOpacity = blendProgress;
-          dynamicParticleOpacity = Math.max(0.1, 1.0 - blendProgress * 0.7);
+          // Fade particles out, bring triangulation to full strength
+          const easedBlendProgress = this.easeInOutCubic(blendProgress);
+          dynamicTriangleOpacity = Math.min(1.0, 0.4 + (easedBlendProgress * 0.6)); // From 0.4 to 1.0
+          dynamicParticleOpacity = Math.max(0, 1.0 - (easedBlendProgress * 1.2)); // Fade out faster
         } else if (currentPhase === 'solidified') {
-          // Full triangulation
+          // Full triangulation, no particles
           dynamicTriangleOpacity = 1.0;
           dynamicParticleOpacity = 0;
         } else if (currentPhase === 'reverseBlend') {
-          // Triangulation fades, particles appear
-          dynamicTriangleOpacity = blendProgress;
-          dynamicParticleOpacity = Math.max(0.3, 1.0 - blendProgress * 0.5);
-        } else if (currentPhase === 'reverseRecombination' || currentPhase === 'reverseExplosion') {
-          // Particles only
-          dynamicTriangleOpacity = 0;
+          // Triangulation fades, particles reappear
+          const easedBlendProgress = this.easeInOutCubic(1.0 - blendProgress);
+          dynamicTriangleOpacity = Math.max(0.4, blendProgress); // From 1.0 down to 0.4
+          dynamicParticleOpacity = Math.min(1.0, easedBlendProgress * 1.5); // Fade in particles
+        } else if (currentPhase === 'reverseRecombination') {
+          // Particles scatter, triangulation continues to fade
+          const recombProgress = (Date.now() - activePreset.phaseStartTime) / activePreset.config.recombinationDuration;
+          const easedProgress = this.easeInOutCubic(Math.min(1.0, recombProgress));
+          
+          dynamicTriangleOpacity = Math.max(0.2, 0.4 - (easedProgress * 0.2)); // Fade to 0.2
+          dynamicParticleOpacity = 1.0; // Particles fully visible
+        } else if (currentPhase === 'reverseExplosion') {
+          // Final dispersal, minimal triangulation
+          const explosionProgress = (Date.now() - activePreset.phaseStartTime) / activePreset.config.explosionTime;
+          const easedProgress = this.easeInOutCubic(Math.min(1.0, explosionProgress));
+          
+          dynamicTriangleOpacity = Math.max(0, 0.2 - (easedProgress * 0.2)); // Fade out completely
           dynamicParticleOpacity = 1.0;
         } else if (currentPhase === 'solidify') {
-          // Particles fade, triangulation shows
+          // Particles fade, triangulation emerges to full strength
           const solidifyProgress = (Date.now() - activePreset.phaseStartTime) / activePreset.config.blendDuration;
-          dynamicTriangleOpacity = Math.min(1.0, solidifyProgress);
-          dynamicParticleOpacity = Math.max(0, 1.0 - solidifyProgress);
+          const easedProgress = this.easeInOutCubic(Math.min(1.0, solidifyProgress));
+          
+          dynamicTriangleOpacity = Math.min(1.0, easedProgress); // Fade in to full
+          dynamicParticleOpacity = Math.max(0, 1.0 - (easedProgress * 1.2)); // Fade out particles
         } else if (blendProgress > 0) {
           // Fallback for blend progress
           dynamicTriangleOpacity = blendProgress;
