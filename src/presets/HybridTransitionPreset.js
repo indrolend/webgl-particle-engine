@@ -102,8 +102,8 @@ export class HybridTransitionPreset extends Preset {
     
     // Validate targets
     if (!targets || targets.length === 0) {
-      console.error('[HybridTransition] Cannot start recombination - no targets provided');
-      console.error('[HybridTransition] Skipping to blend phase');
+      console.warn('[HybridTransition] Cannot start recombination - no targets provided');
+      console.warn('[HybridTransition] Falling back to blend phase');
       this.startBlend(particles);
       return;
     }

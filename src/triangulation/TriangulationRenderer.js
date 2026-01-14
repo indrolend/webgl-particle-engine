@@ -171,11 +171,7 @@ export class TriangulationRenderer {
     // Check if image is loaded
     if (!image.complete) {
       console.warn(`[TriangulationRenderer] Image not fully loaded yet: ${id}`);
-      // Wait for image to load
-      image.onload = () => {
-        console.log(`[TriangulationRenderer] Image loaded, creating texture: ${id}`);
-        this.createTexture(image, id);
-      };
+      console.warn(`[TriangulationRenderer] Skipping texture creation - ensure images are loaded before calling createTexture`);
       return;
     }
     

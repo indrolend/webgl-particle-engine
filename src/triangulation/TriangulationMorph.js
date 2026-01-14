@@ -55,10 +55,11 @@ export class TriangulationMorph {
     
     // Check if images are loaded
     if (!sourceImage.complete || !targetImage.complete) {
-      console.warn('[TriangulationMorph] One or both images are not fully loaded');
-      console.warn('[TriangulationMorph] sourceImage.complete:', sourceImage.complete);
-      console.warn('[TriangulationMorph] targetImage.complete:', targetImage.complete);
-      // Continue anyway, but this might cause issues
+      console.error('[TriangulationMorph] One or both images are not fully loaded');
+      console.error('[TriangulationMorph] sourceImage.complete:', sourceImage.complete);
+      console.error('[TriangulationMorph] targetImage.complete:', targetImage.complete);
+      console.error('[TriangulationMorph] Cannot proceed - ensure images are loaded before calling setImages');
+      return;
     }
     
     console.log('[TriangulationMorph] Images validated successfully');
