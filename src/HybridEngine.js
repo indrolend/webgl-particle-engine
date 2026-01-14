@@ -325,6 +325,35 @@ export class HybridEngine extends ParticleEngine {
    */
   startHybridTransition(sourceImage, targetImage, config = {}) {
     console.log('[HybridEngine] Starting hybrid transition with explosion and recombination...');
+    console.log('[HybridEngine] Config:', config);
+    
+    // Validate images
+    if (!sourceImage || !targetImage) {
+      console.error('[HybridEngine] Invalid images provided to startHybridTransition');
+      console.error('[HybridEngine] sourceImage:', sourceImage);
+      console.error('[HybridEngine] targetImage:', targetImage);
+      return;
+    }
+    
+    // Validate image dimensions
+    if (!sourceImage.width || !sourceImage.height || !targetImage.width || !targetImage.height) {
+      console.error('[HybridEngine] Images have invalid dimensions');
+      console.error('[HybridEngine] sourceImage:', sourceImage.width, 'x', sourceImage.height);
+      console.error('[HybridEngine] targetImage:', targetImage.width, 'x', targetImage.height);
+      return;
+    }
+    
+    // Validate triangulation components
+    if (!this.triangulationMorph || !this.triangulationRenderer) {
+      console.error('[HybridEngine] Triangulation components not initialized');
+      console.error('[HybridEngine] triangulationMorph:', this.triangulationMorph);
+      console.error('[HybridEngine] triangulationRenderer:', this.triangulationRenderer);
+      return;
+    }
+    
+    console.log('[HybridEngine] Validation passed - images and components are valid');
+    console.log('[HybridEngine] Source image:', sourceImage.width, 'x', sourceImage.height);
+    console.log('[HybridEngine] Target image:', targetImage.width, 'x', targetImage.height);
     
     const preset = new HybridTransitionPreset(config);
     
@@ -336,10 +365,23 @@ export class HybridEngine extends ParticleEngine {
     this.triangulationImages.target = targetImage;
     
     // Initialize triangulation morph for blend phase
-    if (this.triangulationMorph) {
+    try {
+      console.log('[HybridEngine] Setting images in triangulation morph...');
       this.triangulationMorph.setImages(sourceImage, targetImage);
+      
+      // Verify triangulation is ready
+      if (!this.triangulationMorph.isReady()) {
+        console.error('[HybridEngine] Triangulation morph failed to initialize properly');
+        this.triangulationMorph.debugLogState();
+        // Continue anyway - particles will still work
+      } else {
+        console.log('[HybridEngine] Triangulation morph is ready');
+      }
+      
+      console.log('[HybridEngine] Creating textures...');
       this.triangulationRenderer.createTexture(sourceImage, 'source');
       this.triangulationRenderer.createTexture(targetImage, 'target');
+      console.log('[HybridEngine] Textures created successfully');
       
       // Start triangulation transition for blend phase
       this.triangulationTransition = {
@@ -348,24 +390,38 @@ export class HybridEngine extends ParticleEngine {
         duration: config.blendDuration || 1500,
         startTime: performance.now()
       };
+      
+      console.log('[HybridEngine] Triangulation transition initialized');
+    } catch (error) {
+      console.error('[HybridEngine] Error initializing triangulation:', error);
+      console.error('[HybridEngine] Stack trace:', error.stack);
+      // Continue with particle-only transition
     }
     
     // Extract target positions from target image
-    const imageData = this.particleSystem.extractImageData(targetImage, this.particleSystem.getParticles().length);
+    console.log('[HybridEngine] Extracting target positions from image...');
+    const particles = this.particleSystem.getParticles();
+    console.log('[HybridEngine] Particle count:', particles.length);
+    
+    const imageData = this.particleSystem.extractImageData(targetImage, particles.length);
+    console.log('[HybridEngine] Image data extracted:', imageData ? imageData.length : 'null');
+    
     const targets = this.particleSystem.imageDataToTargets(imageData);
+    console.log('[HybridEngine] Targets generated:', targets ? targets.length : 'null');
+    
+    // Set targets for recombination phase before activation
+    preset.targets = targets;
     
     // Activate preset with target data
-    const particles = this.particleSystem.getParticles();
     const dimensions = { width: this.canvas.width, height: this.canvas.height };
+    console.log('[HybridEngine] Activating preset with dimensions:', dimensions);
     this.activatePreset('hybridTransition', {
       sourceImage: sourceImage,
       targetImage: targetImage
     });
     
-    // Set targets for recombination phase
-    preset.targets = targets;
-    
-    console.log('[HybridEngine] Hybrid transition preset activated');
+    console.log('[HybridEngine] Hybrid transition preset activated successfully');
+    console.log('[HybridEngine] Preset phase:', preset.getCurrentPhase());
   }
 
   /**

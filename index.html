@@ -414,18 +414,11 @@
         </div>
 
         <div class="controls-panel">
-            <div class="panel-header">🎮 Controls</div>
-
-            <div class="tabs">
-                <button class="tab active" data-tab="images">🖼️ Images</button>
-                <button class="tab" data-tab="patterns">✨ Patterns</button>
-                <button class="tab" data-tab="settings">⚙️ Settings</button>
-            </div>
+            <div class="panel-header">🎮 Hybrid Transition Demo</div>
 
             <div id="status" class="status-message info" style="display: none;">Ready</div>
 
-            <!-- Images Tab -->
-            <div class="tab-content active" id="tab-images">
+            <!-- All controls in one scrollable panel -->
                 <div class="control-group">
                     <h3>📸 Image Upload</h3>
                     
@@ -448,7 +441,7 @@
                     <button id="morphButton" disabled>Start Morph ✨</button>
                 </div>
 
-                <div class="control-group" id="hybridTransitionConfig" style="display: none;">
+                <div class="control-group" id="hybridTransitionConfig">
                     <h3>💥 Hybrid Transition Settings</h3>
                     
                     <div class="slider-group">
@@ -530,35 +523,8 @@
                         <input type="range" id="particleOpacity" min="0" max="100" value="50">
                     </div>
                 </div>
-            </div>
 
-            <!-- Patterns Tab -->
-            <div class="tab-content" id="tab-patterns">
-                <div class="control-group">
-                    <h3>🎯 Initialize Pattern</h3>
-                    <button class="secondary" onclick="initPattern('grid')">Grid</button>
-                    <button class="secondary" onclick="initPattern('circle')">Circle</button>
-                    <button class="secondary" onclick="initPattern('spiral')">Spiral</button>
-                    <button class="secondary" onclick="initPattern('random')">Random</button>
-                </div>
-
-                <div class="control-group">
-                    <h3>✨ Transition To</h3>
-                    <button class="secondary" onclick="transitionPattern('grid')">→ Grid</button>
-                    <button class="secondary" onclick="transitionPattern('circle')">→ Circle</button>
-                    <button class="secondary" onclick="transitionPattern('spiral')">→ Spiral</button>
-                    <button class="secondary" onclick="transitionPattern('random')">→ Random</button>
-                </div>
-
-                <div class="control-group">
-                    <h3>🎬 Presets</h3>
-                    <button onclick="activateSchoolOfFish()">🐟 School of Fish</button>
-                    <button class="secondary" onclick="deactivatePreset()">Stop Preset</button>
-                </div>
-            </div>
-
-            <!-- Settings Tab -->
-            <div class="tab-content" id="tab-settings">
+                <!-- Performance Settings -->
                 <div class="control-group">
                     <h3>⚡ Performance</h3>
                     
@@ -578,9 +544,10 @@
                         <input type="range" id="speedSlider" min="0.1" max="3.0" step="0.1" value="1.0">
                     </div>
 
-                    <button onclick="applySettings()">Apply Settings</button>
+                    </div>
                 </div>
 
+                <!-- Engine Controls -->
                 <div class="control-group">
                     <h3>🎮 Engine Controls</h3>
                     <button onclick="engine.start()">▶️ Start</button>
@@ -588,6 +555,7 @@
                     <button class="secondary" onclick="location.reload()">🔄 Reset</button>
                 </div>
 
+                <!-- Info Display -->
                 <div class="control-group">
                     <h3>ℹ️ Info</h3>
                     <div class="info-display">
@@ -609,7 +577,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
     </div>
 
@@ -642,23 +609,6 @@
         const preview2 = document.getElementById('preview2');
         const morphButton = document.getElementById('morphButton');
         const statusMessage = document.getElementById('status');
-
-        // Tab switching
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabName = tab.dataset.tab;
-                
-                // Update tab buttons
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Update tab content
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                });
-                document.getElementById('tab-' + tabName).classList.add('active');
-            });
-        });
 
         // Status message helper
         function showStatus(message, type = 'info') {

@@ -51,9 +51,24 @@ export class HybridTransitionPreset extends Preset {
   initialize(particles, dimensions, options = {}) {
     super.initialize(particles, dimensions, options);
     
+    console.log('[HybridTransition] Initializing preset...');
+    console.log('[HybridTransition] Particles count:', particles.length);
+    console.log('[HybridTransition] Dimensions:', dimensions);
+    console.log('[HybridTransition] Options:', options);
+    
     // Store source and target images if provided
     this.sourceImage = options.sourceImage || null;
     this.targetImage = options.targetImage || null;
+    
+    console.log('[HybridTransition] Source image:', this.sourceImage ? `${this.sourceImage.width}x${this.sourceImage.height}` : 'null');
+    console.log('[HybridTransition] Target image:', this.targetImage ? `${this.targetImage.width}x${this.targetImage.height}` : 'null');
+    
+    // Validate targets exist
+    if (!this.targets || this.targets.length === 0) {
+      console.warn('[HybridTransition] No targets set yet - recombination phase may fail');
+    } else {
+      console.log('[HybridTransition] Targets available:', this.targets.length);
+    }
     
     // Start with explosion phase
     this.startExplosion(particles, dimensions);
@@ -84,32 +99,44 @@ export class HybridTransitionPreset extends Preset {
    */
   startRecombination(particles, targets) {
     console.log(`[HybridTransition] Starting recombination phase (${this.config.recombinationDuration}ms)`);
+    
+    // Validate targets
+    if (!targets || targets.length === 0) {
+      console.warn('[HybridTransition] Cannot start recombination - no targets provided');
+      console.warn('[HybridTransition] Falling back to blend phase');
+      this.startBlend(particles);
+      return;
+    }
+    
+    console.log('[HybridTransition] Recombination targets:', targets.length);
+    console.log('[HybridTransition] Particles:', particles.length);
+    
     this.phase = 'recombination';
     this.phaseStartTime = Date.now();
 
-    if (targets && targets.length > 0) {
-      this.targets = targets;
-      
-      // Assign target positions to particles
-      particles.forEach((particle, i) => {
-        if (i < targets.length) {
-          particle.targetX = targets[i].x;
-          particle.targetY = targets[i].y;
-          particle.targetR = targets[i].r;
-          particle.targetG = targets[i].g;
-          particle.targetB = targets[i].b;
-        } else {
-          // Reuse targets for extra particles with slight offset
-          const targetIndex = i % targets.length;
-          const target = targets[targetIndex];
-          particle.targetX = target.x + (Math.random() - 0.5) * 5;
-          particle.targetY = target.y + (Math.random() - 0.5) * 5;
-          particle.targetR = target.r;
-          particle.targetG = target.g;
-          particle.targetB = target.b;
-        }
-      });
-    }
+    this.targets = targets;
+    
+    // Assign target positions to particles
+    particles.forEach((particle, i) => {
+      if (i < targets.length) {
+        particle.targetX = targets[i].x;
+        particle.targetY = targets[i].y;
+        particle.targetR = targets[i].r;
+        particle.targetG = targets[i].g;
+        particle.targetB = targets[i].b;
+      } else {
+        // Reuse targets for extra particles with slight offset
+        const targetIndex = i % targets.length;
+        const target = targets[targetIndex];
+        particle.targetX = target.x + (Math.random() - 0.5) * 5;
+        particle.targetY = target.y + (Math.random() - 0.5) * 5;
+        particle.targetR = target.r;
+        particle.targetG = target.g;
+        particle.targetB = target.b;
+      }
+    });
+    
+    console.log('[HybridTransition] Targets assigned to particles');
   }
 
   /**
@@ -165,8 +192,15 @@ export class HybridTransitionPreset extends Preset {
     });
 
     // Check if explosion phase is complete
-    if (progress >= 1 && this.targets) {
-      this.startRecombination(particles, this.targets);
+    if (progress >= 1) {
+      console.log('[HybridTransition] Explosion phase complete');
+      if (this.targets && this.targets.length > 0) {
+        console.log('[HybridTransition] Transitioning to recombination with', this.targets.length, 'targets');
+        this.startRecombination(particles, this.targets);
+      } else {
+        console.warn('[HybridTransition] No targets available, skipping to blend phase');
+        this.startBlend(particles);
+      }
     }
   }
 
@@ -222,6 +256,7 @@ export class HybridTransitionPreset extends Preset {
 
     // Check if recombination is complete
     if (progress >= 1) {
+      console.log('[HybridTransition] Recombination phase complete, starting blend');
       this.startBlend(particles);
     }
   }

@@ -1,27 +1,22 @@
-# WebGL Particle Transition Engine
+# WebGL Particle Transition Engine - Hybrid Transition Demo
 
-A high-performance WebGL-based particle system with smooth animated transitions, specializing in seamless image morphing effects. Features a modular architecture with detailed logging, both focused and comprehensive interfaces, and **advanced triangulation-based morphing**.
+A focused demo for testing and perfecting the **Hybrid Transition** effect - a multi-phase particle transition with explosion, recombination, and triangulation blend effects.
 
-## ✨ Features
+## 🎯 Purpose
 
-- **🎨 Image Morphing**: Seamless particle-based transitions between images with high visual quality
-- **🔺 Triangulation Morphing**: Advanced Delaunay triangulation-based image morphing with smooth mesh interpolation
-- **🎭 Hybrid Rendering**: Combine particle and triangulation effects for stunning visual transitions
-- **💥 Hybrid Transition Preset**: Multi-phase transitions with explosion, recombination, and blend effects
+This repository is specifically for developing and demoing the hybrid transition effect before integrating it into a production website as an API. The focus is on **functionality and usability** rather than UI complexity.
+
+## ✨ Hybrid Transition Features
+
+- **💥 Explosion Phase**: Particles explode outward from source image
+- **🌀 Recombination Phase**: Particles are pulled together by vacuum-like forces to form target shape
+- **🎨 Blend Phase**: Smooth triangulation-based morphing between images
 - **⚡ WebGL Rendering**: Hardware-accelerated rendering for smooth 60 FPS performance
-- **🖼️ Image-Based Particles**: Upload images and create particle formations from pixel data
-- **✨ Smooth Transitions**: Animated transitions with optimized easing for natural morphing effects
-- **🎯 Customizable Key Points**: Grid-based or feature detection-based triangulation
-- **Multiple Patterns**: Grid, Circle, Spiral, and Random formations (for advanced use)
-- **⚙️ Configurable**: Adjustable particle count, speed, size, and triangulation parameters
-- **🎯 Focused Interface**: Dedicated image morphing UI (main page) for streamlined workflow
-- **🐛 Debug Interface**: Interactive HTML panel with real-time controls and logging
-- **📦 Modular Design**: Clean, maintainable code structure in `src/` directory
-- **🚀 Deployment Ready**: Optimized for GitHub Pages and Cloudflare Pages
+- **🎛️ Configurable**: Adjustable explosion intensity, timing, and blend duration
 
 ## 🚀 Quick Start
 
-### Local Development
+### Run the Demo
 
 1. Clone the repository:
 ```bash
@@ -43,21 +38,47 @@ php -S localhost:8000
 
 3. Open your browser and navigate to:
 ```
-http://localhost:8000/                        # 🎨 Main page - Image morphing interface
-http://localhost:8000/index.html              # 🎨 Main page - Image morphing interface (same as above)
-http://localhost:8000/triangulation-demo.html # 🔺 Triangulation morphing demo with hybrid effects
-http://localhost:8000/debug.html              # 🐛 Full debug interface with all features
-http://localhost:8000/landing.html            # 🏠 Original landing page with links
+http://localhost:8000/demo.html    # 🌟 MAIN DEMO - Single-page hybrid transition demo
 ```
 
-## 🔺 Triangulation-Based Image Morphing
+## 📁 Simplified Structure
 
-The engine now includes an advanced **triangulation-based morphing system** that complements the existing particle effects. This feature uses Delaunay triangulation to create smooth, mesh-based image transitions.
+```
+webgl-particle-engine/
+├── demo.html              # ⭐ MAIN ENTRY POINT - Single-page demo for hybrid transition
+├── src/                   # Core engine code (modular, reusable)
+│   ├── HybridEngine.js    # Main hybrid transition engine
+│   ├── ParticleEngine.js  # Base particle system
+│   ├── ParticleSystem.js  # Particle management
+│   ├── Renderer.js        # WebGL renderer
+│   ├── presets/           # Transition presets
+│   │   └── HybridTransitionPreset.js  # Explosion + Recombination + Blend
+│   └── triangulation/     # Triangulation morphing system
+│       ├── TriangulationMorph.js
+│       └── TriangulationRenderer.js
+└── README.md
+```
 
-### Key Features
+## 🎮 Using the Demo
 
-- **Delaunay Triangulation**: Automatic mesh generation using the Bowyer-Watson algorithm
-- **Customizable Key Points**: Choose between grid-based or feature detection methods
+1. **Upload Images**: Choose two images (source and target)
+2. **Configure Settings**: Adjust explosion intensity, timing, and duration
+3. **Start Transition**: Click "Start Hybrid Transition" button
+4. **Watch**: Explosion → Recombination → Blend phases execute automatically
+
+## 🔺 Hybrid Transition Phases
+
+### Phase 1: Explosion (800ms default)
+Particles explode outward from the source image center with configurable intensity.
+
+### Phase 2: Recombination (2000ms default)
+Particles are pulled by vacuum-like forces to form the target image shape. Features:
+- Gravitational attraction to target positions
+- Chaotic movement for natural feel
+- Color interpolation
+
+### Phase 3: Blend (1500ms default)
+Smooth triangulation-based morphing completes the transition with mesh interpolation.
 - **Affine Interpolation**: Smooth triangle-to-triangle morphing with texture mapping
 - **Hybrid Rendering**: Combine particle and triangulation effects for unique visuals
 - **WebGL Accelerated**: High-performance rendering with custom shaders

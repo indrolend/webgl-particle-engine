@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Transition Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .canvas-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 36px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 900px;
+            height: 600px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .controls-panel {
+            width: 380px;
+            background: rgba(20, 20, 35, 0.95);
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .panel-header {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #00d4ff;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .control-group h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .mode-btn {
+            padding: 10px;
+            margin: 4px 0;
+            background: rgba(102, 126, 234, 0.2);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            color: white;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .mode-btn:hover {
+            background: rgba(102, 126, 234, 0.4);
+            border-color: rgba(102, 126, 234, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+
+        .slider-group {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .slider-value {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+        }
+
+        .file-label {
+            display: block;
+            padding: 10px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .file-label:hover {
+            background: rgba(102, 126, 234, 0.3);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .preview-container {
+            width: 100%;
+            height: 100px;
+            border: 2px dashed rgba(102, 126, 234, 0.3);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .preview-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .preview-text {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .status-message {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .status-message.info {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+
+        .status-message.success {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+        }
+
+        .status-message.error {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff6b6b;
+        }
+
+        .info-display {
+            font-size: 13px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .info-label {
+            color: #aaa;
+        }
+
+        .info-value {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="canvas-section">
+            <h1>🎨 Hybrid Transition Demo</h1>
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <div class="controls-panel">
+            <div class="panel-header">🌟 Hybrid Transition Controls</div>
+
+            <div id="status" class="status-message info" style="display: none;">Ready</div>
+
+            <!-- Image Upload -->
+            <div class="control-group">
+                <h3>📸 Image Upload</h3>
+                
+                <label class="file-label" for="image1Input">Choose Image 1</label>
+                <input type="file" id="image1Input" accept="image/*">
+                <div class="preview-container" id="preview1">
+                    <span class="preview-text">No image selected</span>
+                </div>
+
+                <label class="file-label" for="image2Input">Choose Image 2</label>
+                <input type="file" id="image2Input" accept="image/*">
+                <div class="preview-container" id="preview2">
+                    <span class="preview-text">No image selected</span>
+                </div>
+            </div>
+
+            <!-- Hybrid Transition Settings -->
+            <div class="control-group">
+                <h3>💥 Hybrid Transition Settings</h3>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Explosion Intensity:</span>
+                        <span class="slider-value" id="explosionIntensityValue">150</span>
+                    </div>
+                    <input type="range" id="explosionIntensity" min="50" max="300" value="150">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Explosion Time (ms):</span>
+                        <span class="slider-value" id="explosionTimeValue">800</span>
+                    </div>
+                    <input type="range" id="explosionTime" min="300" max="2000" step="100" value="800">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Recombination Duration (ms):</span>
+                        <span class="slider-value" id="recombinationDurationValue">2000</span>
+                    </div>
+                    <input type="range" id="recombinationDuration" min="1000" max="4000" step="100" value="2000">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Blend Duration (ms):</span>
+                        <span class="slider-value" id="blendDurationValue">1500</span>
+                    </div>
+                    <input type="range" id="blendDuration" min="500" max="3000" step="100" value="1500">
+                </div>
+
+                <button id="hybridTransitionButton" disabled>
+                    🌟 Start Hybrid Transition
+                </button>
+            </div>
+
+            <!-- Render Mode -->
+            <div class="control-group">
+                <h3>🎨 Render Mode</h3>
+                <div class="mode-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button class="mode-btn" id="modeParticles">Particles</button>
+                    <button class="mode-btn" id="modeTriangulation">Triangulation</button>
+                </div>
+            </div>
+
+            <!-- Triangulation Settings -->
+            <div class="control-group">
+                <h3>🔺 Triangulation Settings</h3>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Grid Size:</span>
+                        <span class="slider-value" id="gridSizeValue">8</span>
+                    </div>
+                    <input type="range" id="gridSize" min="4" max="16" value="8">
+                </div>
+
+                <div class="slider-label">
+                    <span>Method:</span>
+                    <span class="slider-value" id="methodValue">Grid</span>
+                </div>
+                <select id="keyPointMethod" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 6px; color: white; font-size: 13px;">
+                    <option value="grid">Grid (Uniform)</option>
+                    <option value="feature">Feature Detection</option>
+                </select>
+            </div>
+
+            <!-- Blend Settings -->
+            <div class="control-group">
+                <h3>🎭 Blend Settings</h3>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Particle Opacity:</span>
+                        <span class="slider-value" id="particleOpacityValue">50%</span>
+                    </div>
+                    <input type="range" id="particleOpacity" min="0" max="100" value="50">
+                </div>
+            </div>
+
+            <!-- Performance Settings -->
+            <div class="control-group">
+                <h3>⚡ Performance</h3>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Particle Count:</span>
+                        <span class="slider-value" id="particleCountValue">2000</span>
+                    </div>
+                    <input type="range" id="particleCountSlider" min="500" max="5000" step="100" value="2000">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Speed:</span>
+                        <span class="slider-value" id="speedValue">1.0x</span>
+                    </div>
+                    <input type="range" id="speedSlider" min="0.1" max="3.0" step="0.1" value="1.0">
+                </div>
+
+                <button onclick="applySettings()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">Apply Settings</button>
+            </div>
+
+            <!-- Engine Controls -->
+            <div class="control-group">
+                <h3>🎮 Engine Controls</h3>
+                <button onclick="engine.start()">▶️ Start</button>
+                <button onclick="engine.stop()" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">⏸️ Stop</button>
+                <button onclick="location.reload()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">🔄 Reset</button>
+            </div>
+
+            <!-- Info Display -->
+            <div class="control-group">
+                <h3>ℹ️ Info</h3>
+                <div class="info-display">
+                    <div class="info-row">
+                        <span class="info-label">FPS:</span>
+                        <span class="info-value" id="fpsValue">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Particles:</span>
+                        <span class="info-value" id="particleCount">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Triangles:</span>
+                        <span class="info-value" id="triangleCount">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Mode:</span>
+                        <span class="info-value" id="currentMode">Hybrid</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value" id="statusValue">Ready</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { HybridEngine } from './src/HybridEngine.js';
+
+        // Initialize engine
+        const canvas = document.getElementById('canvas');
+        const engine = new HybridEngine(canvas, {
+            particleCount: 2000,
+            speed: 1.0,
+            enableTriangulation: true,
+            triangulationMode: 'hybrid'
+        });
+
+        // Initialize with random particles
+        engine.initializeParticles('random');
+        engine.start();
+
+        // Status message helper
+        const statusMessage = document.getElementById('status');
+        function showStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type}`;
+            statusMessage.style.display = 'block';
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        // Image upload handling
+        let image1 = null;
+        let image2 = null;
+
+        function handleImageUpload(file, imageIndex) {
+            if (!file) return;
+
+            const img = new Image();
+            const preview = document.getElementById(`preview${imageIndex}`);
+            
+            img.onload = function() {
+                // Store the image
+                if (imageIndex === 1) {
+                    image1 = img;
+                } else {
+                    image2 = img;
+                }
+
+                // Show preview
+                preview.innerHTML = '';
+                preview.appendChild(img);
+
+                // Enable hybrid transition button if both images are loaded
+                if (image1 && image2) {
+                    document.getElementById('hybridTransitionButton').disabled = false;
+                }
+
+                showStatus(`Image ${imageIndex} loaded successfully`, 'success');
+            };
+
+            img.onerror = function() {
+                showStatus('Failed to load image', 'error');
+            };
+
+            const reader = new FileReader();
+            reader.onload = e => { img.src = e.target.result; };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('image1Input').addEventListener('change', (e) => {
+            handleImageUpload(e.target.files[0], 1);
+        });
+
+        document.getElementById('image2Input').addEventListener('change', (e) => {
+            handleImageUpload(e.target.files[0], 2);
+        });
+
+        // Hybrid Transition button handler
+        document.getElementById('hybridTransitionButton').addEventListener('click', () => {
+            if (!engine || !image1 || !image2) return;
+
+            // Get configuration values
+            const config = {
+                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
+                explosionTime: parseInt(document.getElementById('explosionTime').value),
+                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value),
+                blendDuration: parseInt(document.getElementById('blendDuration').value),
+                recombinationChaos: 0.3,
+                vacuumStrength: 0.15,
+                particleFadeRate: 0.7
+            };
+
+            // Initialize with image1
+            engine.initializeFromImage(image1);
+
+            // Start the hybrid transition
+            engine.setRenderMode('hybrid');
+            engine.startHybridTransition(image1, image2, config);
+            engine.start();
+
+            showStatus('🌟 Hybrid transition started: Explosion → Recombination → Blend', 'success');
+            document.getElementById('statusValue').textContent = 'Running';
+        });
+
+        // Slider value display updates
+        document.getElementById('explosionIntensity').addEventListener('input', (e) => {
+            document.getElementById('explosionIntensityValue').textContent = e.target.value;
+        });
+
+        document.getElementById('explosionTime').addEventListener('input', (e) => {
+            document.getElementById('explosionTimeValue').textContent = e.target.value;
+        });
+
+        document.getElementById('recombinationDuration').addEventListener('input', (e) => {
+            document.getElementById('recombinationDurationValue').textContent = e.target.value;
+        });
+
+        document.getElementById('blendDuration').addEventListener('input', (e) => {
+            document.getElementById('blendDurationValue').textContent = e.target.value;
+        });
+
+        document.getElementById('gridSize').addEventListener('input', (e) => {
+            document.getElementById('gridSizeValue').textContent = e.target.value;
+            if (engine.triangulationMorph) {
+                engine.triangulationMorph.setGridSize(parseInt(e.target.value));
+            }
+        });
+
+        document.getElementById('particleOpacity').addEventListener('input', (e) => {
+            document.getElementById('particleOpacityValue').textContent = e.target.value + '%';
+            if (engine.triangulationRenderer) {
+                engine.triangulationRenderer.setParticleOpacity(parseFloat(e.target.value) / 100);
+            }
+        });
+
+        document.getElementById('particleCountSlider').addEventListener('input', (e) => {
+            document.getElementById('particleCountValue').textContent = e.target.value;
+        });
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            document.getElementById('speedValue').textContent = e.target.value + 'x';
+        });
+
+        document.getElementById('keyPointMethod').addEventListener('change', (e) => {
+            document.getElementById('methodValue').textContent = e.target.value === 'grid' ? 'Grid' : 'Feature';
+            if (engine.triangulationMorph) {
+                engine.triangulationMorph.setKeyPointMethod(e.target.value);
+            }
+        });
+
+        // Render mode handlers
+        const modeParticles = document.getElementById('modeParticles');
+        const modeTriangulation = document.getElementById('modeTriangulation');
+
+        modeParticles.addEventListener('click', () => {
+            engine.setRenderMode('particles');
+            document.getElementById('currentMode').textContent = 'Particles';
+            showStatus('Switched to Particles mode', 'info');
+        });
+
+        modeTriangulation.addEventListener('click', () => {
+            engine.setRenderMode('triangulation');
+            document.getElementById('currentMode').textContent = 'Triangulation';
+            showStatus('Switched to Triangulation mode', 'info');
+        });
+
+        // Apply settings function
+        window.applySettings = function() {
+            const newParticleCount = parseInt(document.getElementById('particleCountSlider').value);
+            const newSpeed = parseFloat(document.getElementById('speedSlider').value);
+            
+            engine.particleSystem.config.particleCount = newParticleCount;
+            engine.particleSystem.config.speed = newSpeed;
+            
+            // Reinitialize particles
+            engine.initializeParticles('random');
+            
+            showStatus('Settings applied', 'success');
+        };
+
+        // Make engine globally accessible for button onclick handlers
+        window.engine = engine;
+
+        // Update FPS, particle count, and triangle count
+        setInterval(() => {
+            document.getElementById('fpsValue').textContent = Math.round(engine.fps);
+            document.getElementById('particleCount').textContent = engine.particleSystem.getParticles().length;
+            
+            // Update triangle count if triangulation is active
+            if (engine.triangulationMorph && engine.triangulationMorph.triangles) {
+                document.getElementById('triangleCount').textContent = engine.triangulationMorph.triangles.length;
+            }
+        }, 1000);
+
+        showStatus('Engine ready! Upload two images to start.', 'info');
+    </script>
+</body>
+</html>
