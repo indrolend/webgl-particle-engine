@@ -5,3 +5,4 @@
 export { Preset } from './Preset.js';
 export { PresetManager } from './PresetManager.js';
 export { SchoolOfFishPreset } from './SchoolOfFishPreset.js';
+export { HybridTransitionPreset } from './HybridTransitionPreset.js';

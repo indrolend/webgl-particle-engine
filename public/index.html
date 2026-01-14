@@ -448,6 +448,42 @@
                     <button id="morphButton" disabled>Start Morph ✨</button>
                 </div>
 
+                <div class="control-group" id="hybridTransitionConfig" style="display: none;">
+                    <h3>💥 Hybrid Transition Settings</h3>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Explosion Intensity:</span>
+                            <span class="slider-value" id="explosionIntensityValue">150</span>
+                        </div>
+                        <input type="range" id="explosionIntensity" min="50" max="300" value="150">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Explosion Time (ms):</span>
+                            <span class="slider-value" id="explosionTimeValue">800</span>
+                        </div>
+                        <input type="range" id="explosionTime" min="300" max="2000" step="100" value="800">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Recombination Duration (ms):</span>
+                            <span class="slider-value" id="recombinationDurationValue">2000</span>
+                        </div>
+                        <input type="range" id="recombinationDuration" min="1000" max="4000" step="100" value="2000">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Blend Duration (ms):</span>
+                            <span class="slider-value" id="blendDurationValue">1500</span>
+                        </div>
+                        <input type="range" id="blendDuration" min="500" max="3000" step="100" value="1500">
+                    </div>
+                </div>
+
                 <div class="control-group">
                     <h3>🎨 Render Mode</h3>
                     <div class="mode-buttons">
@@ -664,6 +700,12 @@
                     if (modeHybrid) {
                         modeHybrid.disabled = false;
                     }
+                    
+                    // Show hybrid transition config
+                    const hybridConfig = document.getElementById('hybridTransitionConfig');
+                    if (hybridConfig) {
+                        hybridConfig.style.display = 'block';
+                    }
                 }
                 
                 showStatus(`Image ${imageIndex} loaded successfully`, 'success');
@@ -704,6 +746,31 @@
             }
         });
 
+        // Hybrid transition sliders
+        const explosionIntensity = document.getElementById('explosionIntensity');
+        const explosionIntensityValue = document.getElementById('explosionIntensityValue');
+        explosionIntensity.addEventListener('input', () => {
+            explosionIntensityValue.textContent = explosionIntensity.value;
+        });
+
+        const explosionTime = document.getElementById('explosionTime');
+        const explosionTimeValue = document.getElementById('explosionTimeValue');
+        explosionTime.addEventListener('input', () => {
+            explosionTimeValue.textContent = explosionTime.value;
+        });
+
+        const recombinationDuration = document.getElementById('recombinationDuration');
+        const recombinationDurationValue = document.getElementById('recombinationDurationValue');
+        recombinationDuration.addEventListener('input', () => {
+            recombinationDurationValue.textContent = recombinationDuration.value;
+        });
+
+        const blendDuration = document.getElementById('blendDuration');
+        const blendDurationValue = document.getElementById('blendDurationValue');
+        blendDuration.addEventListener('input', () => {
+            blendDurationValue.textContent = blendDuration.value;
+        });
+
         // Render mode buttons
         const modeParticles = document.getElementById('modeParticles');
         const modeTriangulation = document.getElementById('modeTriangulation');
@@ -730,12 +797,12 @@
         modeHybrid.addEventListener('click', () => {
             if (!engine || !image1 || !image2) return;
             
-            // Get configuration values - using default values since public version doesn't have sliders
+            // Get configuration values
             const config = {
-                explosionIntensity: 150,
-                explosionTime: 800,
-                recombinationDuration: 2000,
-                blendDuration: 1500,
+                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
+                explosionTime: parseInt(document.getElementById('explosionTime').value),
+                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value),
+                blendDuration: parseInt(document.getElementById('blendDuration').value),
                 recombinationChaos: 0.3,
                 vacuumStrength: 0.15,
                 particleFadeRate: 0.7
