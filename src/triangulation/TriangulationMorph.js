@@ -34,6 +34,37 @@ export class TriangulationMorph {
   setImages(sourceImage, targetImage) {
     console.log('[TriangulationMorph] Setting source and target images');
     
+    // Validate images
+    if (!sourceImage || !targetImage) {
+      console.error('[TriangulationMorph] Invalid images provided');
+      console.error('[TriangulationMorph] sourceImage:', sourceImage);
+      console.error('[TriangulationMorph] targetImage:', targetImage);
+      return;
+    }
+    
+    // Validate image dimensions
+    if (!sourceImage.width || !sourceImage.height || sourceImage.width === 0 || sourceImage.height === 0) {
+      console.error('[TriangulationMorph] Source image has invalid dimensions:', sourceImage.width, 'x', sourceImage.height);
+      return;
+    }
+    
+    if (!targetImage.width || !targetImage.height || targetImage.width === 0 || targetImage.height === 0) {
+      console.error('[TriangulationMorph] Target image has invalid dimensions:', targetImage.width, 'x', targetImage.height);
+      return;
+    }
+    
+    // Check if images are loaded
+    if (!sourceImage.complete || !targetImage.complete) {
+      console.warn('[TriangulationMorph] One or both images are not fully loaded');
+      console.warn('[TriangulationMorph] sourceImage.complete:', sourceImage.complete);
+      console.warn('[TriangulationMorph] targetImage.complete:', targetImage.complete);
+      // Continue anyway, but this might cause issues
+    }
+    
+    console.log('[TriangulationMorph] Images validated successfully');
+    console.log('[TriangulationMorph] Source:', sourceImage.width, 'x', sourceImage.height);
+    console.log('[TriangulationMorph] Target:', targetImage.width, 'x', targetImage.height);
+    
     this.sourceImage = sourceImage;
     this.targetImage = targetImage;
     
@@ -42,6 +73,12 @@ export class TriangulationMorph {
     
     // Generate triangulation
     this.generateTriangulation();
+    
+    // Log final state
+    console.log('[TriangulationMorph] Setup complete - isReady:', this.isReady());
+    if (!this.isReady()) {
+      this.debugLogState();
+    }
   }
 
   /**

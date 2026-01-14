@@ -156,33 +156,75 @@ export class TriangulationRenderer {
   createTexture(image, id) {
     console.log(`[TriangulationRenderer] Creating texture: ${id}`);
     
-    const texture = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+    // Validate image
+    if (!image) {
+      console.error(`[TriangulationRenderer] Invalid image provided for texture: ${id}`);
+      return;
+    }
     
-    // Set texture parameters - use CLAMP_TO_EDGE to prevent wrapping artifacts
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+    // Validate image dimensions
+    if (!image.width || !image.height || image.width === 0 || image.height === 0) {
+      console.error(`[TriangulationRenderer] Image has invalid dimensions: ${image.width}x${image.height}`);
+      return;
+    }
     
-    // Upload image to texture
-    this.gl.texImage2D(
-      this.gl.TEXTURE_2D,
-      0,
-      this.gl.RGBA,
-      this.gl.RGBA,
-      this.gl.UNSIGNED_BYTE,
-      image
-    );
+    // Check if image is loaded
+    if (!image.complete) {
+      console.warn(`[TriangulationRenderer] Image not fully loaded yet: ${id}`);
+      // Wait for image to load
+      image.onload = () => {
+        console.log(`[TriangulationRenderer] Image loaded, creating texture: ${id}`);
+        this.createTexture(image, id);
+      };
+      return;
+    }
     
-    this.textures[id] = {
-      texture,
-      width: image.width,
-      height: image.height
-    };
+    console.log(`[TriangulationRenderer] Image validated: ${image.width}x${image.height}`);
     
-    console.log(`[TriangulationRenderer] Texture created: ${id} (${image.width}x${image.height})`);
-    console.log(`[TriangulationRenderer] Texture settings: CLAMP_TO_EDGE, LINEAR filtering`);
+    try {
+      const texture = this.gl.createTexture();
+      if (!texture) {
+        console.error(`[TriangulationRenderer] Failed to create WebGL texture for: ${id}`);
+        return;
+      }
+      
+      this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+      
+      // Set texture parameters - use CLAMP_TO_EDGE to prevent wrapping artifacts
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+      
+      // Upload image to texture
+      this.gl.texImage2D(
+        this.gl.TEXTURE_2D,
+        0,
+        this.gl.RGBA,
+        this.gl.RGBA,
+        this.gl.UNSIGNED_BYTE,
+        image
+      );
+      
+      // Check for WebGL errors
+      const error = this.gl.getError();
+      if (error !== this.gl.NO_ERROR) {
+        console.error(`[TriangulationRenderer] WebGL error during texture creation: ${error}`);
+        return;
+      }
+      
+      this.textures[id] = {
+        texture,
+        width: image.width,
+        height: image.height
+      };
+      
+      console.log(`[TriangulationRenderer] Texture created successfully: ${id} (${image.width}x${image.height})`);
+      console.log(`[TriangulationRenderer] Texture settings: CLAMP_TO_EDGE, LINEAR filtering`);
+    } catch (error) {
+      console.error(`[TriangulationRenderer] Exception during texture creation for ${id}:`, error);
+      console.error(`[TriangulationRenderer] Stack trace:`, error.stack);
+    }
   }
 
   /**
@@ -195,8 +237,31 @@ export class TriangulationRenderer {
   render(morphData, t, sourceTextureId, targetTextureId) {
     const { triangles, sourceKeyPoints, targetKeyPoints } = morphData;
     
-    if (!this.textures[sourceTextureId] || !this.textures[targetTextureId]) {
-      console.warn('[TriangulationRenderer] Textures not loaded');
+    // Validate textures exist
+    if (!this.textures[sourceTextureId]) {
+      console.warn(`[TriangulationRenderer] Source texture not loaded: ${sourceTextureId}`);
+      console.warn('[TriangulationRenderer] Available textures:', Object.keys(this.textures));
+      return;
+    }
+    
+    if (!this.textures[targetTextureId]) {
+      console.warn(`[TriangulationRenderer] Target texture not loaded: ${targetTextureId}`);
+      console.warn('[TriangulationRenderer] Available textures:', Object.keys(this.textures));
+      return;
+    }
+    
+    // Validate morphData
+    if (!triangles || !sourceKeyPoints || !targetKeyPoints) {
+      console.warn('[TriangulationRenderer] Invalid morph data');
+      console.warn('[TriangulationRenderer] triangles:', triangles ? triangles.length : 'null');
+      console.warn('[TriangulationRenderer] sourceKeyPoints:', sourceKeyPoints ? sourceKeyPoints.length : 'null');
+      console.warn('[TriangulationRenderer] targetKeyPoints:', targetKeyPoints ? targetKeyPoints.length : 'null');
+      return;
+    }
+    
+    // Validate key point counts match
+    if (sourceKeyPoints.length !== targetKeyPoints.length) {
+      console.error('[TriangulationRenderer] Key point count mismatch:', sourceKeyPoints.length, 'vs', targetKeyPoints.length);
       return;
     }
 
