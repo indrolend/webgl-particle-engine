@@ -5,6 +5,7 @@
 import { ParticleEngine } from './ParticleEngine.js';
 import { TriangulationMorph } from './triangulation/TriangulationMorph.js';
 import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js';
+import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
 
 export class HybridEngine extends ParticleEngine {
   constructor(canvas, config = {}) {
@@ -214,6 +215,22 @@ export class HybridEngine extends ParticleEngine {
     const mode = this.triangulationConfig.mode;
     const particles = this.particleSystem.getParticles();
     
+    // Check if HybridTransitionPreset is active and in blend phase
+    let dynamicTriangleOpacity = this.triangulationConfig.triangleOpacity;
+    let dynamicParticleOpacity = this.triangulationConfig.particleOpacity;
+    
+    if (this.presetManager.hasActivePreset()) {
+      const activePreset = this.presetManager.getActivePreset();
+      if (activePreset && typeof activePreset.getBlendProgress === 'function') {
+        const blendProgress = activePreset.getBlendProgress();
+        if (blendProgress > 0) {
+          // During blend phase, increase triangulation opacity as particles fade
+          dynamicTriangleOpacity = blendProgress;
+          dynamicParticleOpacity = Math.max(0.1, 1.0 - blendProgress * 0.7);
+        }
+      }
+    }
+    
     // Render triangulation (if enabled and active)
     if (this.triangulationConfig.enabled && 
         (mode === 'triangulation' || mode === 'hybrid') &&
@@ -227,6 +244,11 @@ export class HybridEngine extends ParticleEngine {
       
       // Apply easing for smooth transition
       progress = this.easeInOutCubic(progress);
+      
+      // Apply dynamic opacity during blend phase
+      if (this.triangulationRenderer && typeof this.triangulationRenderer.setOpacity === 'function') {
+        this.triangulationRenderer.setOpacity(dynamicTriangleOpacity);
+      }
       
       this.triangulationRenderer.clear(0, 0, 0, 0);
       this.triangulationRenderer.render(morphData, progress, 'source', 'target');
@@ -245,7 +267,7 @@ export class HybridEngine extends ParticleEngine {
         this.originalAlphasCache.clear();
         particles.forEach((p, i) => {
           this.originalAlphasCache.set(i, p.alpha);
-          p.alpha = p.alpha * this.triangulationConfig.particleOpacity;
+          p.alpha = p.alpha * dynamicParticleOpacity;
         });
       }
       
@@ -293,6 +315,57 @@ export class HybridEngine extends ParticleEngine {
    */
   getTriangulationConfig() {
     return { ...this.triangulationConfig };
+  }
+
+  /**
+   * Start hybrid transition with explosion and recombination
+   * @param {HTMLImageElement} sourceImage - Source image
+   * @param {HTMLImageElement} targetImage - Target image  
+   * @param {Object} config - Transition configuration
+   */
+  startHybridTransition(sourceImage, targetImage, config = {}) {
+    console.log('[HybridEngine] Starting hybrid transition with explosion and recombination...');
+    
+    const preset = new HybridTransitionPreset(config);
+    
+    // Register and activate preset
+    this.registerPreset('hybridTransition', preset);
+    
+    // Store images
+    this.triangulationImages.source = sourceImage;
+    this.triangulationImages.target = targetImage;
+    
+    // Initialize triangulation morph for blend phase
+    if (this.triangulationMorph) {
+      this.triangulationMorph.setImages(sourceImage, targetImage);
+      this.triangulationRenderer.createTexture(sourceImage, 'source');
+      this.triangulationRenderer.createTexture(targetImage, 'target');
+      
+      // Start triangulation transition for blend phase
+      this.triangulationTransition = {
+        isActive: true,
+        progress: 0,
+        duration: config.blendDuration || 1500,
+        startTime: performance.now()
+      };
+    }
+    
+    // Extract target positions from target image
+    const imageData = this.particleSystem.extractImageData(targetImage, this.particleSystem.getParticles().length);
+    const targets = this.particleSystem.imageDataToTargets(imageData);
+    
+    // Activate preset with target data
+    const particles = this.particleSystem.getParticles();
+    const dimensions = { width: this.canvas.width, height: this.canvas.height };
+    this.activatePreset('hybridTransition', {
+      sourceImage: sourceImage,
+      targetImage: targetImage
+    });
+    
+    // Set targets for recombination phase
+    preset.targets = targets;
+    
+    console.log('[HybridEngine] Hybrid transition preset activated');
   }
 
   /**
