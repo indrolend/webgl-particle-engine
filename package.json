@@ -4,6 +4,7 @@
   "description": "WebGL Particle Transition Engine with Triangulation Morphing",
   "type": "module",
   "scripts": {
+    "build": "bash build.sh",
     "serve": "python3 -m http.server 8000"
   },
   "dependencies": {
