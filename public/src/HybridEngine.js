@@ -360,6 +360,10 @@ export class HybridEngine extends ParticleEngine {
   startHybridTransition(sourceImage, targetImage, config = {}) {
     console.log('[HybridEngine] Starting hybrid transition with explosion and recombination...');
     
+    // Initialize particles from source image first to maintain size and position
+    console.log('[HybridEngine] Initializing particles from source image...');
+    this.particleSystem.initializeFromImage(sourceImage);
+    
     const preset = new HybridTransitionPreset(config);
     
     // Register and activate preset
