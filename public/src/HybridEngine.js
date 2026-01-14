@@ -360,10 +360,9 @@ export class HybridEngine extends ParticleEngine {
   startHybridTransition(sourceImage, targetImage, config = {}) {
     console.log('[HybridEngine] Starting hybrid transition with explosion and recombination...');
     
-    // Initialize particles from source image at actual size (1:1 pixel mapping)
-    // This preserves the original image dimensions and position
-    console.log('[HybridEngine] Initializing particles from source image at actual size...');
-    this.particleSystem.initializeFromImageActualSize(sourceImage);
+    // Initialize particles from source image with proper scaling to match display size
+    console.log('[HybridEngine] Initializing particles from source image...');
+    this.particleSystem.initializeFromImage(sourceImage);
     
     const preset = new HybridTransitionPreset(config);
     
@@ -389,9 +388,9 @@ export class HybridEngine extends ParticleEngine {
       };
     }
     
-    // Extract target positions from target image at actual size (1:1 pixel mapping)
+    // Extract target positions from target image with proper scaling to match display size
     const imageData = this.particleSystem.extractImageData(targetImage, this.particleSystem.getParticles().length);
-    const targets = this.particleSystem.imageDataToTargetsActualSize(imageData);
+    const targets = this.particleSystem.imageDataToTargets(imageData);
     
     // Activate preset with target data
     const particles = this.particleSystem.getParticles();
