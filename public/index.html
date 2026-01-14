@@ -714,7 +714,45 @@
 
         modeParticles.addEventListener('click', () => setRenderMode('particles'));
         modeTriangulation.addEventListener('click', () => setRenderMode('triangulation'));
-        modeHybrid.addEventListener('click', () => setRenderMode('hybrid'));
+        
+        // Hybrid button triggers multi-phase hybrid transition when images are loaded
+        modeHybrid.addEventListener('click', () => {
+            if (!engine) return;
+            
+            // If both images are loaded, trigger the hybrid transition
+            if (image1 && image2) {
+                // Get configuration values
+                const config = {
+                    explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
+                    explosionTime: parseInt(document.getElementById('explosionTime').value),
+                    recombinationDuration: parseInt(document.getElementById('recombinationDuration').value),
+                    blendDuration: parseInt(document.getElementById('blendDuration').value),
+                    recombinationChaos: 0.3,
+                    vacuumStrength: 0.15,
+                    particleFadeRate: 0.7
+                };
+                
+                // Initialize with image1 if not already done
+                if (currentImageIndex === 0) {
+                    engine.initializeFromImage(image1);
+                    currentImageIndex = 1;
+                }
+                
+                // Start the hybrid transition
+                engine.setRenderMode('hybrid');
+                engine.startHybridTransition(image1, image2, config);
+                engine.start();
+                
+                // Update active button
+                document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+                modeHybrid.classList.add('active');
+                
+                showStatus('🌟 Hybrid transition started: Explosion → Recombination → Blend', 'success');
+            } else {
+                // If images aren't loaded, just switch render mode
+                setRenderMode('hybrid');
+            }
+        });
 
         // Triangulation controls
         const gridSizeInput = document.getElementById('gridSize');
