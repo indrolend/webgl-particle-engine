@@ -10,6 +10,19 @@
  */
 import { Preset } from './Preset.js';
 
+// Phase constants
+const PHASE = {
+  IDLE: 'idle',
+  EXPLOSION: 'explosion',
+  RECOMBINATION: 'recombination',
+  BLEND: 'blend',
+  SOLIDIFIED: 'solidified',
+  REVERSE_BLEND: 'reverseBlend',
+  REVERSE_RECOMBINATION: 'reverseRecombination',
+  REVERSE_EXPLOSION: 'reverseExplosion',
+  SOLIDIFY: 'solidify'
+};
+
 export class HybridTransitionPreset extends Preset {
   constructor(config = {}) {
     super(
@@ -36,7 +49,7 @@ export class HybridTransitionPreset extends Preset {
       }
     );
 
-    this.phase = 'idle'; // idle, explosion, recombination, blend, reverseBlend, reverseRecombination, reverseExplosion, solidify
+    this.phase = PHASE.IDLE; // Current phase
     this.phaseStartTime = 0;
     this.targets = null;
     this.sourceImage = null;
@@ -99,7 +112,7 @@ export class HybridTransitionPreset extends Preset {
    */
   startExplosion(particles, dimensions) {
     console.log(`[HybridTransition] Starting explosion phase (${this.config.explosionTime}ms)`);
-    this.phase = 'explosion';
+    this.phase = PHASE.EXPLOSION;
     this.phaseStartTime = Date.now();
 
     particles.forEach(particle => {
@@ -118,7 +131,7 @@ export class HybridTransitionPreset extends Preset {
    */
   startRecombination(particles, targets) {
     console.log(`[HybridTransition] Starting recombination phase (${this.config.recombinationDuration}ms)`);
-    this.phase = 'recombination';
+    this.phase = PHASE.RECOMBINATION;
     this.phaseStartTime = Date.now();
 
     if (targets && targets.length > 0) {
@@ -152,7 +165,7 @@ export class HybridTransitionPreset extends Preset {
    */
   startBlend(particles) {
     console.log(`[HybridTransition] Starting blend phase (${this.config.blendDuration}ms)`);
-    this.phase = 'blend';
+    this.phase = PHASE.BLEND;
     this.phaseStartTime = Date.now();
     this.blendProgress = 0;
   }
@@ -161,25 +174,25 @@ export class HybridTransitionPreset extends Preset {
     const elapsedTime = Date.now() - this.phaseStartTime;
 
     switch (this.phase) {
-      case 'explosion':
+      case PHASE.EXPLOSION:
         this.updateExplosion(particles, deltaTime, dimensions, elapsedTime);
         break;
-      case 'recombination':
+      case PHASE.RECOMBINATION:
         this.updateRecombination(particles, deltaTime, dimensions, elapsedTime);
         break;
-      case 'blend':
+      case PHASE.BLEND:
         this.updateBlend(particles, deltaTime, dimensions, elapsedTime);
         break;
-      case 'reverseBlend':
+      case PHASE.REVERSE_BLEND:
         this.updateReverseBlend(particles, deltaTime, dimensions, elapsedTime);
         break;
-      case 'reverseRecombination':
+      case PHASE.REVERSE_RECOMBINATION:
         this.updateReverseRecombination(particles, deltaTime, dimensions, elapsedTime);
         break;
-      case 'reverseExplosion':
+      case PHASE.REVERSE_EXPLOSION:
         this.updateReverseExplosion(particles, deltaTime, dimensions, elapsedTime);
         break;
-      case 'solidify':
+      case PHASE.SOLIDIFY:
         this.updateSolidify(particles, deltaTime, dimensions, elapsedTime);
         break;
     }
@@ -306,7 +319,7 @@ export class HybridTransitionPreset extends Preset {
     if (progress >= 1) {
       this.captureState(particles, 'postBlend');
       console.log('[HybridTransition] Blend complete - transition finished');
-      this.phase = 'solidified';
+      this.phase = PHASE.SOLIDIFIED;
     }
   }
 
@@ -320,7 +333,7 @@ export class HybridTransitionPreset extends Preset {
    */
   startReverseBlend(particles) {
     console.log(`[HybridTransition] Starting reverse blend phase (${this.config.blendDuration}ms)`);
-    this.phase = 'reverseBlend';
+    this.phase = PHASE.REVERSE_BLEND;
     this.phaseStartTime = Date.now();
     this.blendProgress = 0;
     this.direction = 'reverse';
@@ -359,7 +372,7 @@ export class HybridTransitionPreset extends Preset {
    */
   startReverseRecombination(particles) {
     console.log(`[HybridTransition] Starting reverse recombination phase (${this.config.recombinationDuration}ms)`);
-    this.phase = 'reverseRecombination';
+    this.phase = PHASE.REVERSE_RECOMBINATION;
     this.phaseStartTime = Date.now();
     
     // Add outward velocities to scatter particles
@@ -418,7 +431,7 @@ export class HybridTransitionPreset extends Preset {
    */
   startReverseExplosion(particles) {
     console.log(`[HybridTransition] Starting reverse explosion phase (${this.config.explosionTime}ms)`);
-    this.phase = 'reverseExplosion';
+    this.phase = PHASE.REVERSE_EXPLOSION;
     this.phaseStartTime = Date.now();
     
     // Restore pre-explosion targets if available
@@ -486,7 +499,7 @@ export class HybridTransitionPreset extends Preset {
    */
   startSolidify(particles) {
     console.log(`[HybridTransition] Starting solidify phase (${this.config.blendDuration}ms)`);
-    this.phase = 'solidify';
+    this.phase = PHASE.SOLIDIFY;
     this.phaseStartTime = Date.now();
     this.blendProgress = 0;
   }
@@ -518,7 +531,7 @@ export class HybridTransitionPreset extends Preset {
     // Check if solidification is complete
     if (progress >= 1) {
       console.log('[HybridTransition] Solidification complete - back to static image');
-      this.phase = 'idle';
+      this.phase = PHASE.IDLE;
     }
   }
 
@@ -526,7 +539,7 @@ export class HybridTransitionPreset extends Preset {
    * Start reverse transition from solidified state back to source
    */
   startReverseTransition(particles) {
-    if (this.phase === 'solidified' || this.phase === 'idle') {
+    if (this.phase === PHASE.SOLIDIFIED || this.phase === PHASE.IDLE) {
       this.startReverseBlend(particles);
     } else {
       console.warn('[HybridTransition] Can only start reverse from solidified/idle state');
@@ -555,12 +568,12 @@ export class HybridTransitionPreset extends Preset {
     this.config.recombinationDuration = duration;
     
     // If not in explosion, start from beginning
-    if (this.phase === 'idle') {
+    if (this.phase === PHASE.IDLE) {
       this.startExplosion(particles, { width: 0, height: 0 });
     } else if (this.phase === 'explosion') {
       // Let explosion finish naturally
       return;
-    } else if (this.phase === 'recombination' || this.phase === 'blend') {
+    } else if (this.phase === 'recombination' || this.phase === PHASE.BLEND) {
       // Already in later phases, adjust targets
       this.startRecombination(particles, targets);
     }
@@ -571,13 +584,13 @@ export class HybridTransitionPreset extends Preset {
    * Used by HybridEngine to coordinate triangulation opacity
    */
   getBlendProgress() {
-    if (this.phase === 'blend') {
+    if (this.phase === PHASE.BLEND) {
       return this.blendProgress;
     } else if (this.phase === 'reverseBlend') {
       return this.blendProgress; // Already inverted in update
     } else if (this.phase === 'solidify') {
       return 1.0 - this.blendProgress; // Invert for solidify
-    } else if (this.phase === 'solidified') {
+    } else if (this.phase === PHASE.SOLIDIFIED) {
       return 1.0; // Full triangulation
     }
     return 0;
@@ -599,7 +612,7 @@ export class HybridTransitionPreset extends Preset {
 
   deactivate() {
     super.deactivate();
-    this.phase = 'idle';
+    this.phase = PHASE.IDLE;
     this.targets = null;
     this.blendProgress = 0;
   }

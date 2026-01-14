@@ -461,8 +461,11 @@ export class HybridEngine extends ParticleEngine {
       cycleDelay: config.cycleDelay || 1000 // Delay between cycles
     };
     
-    let cycleDirection = 'forward';
-    let cycleTimeout = null;
+    // Store as instance properties for proper cleanup
+    this.cycleDirection = 'forward';
+    this.cycleTimeout = null;
+    this.cycleImages = { image1, image2 };
+    this.cycleConfig = defaultConfig;
     
     const cycleStep = () => {
       const activePreset = this.presetManager.getActivePreset();
@@ -472,30 +475,27 @@ export class HybridEngine extends ParticleEngine {
       
       // Wait for solidified or idle state before cycling
       if (currentPhase === 'solidified' || currentPhase === 'idle') {
-        cycleTimeout = setTimeout(() => {
-          if (cycleDirection === 'forward') {
-            this.startReverseHybridTransition(defaultConfig);
-            cycleDirection = 'reverse';
+        this.cycleTimeout = setTimeout(() => {
+          if (this.cycleDirection === 'forward') {
+            this.startReverseHybridTransition(this.cycleConfig);
+            this.cycleDirection = 'reverse';
           } else {
             // Swap back and start forward
             const temp = this.triangulationImages.source;
             this.triangulationImages.source = this.triangulationImages.target;
             this.triangulationImages.target = temp;
             
-            this.startHybridTransition(image1, image2, defaultConfig);
-            cycleDirection = 'forward';
+            this.startHybridTransition(this.cycleImages.image1, this.cycleImages.image2, this.cycleConfig);
+            this.cycleDirection = 'forward';
           }
           
           requestAnimationFrame(cycleStep);
-        }, defaultConfig.cycleDelay);
+        }, this.cycleConfig.cycleDelay);
       } else {
         // Still transitioning, check again
         requestAnimationFrame(cycleStep);
       }
     };
-    
-    // Store cycle timeout for cleanup
-    this.cycleTimeout = cycleTimeout;
     
     // Start first transition
     this.startHybridTransition(image1, image2, defaultConfig);
