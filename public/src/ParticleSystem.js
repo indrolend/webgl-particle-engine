@@ -657,4 +657,66 @@ export class ParticleSystem {
     
     return targets;
   }
+
+  /**
+   * Initialize particles from an image at its actual size (1:1 pixel mapping)
+   * No scaling or centering - particles positioned at actual image dimensions
+   * 
+   * @param {HTMLImageElement} image - The source image element
+   */
+  initializeFromImageActualSize(image) {
+    console.log('[ParticleSystem] Initializing particles from image at actual size (1:1)...');
+    
+    const imageData = this.extractImageData(image, this.config.particleCount);
+    const pixels = imageData.pixels;
+    
+    this.particles = [];
+    
+    // Use 1:1 pixel mapping - no scaling, no centering
+    // Particles positioned at actual pixel coordinates from the image
+    for (let i = 0; i < pixels.length; i++) {
+      const pixel = pixels[i];
+      
+      this.particles.push(this.createParticle(
+        pixel.x, 
+        pixel.y, 
+        (Math.random() - 0.5) * this.MIN_INITIAL_VELOCITY_RANGE,
+        (Math.random() - 0.5) * this.MIN_INITIAL_VELOCITY_RANGE,
+        {
+          r: pixel.r,
+          g: pixel.g,
+          b: pixel.b,
+          alpha: pixel.alpha
+        }
+      ));
+    }
+    
+    console.log(`[ParticleSystem] Created ${this.particles.length} particles at actual image size (${imageData.originalWidth}x${imageData.originalHeight})`);
+  }
+
+  /**
+   * Convert image data to target positions at actual size (1:1 pixel mapping)
+   * No scaling or centering applied
+   * 
+   * @param {Object} imageData - Image data from extractImageData
+   * @returns {Array} Array of target positions with colors
+   */
+  imageDataToTargetsActualSize(imageData) {
+    const targets = [];
+    const pixels = imageData.pixels;
+    
+    // Use 1:1 pixel mapping - particles positioned at actual pixel coordinates
+    for (let pixel of pixels) {
+      targets.push({
+        x: pixel.x,
+        y: pixel.y,
+        r: pixel.r,
+        g: pixel.g,
+        b: pixel.b
+      });
+    }
+    
+    console.log(`[ParticleSystem] Created ${targets.length} targets at actual image size`);
+    return targets;
+  }
 }

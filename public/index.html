@@ -498,6 +498,13 @@
                     </button>
                 </div>
 
+                <div class="control-group" id="reverseTransitionControls" style="display: none;">
+                    <h3>🔄 Bidirectional Controls</h3>
+                    <button class="secondary" id="reverseTransition" disabled>← Reverse Transition</button>
+                    <button class="secondary" id="cycleTransition" disabled>♻️ Cycle Continuously</button>
+                    <button class="secondary" id="stopCycle" disabled style="display: none;">⏹️ Stop Cycle</button>
+                </div>
+
                 <div class="control-group">
                     <h3>🔺 Triangulation</h3>
                     
@@ -819,8 +826,78 @@
             engine.setRenderMode('hybrid');
             engine.startHybridTransition(image1, image2, config);
             
+            // Show reverse controls
+            const reverseControls = document.getElementById('reverseTransitionControls');
+            if (reverseControls) {
+                reverseControls.style.display = 'block';
+            }
+            
+            // Enable reverse and cycle buttons
+            const reverseBtn = document.getElementById('reverseTransition');
+            const cycleBtn = document.getElementById('cycleTransition');
+            if (reverseBtn) reverseBtn.disabled = false;
+            if (cycleBtn) cycleBtn.disabled = false;
+            
             showStatus('🌟 Hybrid transition started: Explosion → Recombination → Blend', 'success');
         });
+
+        // Reverse Transition button
+        const reverseTransition = document.getElementById('reverseTransition');
+        if (reverseTransition) {
+            reverseTransition.addEventListener('click', () => {
+                if (!engine || !image1 || !image2) return;
+                
+                const config = {
+                    explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
+                    explosionTime: parseInt(document.getElementById('explosionTime').value),
+                    recombinationDuration: parseInt(document.getElementById('recombinationDuration').value),
+                    blendDuration: parseInt(document.getElementById('blendDuration').value)
+                };
+                
+                engine.startReverseHybridTransition(config);
+                showStatus('🔄 Reverse transition started: Blend → Recombination → Explosion → Static', 'success');
+            });
+        }
+
+        // Cycle Transition button
+        const cycleTransition = document.getElementById('cycleTransition');
+        const stopCycle = document.getElementById('stopCycle');
+        if (cycleTransition && stopCycle) {
+            cycleTransition.addEventListener('click', () => {
+                if (!engine || !image1 || !image2) return;
+                
+                const config = {
+                    explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
+                    explosionTime: parseInt(document.getElementById('explosionTime').value),
+                    recombinationDuration: parseInt(document.getElementById('recombinationDuration').value),
+                    blendDuration: parseInt(document.getElementById('blendDuration').value),
+                    recombinationChaos: 0.3,
+                    vacuumStrength: 0.15,
+                    particleFadeRate: 0.7,
+                    cycleDelay: 1000
+                };
+                
+                engine.startCycleTransition(image1, image2, config);
+                
+                cycleTransition.style.display = 'none';
+                stopCycle.style.display = 'block';
+                reverseTransition.disabled = true;
+                
+                showStatus('♻️ Continuous cycling started', 'success');
+            });
+            
+            stopCycle.addEventListener('click', () => {
+                if (!engine) return;
+                
+                engine.stopCycleTransition();
+                
+                cycleTransition.style.display = 'block';
+                stopCycle.style.display = 'none';
+                reverseTransition.disabled = false;
+                
+                showStatus('⏹️ Cycling stopped', 'info');
+            });
+        }
 
         // Triangulation controls
         const gridSizeInput = document.getElementById('gridSize');
