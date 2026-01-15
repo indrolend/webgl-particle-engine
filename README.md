@@ -398,6 +398,29 @@ engine.startHybridTransition(img1, img2, {
 2. **Recombination**: Particles are pulled together by vacuum force to form target image
 3. **Blend**: Gradual crossfade from particle rendering to triangulation rendering
 
+**Key Improvements:**
+- **Proportional Particle Sizes**: Particle sizes automatically scale based on image dimensions for smooth, realistic transitions
+- **Bidirectional Support**: Transition state is stored for reversibility using `reverseHybridTransition()`
+- **Perfect Alignment**: Particles maintain proper alignment with source and target image positioning
+
+#### `reverseHybridTransition(config)`
+Reverse the hybrid transition (go back from target to source image).
+```javascript
+// After running a forward transition
+engine.startHybridTransition(img1, img2, config);
+
+// Later, reverse the transition
+engine.reverseHybridTransition(); // Uses stored config
+
+// Or override specific config values
+engine.reverseHybridTransition({
+    explosionTime: 1000,  // Slower explosion on reverse
+    blendDuration: 2000   // Longer blend duration
+});
+```
+
+This method automatically swaps the source and target images, allowing seamless bidirectional transitions between images.
+
 #### `updateTriangulationConfig(config)`
 engine.setRenderMode('triangulation');  // Triangulation only
 engine.setRenderMode('hybrid');         // Both combined

@@ -279,6 +279,10 @@ export class ParticleSystem {
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
     
+    // Calculate particle size proportional to the image scale
+    // Smaller images get smaller particles, larger images get larger particles
+    const particleSize = Math.max(this.config.minSize, Math.min(this.config.maxSize, scale * 0.8));
+    
     // Create particles with minimal initial velocity for stable image display
     for (let i = 0; i < pixels.length; i++) {
       const pixel = pixels[i];
@@ -293,12 +297,13 @@ export class ParticleSystem {
           r: pixel.r,
           g: pixel.g,
           b: pixel.b,
-          alpha: pixel.alpha
+          alpha: pixel.alpha,
+          size: particleSize
         }
       ));
     }
     
-    console.log(`[ParticleSystem] Created ${this.particles.length} particles representing the image`);
+    console.log(`[ParticleSystem] Created ${this.particles.length} particles representing the image with size ${particleSize.toFixed(2)}`);
   }
 
   /**
@@ -309,6 +314,7 @@ export class ParticleSystem {
    * - Interpolating both position and color
    * - Handling particle count mismatches gracefully
    * - Maintaining aspect ratio and centering
+   * - Adjusting particle sizes proportionally to image scale
    * 
    * @param {HTMLImageElement} image - The target image to morph into
    * @param {number} duration - Transition duration in milliseconds (default: 2000ms)
@@ -329,6 +335,9 @@ export class ParticleSystem {
     // Calculate offset to center the target image
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
+    
+    // Calculate particle size proportional to the target image scale
+    const targetParticleSize = Math.max(this.config.minSize, Math.min(this.config.maxSize, scale * 0.8));
     
     // Handle particle-to-pixel mapping for seamless transitions
     if (this.particles.length > pixels.length) {
@@ -357,6 +366,7 @@ export class ParticleSystem {
         particle.targetR = pixel.r;
         particle.targetG = pixel.g;
         particle.targetB = pixel.b;
+        particle.targetSize = targetParticleSize;
       }
     } else {
       // Equal or fewer particles than pixels: direct 1-to-1 mapping
@@ -374,10 +384,11 @@ export class ParticleSystem {
         particle.targetR = pixel.r;
         particle.targetG = pixel.g;
         particle.targetB = pixel.b;
+        particle.targetSize = targetParticleSize;
       }
     }
     
-    console.log('[ParticleSystem] Target positions and colors set for seamless morphing');
+    console.log(`[ParticleSystem] Target positions, colors, and sizes set for seamless morphing (size: ${targetParticleSize.toFixed(2)})`);
   }
 
   _startTransition(duration) {
@@ -505,6 +516,11 @@ export class ParticleSystem {
         particle.r = particle.r + (particle.targetR - particle.r) * factor;
         particle.g = particle.g + (particle.targetG - particle.g) * factor;
         particle.b = particle.b + (particle.targetB - particle.b) * factor;
+        
+        // Interpolate size if target size is defined
+        if (particle.targetSize !== undefined) {
+          particle.size = particle.size + (particle.targetSize - particle.size) * factor;
+        }
       } else {
         // Free movement with reduced drift to maintain image structure
         particle.x += particle.vx * deltaTime * this.config.speed * this.DRIFT_FACTOR;
@@ -644,14 +660,18 @@ export class ParticleSystem {
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
     
-    // Transform each pixel into a target position with color
+    // Calculate particle size proportional to the image scale
+    const targetParticleSize = Math.max(this.config.minSize, Math.min(this.config.maxSize, scale * 0.8));
+    
+    // Transform each pixel into a target position with color and size
     for (let pixel of pixels) {
       targets.push({
         x: offsetX + pixel.x * scale,
         y: offsetY + pixel.y * scale,
         r: pixel.r,
         g: pixel.g,
-        b: pixel.b
+        b: pixel.b,
+        size: targetParticleSize
       });
     }
     

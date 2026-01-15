@@ -98,6 +98,7 @@ export class HybridTransitionPreset extends Preset {
           particle.targetR = targets[i].r;
           particle.targetG = targets[i].g;
           particle.targetB = targets[i].b;
+          particle.targetSize = targets[i].size;
         } else {
           // Reuse targets for extra particles with slight offset
           const targetIndex = i % targets.length;
@@ -107,6 +108,7 @@ export class HybridTransitionPreset extends Preset {
           particle.targetR = target.r;
           particle.targetG = target.g;
           particle.targetB = target.b;
+          particle.targetSize = target.size;
         }
       });
     }
@@ -135,6 +137,9 @@ export class HybridTransitionPreset extends Preset {
         break;
       case 'blend':
         this.updateBlend(particles, deltaTime, dimensions, elapsedTime);
+        break;
+      case 'finalStatic':
+        this.updateFinalStatic(particles, deltaTime, dimensions, elapsedTime);
         break;
     }
   }
@@ -210,6 +215,11 @@ export class HybridTransitionPreset extends Preset {
           particle.r += (particle.targetR - particle.r) * colorBlend;
           particle.g += (particle.targetG - particle.g) * colorBlend;
           particle.b += (particle.targetB - particle.b) * colorBlend;
+          
+          // Interpolate size smoothly
+          if (particle.targetSize !== undefined) {
+            particle.size += (particle.targetSize - particle.size) * colorBlend;
+          }
         } else {
           // Close enough to target, lock in place
           particle.x = particle.targetX;
@@ -252,11 +262,39 @@ export class HybridTransitionPreset extends Preset {
         particle.g += (particle.targetG - particle.g) * 0.05;
         particle.b += (particle.targetB - particle.b) * 0.05;
       }
+      
+      // Continue size convergence
+      if (particle.targetSize !== undefined) {
+        particle.size += (particle.targetSize - particle.size) * 0.05;
+      }
     });
 
     // Check if blend is complete
     if (progress >= 1) {
-      console.log('[HybridTransition] Blend complete - transition finished');
+      console.log('[HybridTransition] Blend complete - showing final static image');
+      this.startFinalStatic();
+    }
+  }
+
+  /**
+   * Phase 5: Final Static - display target image as solid static image
+   */
+  startFinalStatic() {
+    console.log('[HybridTransition] Starting final static image display');
+    this.phase = 'finalStatic';
+    this.phaseStartTime = Date.now();
+  }
+
+  updateFinalStatic(particles, deltaTime, dimensions, elapsedTime) {
+    // Keep particles hidden or at low alpha during final static display
+    particles.forEach(particle => {
+      particle.alpha = Math.max(0, particle.alpha - 0.05);
+    });
+
+    // After showing final static image for a duration, mark transition as complete
+    const finalStaticDuration = this.config.finalStaticDuration || 2000; // Default 2 seconds
+    if (elapsedTime >= finalStaticDuration) {
+      console.log('[HybridTransition] Final static display complete - transition finished');
       this.phase = 'idle';
     }
   }
@@ -300,6 +338,13 @@ export class HybridTransitionPreset extends Preset {
    */
   getBlendProgress() {
     return this.phase === 'blend' ? this.blendProgress : 0;
+  }
+
+  /**
+   * Check if in final static phase
+   */
+  isInFinalStatic() {
+    return this.phase === 'finalStatic';
   }
 
   /**

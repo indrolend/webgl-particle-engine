@@ -7,6 +7,9 @@ import { TriangulationMorph } from './triangulation/TriangulationMorph.js';
 import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js';
 import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
 
+// Constants
+const DEFAULT_STATIC_DISPLAY_DURATION = 500; // ms - how long to show static image before atomization
+
 export class HybridEngine extends ParticleEngine {
   constructor(canvas, config = {}) {
     // Initialize parent ParticleEngine
@@ -42,6 +45,33 @@ export class HybridEngine extends ParticleEngine {
       duration: 0,
       startTime: 0
     };
+    
+    // Hybrid transition state for bidirectional support
+    this.hybridTransitionState = null;
+    
+    // Static image display state
+    this.staticImageState = {
+      isDisplaying: false,
+      image: null,
+      startTime: 0,
+      displayDuration: 0
+    };
+    
+    // Create overlay canvas for static image display
+    this.staticImageCanvas = document.createElement('canvas');
+    this.staticImageCanvas.style.position = 'absolute';
+    this.staticImageCanvas.style.pointerEvents = 'none';
+    this.staticImageCanvas.style.display = 'none';
+    
+    // Position overlay canvas on top of main canvas
+    if (this.canvas.parentElement) {
+      // Match main canvas dimensions and position
+      this.staticImageCanvas.width = this.canvas.width;
+      this.staticImageCanvas.height = this.canvas.height;
+      this.staticImageCanvas.style.left = this.canvas.offsetLeft + 'px';
+      this.staticImageCanvas.style.top = this.canvas.offsetTop + 'px';
+      this.canvas.parentElement.appendChild(this.staticImageCanvas);
+    }
     
     // Reusable Map for storing original alpha values (optimization)
     this.originalAlphasCache = new Map();
@@ -187,6 +217,27 @@ export class HybridEngine extends ParticleEngine {
       this.fpsUpdateTime = currentTime;
     }
     
+    // Check if static image display is complete
+    if (this.staticImageState.isDisplaying) {
+      const elapsed = currentTime - this.staticImageState.startTime;
+      if (elapsed >= this.staticImageState.displayDuration) {
+        // Time to atomize into particles
+        console.log('[HybridEngine] Static image display complete, atomizing into particles...');
+        this.staticImageState.isDisplaying = false;
+        
+        // Hide the static image overlay
+        this.hideStaticImage();
+        
+        // Initialize particles from the static image
+        this.initializeFromImage(this.staticImageState.image);
+        
+        // Start the hybrid transition preset
+        if (this.staticImageState.onComplete) {
+          this.staticImageState.onComplete();
+        }
+      }
+    }
+    
     // Update triangulation transition
     if (this.triangulationConfig.enabled) {
       this.updateTriangulationTransition(currentTime);
@@ -212,6 +263,24 @@ export class HybridEngine extends ParticleEngine {
    * Hybrid rendering combining particles and triangulation
    */
   renderHybrid() {
+    // If displaying static image, render it and return
+    if (this.staticImageState.isDisplaying && this.staticImageState.image) {
+      this.renderStaticImage(this.staticImageState.image);
+      return;
+    }
+    
+    // Check if in final static phase (show target image as static)
+    if (this.presetManager.hasActivePreset()) {
+      const activePreset = this.presetManager.getActivePreset();
+      if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
+        // Display target image as solid static image
+        if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
+          this.renderStaticImage(this.hybridTransitionState.targetImage);
+          return;
+        }
+      }
+    }
+    
     const mode = this.triangulationConfig.mode;
     const particles = this.particleSystem.getParticles();
     
@@ -283,6 +352,52 @@ export class HybridEngine extends ParticleEngine {
   }
 
   /**
+   * Render a static image on an overlay canvas (for pre-explosion display)
+   * Uses a 2D canvas overlay to display the image clearly and reliably
+   * @param {HTMLImageElement} image - The image to render
+   */
+  renderStaticImage(image) {
+    if (!this.staticImageCanvas) {
+      return;
+    }
+    
+    // Show the overlay canvas
+    this.staticImageCanvas.style.display = 'block';
+    
+    // Get 2D context from overlay canvas
+    const ctx = this.staticImageCanvas.getContext('2d');
+    
+    // Clear the overlay canvas
+    ctx.clearRect(0, 0, this.staticImageCanvas.width, this.staticImageCanvas.height);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, this.staticImageCanvas.width, this.staticImageCanvas.height);
+    
+    // Calculate scaling to fit canvas while maintaining aspect ratio
+    const scaleX = this.staticImageCanvas.width / image.width;
+    const scaleY = this.staticImageCanvas.height / image.height;
+    const scale = Math.min(scaleX, scaleY) * 0.9; // Use same padding factor as particles
+    
+    const scaledWidth = image.width * scale;
+    const scaledHeight = image.height * scale;
+    
+    // Center the image
+    const offsetX = (this.staticImageCanvas.width - scaledWidth) / 2;
+    const offsetY = (this.staticImageCanvas.height - scaledHeight) / 2;
+    
+    // Draw the centered image
+    ctx.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight);
+  }
+  
+  /**
+   * Hide the static image overlay canvas
+   */
+  hideStaticImage() {
+    if (this.staticImageCanvas) {
+      this.staticImageCanvas.style.display = 'none';
+    }
+  }
+
+  /**
    * Easing function for smooth transitions
    * @param {number} t - Progress (0 to 1)
    * @returns {number} Eased progress
@@ -319,21 +434,52 @@ export class HybridEngine extends ParticleEngine {
 
   /**
    * Start hybrid transition with explosion and recombination
-   * @param {HTMLImageElement} sourceImage - Source image
+   * Now starts with a static image display before atomizing into particles
+   * @param {HTMLImageElement} sourceImage - Source image (displayed as static first)
    * @param {HTMLImageElement} targetImage - Target image  
    * @param {Object} config - Transition configuration
    */
   startHybridTransition(sourceImage, targetImage, config = {}) {
-    console.log('[HybridEngine] Starting hybrid transition with explosion and recombination...');
+    console.log('[HybridEngine] Starting hybrid transition with static image display...');
+    
+    // Store images for bidirectional support
+    this.triangulationImages.source = sourceImage;
+    this.triangulationImages.target = targetImage;
+    this.hybridTransitionState = {
+      sourceImage: sourceImage,
+      targetImage: targetImage,
+      config: config
+    };
+    
+    // Set up static image display (show for a brief moment before atomizing)
+    const staticDisplayDuration = config.staticDisplayDuration || DEFAULT_STATIC_DISPLAY_DURATION;
+    this.staticImageState = {
+      isDisplaying: true,
+      image: sourceImage,
+      startTime: performance.now(),
+      displayDuration: staticDisplayDuration,
+      onComplete: () => {
+        // After static display, start the particle transition
+        this.startParticleTransition(sourceImage, targetImage, config);
+      }
+    };
+    
+    console.log(`[HybridEngine] Displaying static image for ${staticDisplayDuration}ms before atomization...`);
+  }
+
+  /**
+   * Internal method to start the particle-based transition after static image display
+   * @param {HTMLImageElement} sourceImage - Source image
+   * @param {HTMLImageElement} targetImage - Target image  
+   * @param {Object} config - Transition configuration
+   */
+  startParticleTransition(sourceImage, targetImage, config) {
+    console.log('[HybridEngine] Starting particle transition phase...');
     
     const preset = new HybridTransitionPreset(config);
     
     // Register and activate preset
     this.registerPreset('hybridTransition', preset);
-    
-    // Store images
-    this.triangulationImages.source = sourceImage;
-    this.triangulationImages.target = targetImage;
     
     // Initialize triangulation morph for blend phase
     if (this.triangulationMorph) {
@@ -365,7 +511,35 @@ export class HybridEngine extends ParticleEngine {
     // Set targets for recombination phase
     preset.targets = targets;
     
-    console.log('[HybridEngine] Hybrid transition preset activated');
+    console.log('[HybridEngine] Hybrid transition preset activated - particles will now explode');
+  }
+
+  /**
+   * Reverse the hybrid transition (go back from target to source)
+   * @param {Object} config - Optional configuration overrides
+   */
+  reverseHybridTransition(config = {}) {
+    console.log('[HybridEngine] Reversing hybrid transition...');
+    
+    if (!this.hybridTransitionState) {
+      console.warn('[HybridEngine] No hybrid transition state found, cannot reverse');
+      return;
+    }
+    
+    // Swap source and target images for reverse transition
+    const sourceImage = this.hybridTransitionState.targetImage;
+    const targetImage = this.hybridTransitionState.sourceImage;
+    
+    // Merge with stored config
+    const mergedConfig = {
+      ...this.hybridTransitionState.config,
+      ...config
+    };
+    
+    // Start new transition with swapped images
+    this.startHybridTransition(sourceImage, targetImage, mergedConfig);
+    
+    console.log('[HybridEngine] Reverse hybrid transition started');
   }
 
   /**
@@ -373,6 +547,12 @@ export class HybridEngine extends ParticleEngine {
    */
   destroy() {
     console.log('[HybridEngine] Destroying hybrid engine...');
+    
+    // Clean up static image overlay canvas
+    if (this.staticImageCanvas && this.staticImageCanvas.parentElement) {
+      this.staticImageCanvas.parentElement.removeChild(this.staticImageCanvas);
+      this.staticImageCanvas = null;
+    }
     
     // Clean up triangulation
     if (this.triangulationRenderer) {
