@@ -43,6 +43,9 @@ export class HybridEngine extends ParticleEngine {
       startTime: 0
     };
     
+    // Hybrid transition state for bidirectional support
+    this.hybridTransitionState = null;
+    
     // Reusable Map for storing original alpha values (optimization)
     this.originalAlphasCache = new Map();
     
@@ -331,9 +334,14 @@ export class HybridEngine extends ParticleEngine {
     // Register and activate preset
     this.registerPreset('hybridTransition', preset);
     
-    // Store images
+    // Store images for bidirectional support
     this.triangulationImages.source = sourceImage;
     this.triangulationImages.target = targetImage;
+    this.hybridTransitionState = {
+      sourceImage: sourceImage,
+      targetImage: targetImage,
+      config: config
+    };
     
     // Initialize triangulation morph for blend phase
     if (this.triangulationMorph) {
@@ -366,6 +374,34 @@ export class HybridEngine extends ParticleEngine {
     preset.targets = targets;
     
     console.log('[HybridEngine] Hybrid transition preset activated');
+  }
+
+  /**
+   * Reverse the hybrid transition (go back from target to source)
+   * @param {Object} config - Optional configuration overrides
+   */
+  reverseHybridTransition(config = {}) {
+    console.log('[HybridEngine] Reversing hybrid transition...');
+    
+    if (!this.hybridTransitionState) {
+      console.warn('[HybridEngine] No hybrid transition state found, cannot reverse');
+      return;
+    }
+    
+    // Swap source and target images for reverse transition
+    const sourceImage = this.hybridTransitionState.targetImage;
+    const targetImage = this.hybridTransitionState.sourceImage;
+    
+    // Merge with stored config
+    const mergedConfig = {
+      ...this.hybridTransitionState.config,
+      ...config
+    };
+    
+    // Start new transition with swapped images
+    this.startHybridTransition(sourceImage, targetImage, mergedConfig);
+    
+    console.log('[HybridEngine] Reverse hybrid transition started');
   }
 
   /**

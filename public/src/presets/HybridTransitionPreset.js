@@ -98,6 +98,7 @@ export class HybridTransitionPreset extends Preset {
           particle.targetR = targets[i].r;
           particle.targetG = targets[i].g;
           particle.targetB = targets[i].b;
+          particle.targetSize = targets[i].size;
         } else {
           // Reuse targets for extra particles with slight offset
           const targetIndex = i % targets.length;
@@ -107,6 +108,7 @@ export class HybridTransitionPreset extends Preset {
           particle.targetR = target.r;
           particle.targetG = target.g;
           particle.targetB = target.b;
+          particle.targetSize = target.size;
         }
       });
     }
@@ -210,6 +212,11 @@ export class HybridTransitionPreset extends Preset {
           particle.r += (particle.targetR - particle.r) * colorBlend;
           particle.g += (particle.targetG - particle.g) * colorBlend;
           particle.b += (particle.targetB - particle.b) * colorBlend;
+          
+          // Interpolate size smoothly
+          if (particle.targetSize !== undefined) {
+            particle.size += (particle.targetSize - particle.size) * colorBlend;
+          }
         } else {
           // Close enough to target, lock in place
           particle.x = particle.targetX;
@@ -251,6 +258,11 @@ export class HybridTransitionPreset extends Preset {
         particle.r += (particle.targetR - particle.r) * 0.05;
         particle.g += (particle.targetG - particle.g) * 0.05;
         particle.b += (particle.targetB - particle.b) * 0.05;
+      }
+      
+      // Continue size convergence
+      if (particle.targetSize !== undefined) {
+        particle.size += (particle.targetSize - particle.size) * 0.05;
       }
     });
 
