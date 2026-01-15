@@ -603,8 +603,32 @@ export class HybridEngine extends ParticleEngine {
    * @param {HTMLImageElement} targetImage - Target image  
    * @param {Object} config - Transition configuration
    */
-  startHybridTransition(sourceImage, targetImage, config = {}) {
-    console.log('[HybridEngine] Starting hybrid transition with disintegration effect...');
+  startHybridTransition(image1, image2, config = {}) {
+    console.log('[HybridEngine] Starting/continuing hybrid transition...');
+    
+    // Determine source and target based on current state
+    let sourceImage, targetImage;
+    
+    if (!this.hybridTransitionState) {
+      // First transition: image1 -> image2
+      sourceImage = image1;
+      targetImage = image2;
+      console.log('[HybridEngine] First transition: image1 -> image2');
+    } else {
+      // Subsequent transitions: swap source and target to alternate
+      const lastTarget = this.hybridTransitionState.targetImage;
+      if (lastTarget === image2) {
+        // Last transition ended at image2, now go to image1
+        sourceImage = image2;
+        targetImage = image1;
+        console.log('[HybridEngine] Alternating: image2 -> image1');
+      } else {
+        // Last transition ended at image1, now go to image2
+        sourceImage = image1;
+        targetImage = image2;
+        console.log('[HybridEngine] Alternating: image1 -> image2');
+      }
+    }
     
     // Reset any active transition states
     this.disintegrationState.isActive = false;
@@ -622,6 +646,8 @@ export class HybridEngine extends ParticleEngine {
     this.hybridTransitionState = {
       sourceImage: sourceImage,
       targetImage: targetImage,
+      image1: image1,  // Store both images for alternation
+      image2: image2,
       config: config
     };
     
@@ -695,29 +721,22 @@ export class HybridEngine extends ParticleEngine {
   /**
    * Reverse the hybrid transition (go back from target to source)
    * @param {Object} config - Optional configuration overrides
+   * @deprecated Use startHybridTransition() with the same images - it will automatically alternate
    */
   reverseHybridTransition(config = {}) {
-    console.log('[HybridEngine] Reversing hybrid transition...');
+    console.log('[HybridEngine] reverseHybridTransition is deprecated - use startHybridTransition() for automatic alternation');
     
     if (!this.hybridTransitionState) {
       console.warn('[HybridEngine] No hybrid transition state found, cannot reverse');
       return;
     }
     
-    // Swap source and target images for reverse transition
-    const sourceImage = this.hybridTransitionState.targetImage;
-    const targetImage = this.hybridTransitionState.sourceImage;
-    
-    // Merge with stored config
-    const mergedConfig = {
-      ...this.hybridTransitionState.config,
-      ...config
-    };
-    
-    // Start new transition with swapped images
-    this.startHybridTransition(sourceImage, targetImage, mergedConfig);
-    
-    console.log('[HybridEngine] Reverse hybrid transition started');
+    // For backwards compatibility, just call startHybridTransition with the stored images
+    this.startHybridTransition(
+      this.hybridTransitionState.image1,
+      this.hybridTransitionState.image2,
+      { ...this.hybridTransitionState.config, ...config }
+    );
   }
 
   /**
