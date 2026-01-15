@@ -307,10 +307,8 @@ export class HybridEngine extends ParticleEngine {
         console.log('[HybridEngine] Solidification complete, showing final static image...');
         this.solidificationState.isActive = false;
         
-        // Clear preset and show static image
-        if (this.presetManager.hasActivePreset()) {
-          this.presetManager.clearPreset();
-        }
+        // DON'T clear preset immediately - let it transition to idle naturally
+        // Just mark that solidification is done
         
         // Display target image as static
         if (this.solidificationState.targetImage) {
