@@ -7,6 +7,9 @@ import { TriangulationMorph } from './triangulation/TriangulationMorph.js';
 import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js';
 import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
 
+// Constants
+const DEFAULT_STATIC_DISPLAY_DURATION = 500; // ms - how long to show static image before atomization
+
 export class HybridEngine extends ParticleEngine {
   constructor(canvas, config = {}) {
     // Initialize parent ParticleEngine
@@ -424,7 +427,7 @@ export class HybridEngine extends ParticleEngine {
       gl.uniform1i(samplerLoc, 0);
     }
     
-    // Set blend mode to 1.0 (fully opaque)
+    // Set blend mode to 0.0 (source only, no blending between source/target)
     const blendLoc = gl.getUniformLocation(this.triangulationRenderer.program, 'u_blend');
     if (blendLoc) {
       gl.uniform1f(blendLoc, 0.0);
@@ -495,7 +498,7 @@ export class HybridEngine extends ParticleEngine {
     };
     
     // Set up static image display (show for a brief moment before atomizing)
-    const staticDisplayDuration = config.staticDisplayDuration || 500; // Default 500ms
+    const staticDisplayDuration = config.staticDisplayDuration || DEFAULT_STATIC_DISPLAY_DURATION;
     this.staticImageState = {
       isDisplaying: true,
       image: sourceImage,
