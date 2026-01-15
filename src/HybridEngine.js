@@ -502,6 +502,12 @@ export class HybridEngine extends ParticleEngine {
       return;
     }
     
+    // Update overlay canvas dimensions to match main canvas
+    this.staticImageCanvas.width = this.canvas.width;
+    this.staticImageCanvas.height = this.canvas.height;
+    this.staticImageCanvas.style.width = this.canvas.clientWidth + 'px';
+    this.staticImageCanvas.style.height = this.canvas.clientHeight + 'px';
+    
     // Show the overlay canvas
     this.staticImageCanvas.style.display = 'block';
     
