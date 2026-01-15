@@ -10,6 +10,8 @@ import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
 // Constants
 const DEFAULT_STATIC_DISPLAY_DURATION = 500; // ms - how long to show static image before disintegration
 const DEFAULT_DISINTEGRATION_DURATION = 1000; // ms - how long the disintegration effect takes
+const FINAL_FADE_PARTICLE_FADE_RATE = 0.5; // How fast particles fade during final static fade-in
+const FINAL_FADE_MIN_PARTICLE_OPACITY = 0.05; // Minimum particle opacity threshold before stopping render
 
 export class HybridEngine extends ParticleEngine {
   constructor(canvas, config = {}) {
@@ -318,13 +320,11 @@ export class HybridEngine extends ParticleEngine {
       if (activePreset && activePreset.phase === 'blend' && activePreset.blendComplete) {
         // Blend is complete, start final static fade-in
         console.log('[HybridEngine] Blend phase complete, starting final static fade-in...');
-        this.finalStaticFadeState = {
-          isActive: true,
-          progress: 0,
-          startTime: currentTime,
-          duration: this.hybridTransitionState?.config?.finalStaticFadeDuration || 1000,
-          targetImage: this.hybridTransitionState?.targetImage || null
-        };
+        this.finalStaticFadeState.isActive = true;
+        this.finalStaticFadeState.progress = 0;
+        this.finalStaticFadeState.startTime = currentTime;
+        this.finalStaticFadeState.duration = this.hybridTransitionState?.config?.finalStaticFadeDuration || 1000;
+        this.finalStaticFadeState.targetImage = this.hybridTransitionState?.targetImage || null;
       }
     }
     
@@ -375,13 +375,13 @@ export class HybridEngine extends ParticleEngine {
       
       // Also render particles fading out
       const particles = this.particleSystem.getParticles();
-      const particleOpacity = 1.0 - progress * 0.5; // Particles fade out more gradually
+      const particleOpacity = 1.0 - progress * FINAL_FADE_PARTICLE_FADE_RATE; // Particles fade out more gradually
       
       // Clear main canvas first
       this.renderer.clear(0, 0, 0, 1);
       
       // Render particles with reduced opacity
-      if (particleOpacity > 0.05) {
+      if (particleOpacity > FINAL_FADE_MIN_PARTICLE_OPACITY) {
         this.originalAlphasCache.clear();
         particles.forEach((p, i) => {
           this.originalAlphasCache.set(i, p.alpha);
