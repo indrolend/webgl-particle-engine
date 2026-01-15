@@ -342,7 +342,10 @@ export class HybridEngine extends ParticleEngine {
     
     // Check if preset just entered finalStatic phase and trigger solidification
     // This check happens AFTER preset update so we catch the phase transition immediately
-    if (this.presetManager.hasActivePreset() && !this.solidificationState.isActive) {
+    // Only trigger if not already showing static image (prevents re-triggering)
+    if (this.presetManager.hasActivePreset() && 
+        !this.solidificationState.isActive && 
+        !(this.staticImageState.isDisplaying && this.staticImageState.displayDuration === Infinity)) {
       const activePreset = this.presetManager.getActivePreset();
       if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
         // Preset is in finalStatic phase, start solidification effect
