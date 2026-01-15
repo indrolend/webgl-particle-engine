@@ -73,7 +73,8 @@ export class HybridEngine extends ParticleEngine {
       progress: 0,
       startTime: 0,
       duration: 0,
-      targetImage: null
+      targetImage: null,
+      hasTriggered: false  // Track if solidification has been triggered for current transition
     };
     
     // Create overlay canvas for static image display
@@ -342,10 +343,10 @@ export class HybridEngine extends ParticleEngine {
     
     // Check if preset just entered finalStatic phase and trigger solidification
     // This check happens AFTER preset update so we catch the phase transition immediately
-    // Only trigger if not already showing static image (prevents re-triggering)
+    // Only trigger if not already triggered for this transition (prevents re-triggering)
     if (this.presetManager.hasActivePreset() && 
         !this.solidificationState.isActive && 
-        !(this.staticImageState.isDisplaying && this.staticImageState.displayDuration === Infinity)) {
+        !this.solidificationState.hasTriggered) {
       const activePreset = this.presetManager.getActivePreset();
       if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
         // Preset is in finalStatic phase, start solidification effect
@@ -355,6 +356,7 @@ export class HybridEngine extends ParticleEngine {
                                         DEFAULT_DISINTEGRATION_DURATION;
           console.log('[HybridEngine] Final static phase detected, starting solidification...');
           this.startSolidification(this.hybridTransitionState.targetImage, solidificationDuration);
+          this.solidificationState.hasTriggered = true;  // Mark as triggered
         }
       }
     }
@@ -607,6 +609,7 @@ export class HybridEngine extends ParticleEngine {
     // Reset any active transition states
     this.disintegrationState.isActive = false;
     this.solidificationState.isActive = false;
+    this.solidificationState.hasTriggered = false;  // Reset trigger flag for new transition
     
     // Clear any active presets
     if (this.presetManager.hasActivePreset()) {
