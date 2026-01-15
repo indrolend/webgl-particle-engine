@@ -305,14 +305,26 @@ export class HybridEngine extends ParticleEngine {
       this.finalStaticFadeState.progress = progress;
       
       if (progress >= 1.0) {
-        // Fade-in complete - deactivate and hide overlay to allow normal rendering
-        console.log('[HybridEngine] Final static fade-in complete, hiding overlay');
+        // Fade-in complete - transition to showing target as static
+        console.log('[HybridEngine] Final static fade-in complete, showing target image as static');
         this.finalStaticFadeState.isActive = false;
-        this.hideStaticImage();
         
         // Clear the preset so normal rendering can continue
         if (this.presetManager.hasActivePreset()) {
           this.presetManager.clearPreset();
+        }
+        
+        // Set up to display the target image as static
+        if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
+          this.staticImageState.isDisplaying = true;
+          this.staticImageState.image = this.hybridTransitionState.targetImage;
+          this.staticImageState.startTime = currentTime;
+          this.staticImageState.displayDuration = Infinity; // Keep showing until next transition
+          
+          // Update triangulation source for next transition
+          if (this.triangulationConfig.enabled) {
+            this.triangulationImages.source = this.hybridTransitionState.targetImage;
+          }
         }
       }
     }
