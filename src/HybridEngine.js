@@ -319,20 +319,20 @@ export class HybridEngine extends ParticleEngine {
 
   /**
    * Render a static image on the canvas (for pre-explosion display)
+   * Uses the triangulation renderer to display the image as a simple textured quad
    * @param {HTMLImageElement} image - The image to render
    */
   renderStaticImage(image) {
-    const gl = this.renderer.gl;
+    // Use triangulation renderer to display static image
+    if (!this.triangulationRenderer) {
+      return;
+    }
+    
+    const gl = this.triangulationRenderer.gl;
     
     // Clear the canvas
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    
-    // Use 2D context to draw the image
-    const canvas2d = document.createElement('canvas');
-    canvas2d.width = this.canvas.width;
-    canvas2d.height = this.canvas.height;
-    const ctx = canvas2d.getContext('2d');
     
     // Calculate scaling to fit canvas while maintaining aspect ratio
     const scaleX = this.canvas.width / image.width;
@@ -346,32 +346,98 @@ export class HybridEngine extends ParticleEngine {
     const offsetX = (this.canvas.width - scaledWidth) / 2;
     const offsetY = (this.canvas.height - scaledHeight) / 2;
     
-    // Draw centered image
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, canvas2d.width, canvas2d.height);
-    ctx.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight);
-    
-    // Copy to WebGL canvas
-    const imageData = ctx.getImageData(0, 0, canvas2d.width, canvas2d.height);
-    
-    // Create texture from image data
+    // Create a temporary texture for the static image
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas2d);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     
-    // For simplicity, use a simple full-screen quad approach
-    // We'll just copy the canvas2d to the main canvas using regular canvas API
-    const mainCtx = this.canvas.getContext('2d', { willReadFrequently: false });
-    if (mainCtx) {
-      mainCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      mainCtx.fillStyle = '#000000';
-      mainCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      mainCtx.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight);
+    // Render a full-screen quad with the image texture
+    this.renderImageQuad(texture, offsetX, offsetY, scaledWidth, scaledHeight);
+    
+    // Clean up texture
+    gl.deleteTexture(texture);
+  }
+
+  /**
+   * Render a textured quad (helper for static image display)
+   * @param {WebGLTexture} texture - The texture to render
+   * @param {number} x - X position
+   * @param {number} y - Y position
+   * @param {number} width - Width
+   * @param {number} height - Height
+   */
+  renderImageQuad(texture, x, y, width, height) {
+    const gl = this.triangulationRenderer.gl;
+    
+    // Use the triangulation renderer's shader program
+    gl.useProgram(this.triangulationRenderer.program);
+    
+    // Convert screen coordinates to normalized device coordinates
+    const x1 = (x / this.canvas.width) * 2 - 1;
+    const y1 = 1 - (y / this.canvas.height) * 2;
+    const x2 = ((x + width) / this.canvas.width) * 2 - 1;
+    const y2 = 1 - ((y + height) / this.canvas.height) * 2;
+    
+    // Create a simple quad (two triangles)
+    const vertices = new Float32Array([
+      // Triangle 1
+      x1, y1, 0.0, 0.0,  // top-left
+      x2, y1, 1.0, 0.0,  // top-right
+      x1, y2, 0.0, 1.0,  // bottom-left
+      // Triangle 2
+      x2, y1, 1.0, 0.0,  // top-right
+      x2, y2, 1.0, 1.0,  // bottom-right
+      x1, y2, 0.0, 1.0   // bottom-left
+    ]);
+    
+    // Create and bind buffer
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    
+    // Get attribute locations
+    const positionLoc = gl.getAttribLocation(this.triangulationRenderer.program, 'a_position');
+    const texCoordLoc = gl.getAttribLocation(this.triangulationRenderer.program, 'a_texCoord');
+    
+    // Set up attributes
+    if (positionLoc !== -1) {
+      gl.enableVertexAttribArray(positionLoc);
+      gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 16, 0);
     }
+    
+    if (texCoordLoc !== -1) {
+      gl.enableVertexAttribArray(texCoordLoc);
+      gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 16, 8);
+    }
+    
+    // Bind texture
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    
+    // Set uniform for texture sampler
+    const samplerLoc = gl.getUniformLocation(this.triangulationRenderer.program, 'u_texture');
+    if (samplerLoc) {
+      gl.uniform1i(samplerLoc, 0);
+    }
+    
+    // Set blend mode to 1.0 (fully opaque)
+    const blendLoc = gl.getUniformLocation(this.triangulationRenderer.program, 'u_blend');
+    if (blendLoc) {
+      gl.uniform1f(blendLoc, 0.0);
+    }
+    
+    // Draw the quad
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    
+    // Clean up
+    gl.deleteBuffer(buffer);
+    
+    if (positionLoc !== -1) gl.disableVertexAttribArray(positionLoc);
+    if (texCoordLoc !== -1) gl.disableVertexAttribArray(texCoordLoc);
   }
 
   /**
