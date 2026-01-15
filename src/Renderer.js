@@ -228,6 +228,7 @@ export class Renderer {
 
   renderImage(opacity = 1.0) {
     if (!this.imageLoaded || !this.texture) {
+      // Image not loaded yet, skip rendering
       return;
     }
     

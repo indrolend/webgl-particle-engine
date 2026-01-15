@@ -409,16 +409,21 @@ export class ParticleSystem {
     this.disintegrationDuration = duration;
     this.disintegrationStartTime = Date.now();
     
-    // Initialize particles with minimal dispersion for smooth start
+    // Initialize particle dispersion targets once, outside the loop
     for (let i = 0; i < this.particles.length; i++) {
       const particle = this.particles[i];
       
-      // Store initial particle positions as targets
+      // Store initial particle positions as targets (only if not already set)
       if (particle.initialX === undefined) {
         particle.initialX = particle.x;
         particle.initialY = particle.y;
         particle.initialSize = particle.size;
       }
+    }
+    
+    // Set dispersion targets for all particles
+    for (let i = 0; i < this.particles.length; i++) {
+      const particle = this.particles[i];
       
       // Set dispersion targets with easing
       const angle = Math.random() * Math.PI * 2;

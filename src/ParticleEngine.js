@@ -117,7 +117,7 @@ export class ParticleEngine {
   /**
    * Start disintegration effect from solid image to particles
    * @param {HTMLImageElement} image - The image element
-   * @param {number} duration - Disintegration duration in milliseconds
+   * @param {number} duration - Disintegration duration in milliseconds (0 means no auto-animation)
    */
   initializeFromSolidImage(image, duration = 2000) {
     console.log('[ParticleEngine] Initializing from solid image with disintegration...');
@@ -128,10 +128,13 @@ export class ParticleEngine {
     // Load the image texture for solid rendering
     this.renderer.loadImageTexture(image);
     
-    // Start the disintegration effect
-    this.particleSystem.startDisintegration(duration);
-    
-    console.log('[ParticleEngine] Solid image loaded, disintegration will start');
+    // Start the disintegration effect only if duration > 0
+    if (duration > 0) {
+      this.particleSystem.startDisintegration(duration);
+      console.log('[ParticleEngine] Solid image loaded, disintegration will start automatically');
+    } else {
+      console.log('[ParticleEngine] Solid image loaded, no auto-animation (duration = 0)');
+    }
   }
 
   /**
