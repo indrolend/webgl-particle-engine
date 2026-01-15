@@ -383,20 +383,29 @@ img2.src = 'star.png';
 
 // Start hybrid transition with custom configuration
 engine.startHybridTransition(img1, img2, {
+    staticDisplayDuration: 500,     // Static image display before disintegration (ms)
+    disintegrationDuration: 1000,   // Smooth solid-to-particle fade (500-3000ms) - NEW!
     explosionIntensity: 150,        // Explosion force (50-300)
     explosionTime: 800,             // Explosion duration in ms (300-2000)
     recombinationDuration: 2000,    // Time to recombine into target shape (1000-4000)
     recombinationChaos: 0.3,        // Chaotic movement factor (0-1)
     vacuumStrength: 0.15,           // Gravitational pull strength (0-1)
     blendDuration: 1500,            // Blend to triangulation duration (500-3000)
-    particleFadeRate: 0.7           // Particle fade speed during blend (0-1)
+    particleFadeRate: 0.7,          // Particle fade speed during blend (0-1)
+    finalStaticDuration: 2000       // Final static image display duration (ms)
 });
 ```
 
 **Transition Phases:**
-1. **Explosion**: Particles scatter in random directions with adjustable intensity
-2. **Recombination**: Particles are pulled together by vacuum force to form target image
-3. **Blend**: Gradual crossfade from particle rendering to triangulation rendering
+1. **Static Display**: Shows solid source image briefly (500ms default)
+2. **Disintegration**: Smooth opacity fade from solid to particles with dispersion (1000ms default)
+   - Image opacity: 100% → 0%
+   - Particle opacity: 0% → 100%
+   - Particles disperse radially with ease-in-out-cubic easing
+3. **Explosion**: Particles scatter in random directions with adjustable intensity
+4. **Recombination**: Particles are pulled together by vacuum force to form target image
+5. **Blend**: Gradual crossfade from particle rendering to triangulation rendering
+6. **Final Static**: Shows solid target image (2000ms default)
 
 **Key Improvements:**
 - **Proportional Particle Sizes**: Particle sizes automatically scale based on image dimensions for smooth, realistic transitions
