@@ -138,6 +138,9 @@ export class HybridTransitionPreset extends Preset {
       case 'blend':
         this.updateBlend(particles, deltaTime, dimensions, elapsedTime);
         break;
+      case 'finalStatic':
+        this.updateFinalStatic(particles, deltaTime, dimensions, elapsedTime);
+        break;
     }
   }
 
@@ -268,7 +271,30 @@ export class HybridTransitionPreset extends Preset {
 
     // Check if blend is complete
     if (progress >= 1) {
-      console.log('[HybridTransition] Blend complete - transition finished');
+      console.log('[HybridTransition] Blend complete - showing final static image');
+      this.startFinalStatic();
+    }
+  }
+
+  /**
+   * Phase 5: Final Static - display target image as solid static image
+   */
+  startFinalStatic() {
+    console.log('[HybridTransition] Starting final static image display');
+    this.phase = 'finalStatic';
+    this.phaseStartTime = Date.now();
+  }
+
+  updateFinalStatic(particles, deltaTime, dimensions, elapsedTime) {
+    // Keep particles hidden or at low alpha during final static display
+    particles.forEach(particle => {
+      particle.alpha = Math.max(0, particle.alpha - 0.05);
+    });
+
+    // After showing final static image for a duration, mark transition as complete
+    const finalStaticDuration = this.config.finalStaticDuration || 2000; // Default 2 seconds
+    if (elapsedTime >= finalStaticDuration) {
+      console.log('[HybridTransition] Final static display complete - transition finished');
       this.phase = 'idle';
     }
   }
@@ -312,6 +338,13 @@ export class HybridTransitionPreset extends Preset {
    */
   getBlendProgress() {
     return this.phase === 'blend' ? this.blendProgress : 0;
+  }
+
+  /**
+   * Check if in final static phase
+   */
+  isInFinalStatic() {
+    return this.phase === 'finalStatic';
   }
 
   /**

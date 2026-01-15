@@ -269,6 +269,18 @@ export class HybridEngine extends ParticleEngine {
       return;
     }
     
+    // Check if in final static phase (show target image as static)
+    if (this.presetManager.hasActivePreset()) {
+      const activePreset = this.presetManager.getActivePreset();
+      if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
+        // Display target image as solid static image
+        if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
+          this.renderStaticImage(this.hybridTransitionState.targetImage);
+          return;
+        }
+      }
+    }
+    
     const mode = this.triangulationConfig.mode;
     const particles = this.particleSystem.getParticles();
     
