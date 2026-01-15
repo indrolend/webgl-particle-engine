@@ -107,7 +107,66 @@ export class ParticleEngine {
   initializeFromImage(image) {
     console.log('[ParticleEngine] Initializing particles from image...');
     this.particleSystem.initializeFromImage(image);
+    
+    // Load the image texture for solid rendering
+    this.renderer.loadImageTexture(image);
+    
     console.log('[ParticleEngine] Particles initialized from image');
+  }
+
+  /**
+   * Start disintegration effect from solid image to particles
+   * @param {HTMLImageElement} image - The image element
+   * @param {number} duration - Disintegration duration in milliseconds (0 means no auto-animation)
+   */
+  initializeFromSolidImage(image, duration = 2000) {
+    console.log('[ParticleEngine] Initializing from solid image with disintegration...');
+    
+    // Initialize particles (they will be hidden initially by opacity)
+    this.particleSystem.initializeFromImage(image);
+    
+    // Load the image texture for solid rendering
+    this.renderer.loadImageTexture(image);
+    
+    // Start the disintegration effect only if duration > 0
+    if (duration > 0) {
+      this.particleSystem.startDisintegration(duration);
+      console.log('[ParticleEngine] Solid image loaded, disintegration will start automatically');
+    } else {
+      console.log('[ParticleEngine] Solid image loaded, no auto-animation (duration = 0)');
+    }
+  }
+
+  /**
+   * Start the disintegration effect manually
+   * @param {number} duration - Duration in milliseconds
+   */
+  startDisintegration(duration = 2000) {
+    console.log('[ParticleEngine] Starting disintegration effect...');
+    this.particleSystem.startDisintegration(duration);
+  }
+
+  /**
+   * Stop the disintegration effect
+   */
+  stopDisintegration() {
+    this.particleSystem.stopDisintegration();
+  }
+
+  /**
+   * Get the current disintegration progress
+   * @returns {number} Progress value from 0.0 to 1.0
+   */
+  getDisintegrationProgress() {
+    return this.particleSystem.getDisintegrationProgress();
+  }
+
+  /**
+   * Set disintegration progress manually
+   * @param {number} progress - Progress value from 0.0 to 1.0
+   */
+  setDisintegrationProgress(progress) {
+    this.particleSystem.setDisintegrationProgress(progress);
   }
 
   transition(pattern, duration = 2000) {
@@ -187,9 +246,20 @@ export class ParticleEngine {
       this.particleSystem.update(deltaTime);
     }
     
-    // Render particles
+    // Render particles with transition control
     const particles = this.particleSystem.getParticles();
-    this.renderer.render(particles);
+    const disintegrationProgress = this.particleSystem.getDisintegrationProgress();
+    
+    // Calculate opacity for image and particles based on disintegration progress
+    // At progress 0: image is 100% visible, particles are 0% visible
+    // At progress 1: image is 0% visible, particles are 100% visible
+    const imageOpacity = 1.0 - disintegrationProgress;
+    const particleOpacity = disintegrationProgress;
+    
+    this.renderer.render(particles, {
+      imageOpacity: imageOpacity,
+      particleOpacity: particleOpacity
+    });
     
     // Continue animation loop
     requestAnimationFrame(() => this.animate());
