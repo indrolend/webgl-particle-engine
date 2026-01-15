@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Transition Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        
+        #canvas {
+            border: 2px solid #667eea;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px;
+        }
+        
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #764ba2;
+        }
+        
+        .status {
+            text-align: center;
+            margin: 10px;
+            font-size: 14px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">Hybrid Transition Test</h1>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    
+    <div class="controls">
+        <input type="file" id="image1Input" accept="image/*">
+        <label>Image 1</label>
+        <input type="file" id="image2Input" accept="image/*">
+        <label>Image 2</label>
+    </div>
+    
+    <div class="controls">
+        <button id="initBtn">Initialize with Image 1</button>
+        <button id="transitionBtn">Transition to Image 2</button>
+        <button id="reverseBtn">Reverse Transition</button>
+    </div>
+    
+    <div class="status" id="status">Load two images and click Initialize</div>
+    
+    <script type="module">
+        import { HybridEngine } from './src/HybridEngine.js';
+        
+        const canvas = document.getElementById('canvas');
+        const status = document.getElementById('status');
+        const image1Input = document.getElementById('image1Input');
+        const image2Input = document.getElementById('image2Input');
+        const initBtn = document.getElementById('initBtn');
+        const transitionBtn = document.getElementById('transitionBtn');
+        const reverseBtn = document.getElementById('reverseBtn');
+        
+        let engine = null;
+        let image1 = null;
+        let image2 = null;
+        
+        // Initialize engine
+        engine = new HybridEngine(canvas, {
+            particleCount: 2000,
+            speed: 1.0,
+            enableTriangulation: true,
+            triangulationMode: 'hybrid',
+            gridSize: 8
+        });
+        
+        // Image 1 upload
+        image1Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image1 = new Image();
+                    image1.onload = () => {
+                        status.textContent = `Image 1 loaded: ${image1.width}x${image1.height}`;
+                    };
+                    image1.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Image 2 upload
+        image2Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image2 = new Image();
+                    image2.onload = () => {
+                        status.textContent = `Image 2 loaded: ${image2.width}x${image2.height}`;
+                    };
+                    image2.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Initialize button
+        initBtn.addEventListener('click', () => {
+            if (!image1) {
+                status.textContent = 'Please load Image 1 first';
+                return;
+            }
+            
+            engine.initializeFromImage(image1);
+            engine.start();
+            status.textContent = 'Initialized with Image 1';
+        });
+        
+        // Transition button
+        transitionBtn.addEventListener('click', () => {
+            if (!image1 || !image2) {
+                status.textContent = 'Please load both images first';
+                return;
+            }
+            
+            if (!engine.isRunning) {
+                engine.initializeFromImage(image1);
+                engine.start();
+            }
+            
+            const config = {
+                explosionIntensity: 150,
+                explosionTime: 800,
+                recombinationDuration: 2000,
+                blendDuration: 1500,
+                recombinationChaos: 0.3,
+                vacuumStrength: 0.15,
+                particleFadeRate: 0.7
+            };
+            
+            engine.setRenderMode('hybrid');
+            engine.startHybridTransition(image1, image2, config);
+            status.textContent = 'Transitioning from Image 1 to Image 2...';
+        });
+        
+        // Reverse button
+        reverseBtn.addEventListener('click', () => {
+            if (!engine.hybridTransitionState) {
+                status.textContent = 'No transition to reverse. Run a transition first.';
+                return;
+            }
+            
+            engine.reverseHybridTransition();
+            status.textContent = 'Reversing transition...';
+        });
+    </script>
+</body>
+</html>
