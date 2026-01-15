@@ -57,6 +57,22 @@ export class HybridEngine extends ParticleEngine {
       displayDuration: 0
     };
     
+    // Create overlay canvas for static image display
+    this.staticImageCanvas = document.createElement('canvas');
+    this.staticImageCanvas.style.position = 'absolute';
+    this.staticImageCanvas.style.pointerEvents = 'none';
+    this.staticImageCanvas.style.display = 'none';
+    
+    // Position overlay canvas on top of main canvas
+    if (this.canvas.parentElement) {
+      // Match main canvas dimensions and position
+      this.staticImageCanvas.width = this.canvas.width;
+      this.staticImageCanvas.height = this.canvas.height;
+      this.staticImageCanvas.style.left = this.canvas.offsetLeft + 'px';
+      this.staticImageCanvas.style.top = this.canvas.offsetTop + 'px';
+      this.canvas.parentElement.appendChild(this.staticImageCanvas);
+    }
+    
     // Reusable Map for storing original alpha values (optimization)
     this.originalAlphasCache = new Map();
     
@@ -209,6 +225,9 @@ export class HybridEngine extends ParticleEngine {
         console.log('[HybridEngine] Static image display complete, atomizing into particles...');
         this.staticImageState.isDisplaying = false;
         
+        // Hide the static image overlay
+        this.hideStaticImage();
+        
         // Initialize particles from the static image
         this.initializeFromImage(this.staticImageState.image);
         
@@ -321,126 +340,49 @@ export class HybridEngine extends ParticleEngine {
   }
 
   /**
-   * Render a static image on the canvas (for pre-explosion display)
-   * Uses the triangulation renderer to display the image as a simple textured quad
+   * Render a static image on an overlay canvas (for pre-explosion display)
+   * Uses a 2D canvas overlay to display the image clearly and reliably
    * @param {HTMLImageElement} image - The image to render
    */
   renderStaticImage(image) {
-    // Use triangulation renderer to display static image
-    if (!this.triangulationRenderer) {
+    if (!this.staticImageCanvas) {
       return;
     }
     
-    const gl = this.triangulationRenderer.gl;
+    // Show the overlay canvas
+    this.staticImageCanvas.style.display = 'block';
     
-    // Clear the canvas
-    gl.clearColor(0, 0, 0, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    // Get 2D context from overlay canvas
+    const ctx = this.staticImageCanvas.getContext('2d');
+    
+    // Clear the overlay canvas
+    ctx.clearRect(0, 0, this.staticImageCanvas.width, this.staticImageCanvas.height);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, this.staticImageCanvas.width, this.staticImageCanvas.height);
     
     // Calculate scaling to fit canvas while maintaining aspect ratio
-    const scaleX = this.canvas.width / image.width;
-    const scaleY = this.canvas.height / image.height;
+    const scaleX = this.staticImageCanvas.width / image.width;
+    const scaleY = this.staticImageCanvas.height / image.height;
     const scale = Math.min(scaleX, scaleY) * 0.9; // Use same padding factor as particles
     
     const scaledWidth = image.width * scale;
     const scaledHeight = image.height * scale;
     
     // Center the image
-    const offsetX = (this.canvas.width - scaledWidth) / 2;
-    const offsetY = (this.canvas.height - scaledHeight) / 2;
+    const offsetX = (this.staticImageCanvas.width - scaledWidth) / 2;
+    const offsetY = (this.staticImageCanvas.height - scaledHeight) / 2;
     
-    // Create a temporary texture for the static image
-    const texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    
-    // Render a full-screen quad with the image texture
-    this.renderImageQuad(texture, offsetX, offsetY, scaledWidth, scaledHeight);
-    
-    // Clean up texture
-    gl.deleteTexture(texture);
+    // Draw the centered image
+    ctx.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight);
   }
-
+  
   /**
-   * Render a textured quad (helper for static image display)
-   * @param {WebGLTexture} texture - The texture to render
-   * @param {number} x - X position
-   * @param {number} y - Y position
-   * @param {number} width - Width
-   * @param {number} height - Height
+   * Hide the static image overlay canvas
    */
-  renderImageQuad(texture, x, y, width, height) {
-    const gl = this.triangulationRenderer.gl;
-    
-    // Use the triangulation renderer's shader program
-    gl.useProgram(this.triangulationRenderer.program);
-    
-    // Convert screen coordinates to normalized device coordinates
-    const x1 = (x / this.canvas.width) * 2 - 1;
-    const y1 = 1 - (y / this.canvas.height) * 2;
-    const x2 = ((x + width) / this.canvas.width) * 2 - 1;
-    const y2 = 1 - ((y + height) / this.canvas.height) * 2;
-    
-    // Create a simple quad (two triangles)
-    const vertices = new Float32Array([
-      // Triangle 1
-      x1, y1, 0.0, 0.0,  // top-left
-      x2, y1, 1.0, 0.0,  // top-right
-      x1, y2, 0.0, 1.0,  // bottom-left
-      // Triangle 2
-      x2, y1, 1.0, 0.0,  // top-right
-      x2, y2, 1.0, 1.0,  // bottom-right
-      x1, y2, 0.0, 1.0   // bottom-left
-    ]);
-    
-    // Create and bind buffer
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-    
-    // Get attribute locations
-    const positionLoc = gl.getAttribLocation(this.triangulationRenderer.program, 'a_position');
-    const texCoordLoc = gl.getAttribLocation(this.triangulationRenderer.program, 'a_texCoord');
-    
-    // Set up attributes
-    if (positionLoc !== -1) {
-      gl.enableVertexAttribArray(positionLoc);
-      gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 16, 0);
+  hideStaticImage() {
+    if (this.staticImageCanvas) {
+      this.staticImageCanvas.style.display = 'none';
     }
-    
-    if (texCoordLoc !== -1) {
-      gl.enableVertexAttribArray(texCoordLoc);
-      gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 16, 8);
-    }
-    
-    // Bind texture
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    
-    // Set uniform for texture sampler
-    const samplerLoc = gl.getUniformLocation(this.triangulationRenderer.program, 'u_texture');
-    if (samplerLoc) {
-      gl.uniform1i(samplerLoc, 0);
-    }
-    
-    // Set blend mode to 0.0 (source only, no blending between source/target)
-    const blendLoc = gl.getUniformLocation(this.triangulationRenderer.program, 'u_blend');
-    if (blendLoc) {
-      gl.uniform1f(blendLoc, 0.0);
-    }
-    
-    // Draw the quad
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-    
-    // Clean up
-    gl.deleteBuffer(buffer);
-    
-    if (positionLoc !== -1) gl.disableVertexAttribArray(positionLoc);
-    if (texCoordLoc !== -1) gl.disableVertexAttribArray(texCoordLoc);
   }
 
   /**
@@ -593,6 +535,12 @@ export class HybridEngine extends ParticleEngine {
    */
   destroy() {
     console.log('[HybridEngine] Destroying hybrid engine...');
+    
+    // Clean up static image overlay canvas
+    if (this.staticImageCanvas && this.staticImageCanvas.parentElement) {
+      this.staticImageCanvas.parentElement.removeChild(this.staticImageCanvas);
+      this.staticImageCanvas = null;
+    }
     
     // Clean up triangulation
     if (this.triangulationRenderer) {
