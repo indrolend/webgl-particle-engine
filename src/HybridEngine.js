@@ -8,7 +8,8 @@ import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js'
 import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
 
 // Constants
-const DEFAULT_STATIC_DISPLAY_DURATION = 500; // ms - how long to show static image before atomization
+const DEFAULT_STATIC_DISPLAY_DURATION = 500; // ms - how long to show static image before disintegration
+const DEFAULT_DISINTEGRATION_DURATION = 1000; // ms - how long the disintegration effect takes
 
 export class HybridEngine extends ParticleEngine {
   constructor(canvas, config = {}) {
@@ -241,7 +242,7 @@ export class HybridEngine extends ParticleEngine {
         this.initializeFromImage(this.staticImageState.image);
         
         // Start disintegration effect instead of immediate transition
-        if (this.staticImageState.disintegrationDuration > 0) {
+        if (this.staticImageState.disintegrationDuration && this.staticImageState.disintegrationDuration > 0) {
           this.disintegrationState = {
             isActive: true,
             progress: 0,
@@ -265,7 +266,7 @@ export class HybridEngine extends ParticleEngine {
     }
     
     // Update disintegration progress
-    if (this.disintegrationState.isActive) {
+    if (this.disintegrationState.isActive && this.disintegrationState.duration > 0) {
       const elapsed = currentTime - this.disintegrationState.startTime;
       const progress = Math.min(elapsed / this.disintegrationState.duration, 1.0);
       this.disintegrationState.progress = progress;
@@ -513,7 +514,7 @@ export class HybridEngine extends ParticleEngine {
     
     // Set up static image display and disintegration phases
     const staticDisplayDuration = config.staticDisplayDuration || DEFAULT_STATIC_DISPLAY_DURATION;
-    const disintegrationDuration = config.disintegrationDuration || 1000; // Default 1 second
+    const disintegrationDuration = config.disintegrationDuration || DEFAULT_DISINTEGRATION_DURATION;
     
     this.staticImageState = {
       isDisplaying: true,
