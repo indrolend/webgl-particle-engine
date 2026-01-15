@@ -348,11 +348,12 @@ export class HybridEngine extends ParticleEngine {
     }
     
     // Update particles (preset or default)
-    if (this.presetManager.hasActivePreset()) {
+    // Skip preset updates during solidification - solidification controls the rendering
+    if (this.presetManager.hasActivePreset() && !this.solidificationState.isActive) {
       const particles = this.particleSystem.getParticles();
       const dimensions = { width: this.canvas.width, height: this.canvas.height };
       this.presetManager.update(particles, deltaTime, dimensions);
-    } else {
+    } else if (!this.solidificationState.isActive) {
       this.particleSystem.update(deltaTime);
     }
     
