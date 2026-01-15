@@ -253,8 +253,8 @@ export class HybridEngine extends ParticleEngine {
             sourceImage: this.staticImageState.image
           };
           
-          // Load image texture for dual rendering
-          this.renderer.loadImageTexture(this.staticImageState.image);
+          // Load image texture for dual rendering with particle system config
+          this.renderer.loadImageTexture(this.staticImageState.image, this.particleSystem.config);
           
           // Initialize particle dispersion targets
           this.particleSystem.startDisintegration(this.staticImageState.disintegrationDuration);
