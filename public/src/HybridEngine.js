@@ -89,6 +89,8 @@ export class HybridEngine extends ParticleEngine {
       // Match main canvas dimensions and position
       this.staticImageCanvas.width = this.canvas.width;
       this.staticImageCanvas.height = this.canvas.height;
+      this.staticImageCanvas.style.width = this.canvas.clientWidth + 'px';
+      this.staticImageCanvas.style.height = this.canvas.clientHeight + 'px';
       this.staticImageCanvas.style.left = this.canvas.offsetLeft + 'px';
       this.staticImageCanvas.style.top = this.canvas.offsetTop + 'px';
       this.canvas.parentElement.appendChild(this.staticImageCanvas);
@@ -303,9 +305,15 @@ export class HybridEngine extends ParticleEngine {
       this.finalStaticFadeState.progress = progress;
       
       if (progress >= 1.0) {
-        // Fade-in complete
-        console.log('[HybridEngine] Final static fade-in complete');
-        // Keep showing the static image but mark as complete
+        // Fade-in complete - deactivate and hide overlay to allow normal rendering
+        console.log('[HybridEngine] Final static fade-in complete, hiding overlay');
+        this.finalStaticFadeState.isActive = false;
+        this.hideStaticImage();
+        
+        // Clear the preset so normal rendering can continue
+        if (this.presetManager.hasActivePreset()) {
+          this.presetManager.clearPreset();
+        }
       }
     }
     
