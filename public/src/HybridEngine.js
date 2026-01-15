@@ -332,7 +332,18 @@ export class HybridEngine extends ParticleEngine {
       this.updateTriangulationTransition(currentTime);
     }
     
+    // Update particles (preset or default)
+    // Skip preset updates during solidification - solidification controls the rendering
+    if (this.presetManager.hasActivePreset() && !this.solidificationState.isActive) {
+      const particles = this.particleSystem.getParticles();
+      const dimensions = { width: this.canvas.width, height: this.canvas.height };
+      this.presetManager.update(particles, deltaTime, dimensions);
+    } else if (!this.solidificationState.isActive) {
+      this.particleSystem.update(deltaTime);
+    }
+    
     // Check if preset just entered finalStatic phase and trigger solidification
+    // This check happens AFTER preset update so we catch the phase transition immediately
     if (this.presetManager.hasActivePreset() && !this.solidificationState.isActive) {
       const activePreset = this.presetManager.getActivePreset();
       if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
@@ -345,16 +356,6 @@ export class HybridEngine extends ParticleEngine {
           this.startSolidification(this.hybridTransitionState.targetImage, solidificationDuration);
         }
       }
-    }
-    
-    // Update particles (preset or default)
-    // Skip preset updates during solidification - solidification controls the rendering
-    if (this.presetManager.hasActivePreset() && !this.solidificationState.isActive) {
-      const particles = this.particleSystem.getParticles();
-      const dimensions = { width: this.canvas.width, height: this.canvas.height };
-      this.presetManager.update(particles, deltaTime, dimensions);
-    } else if (!this.solidificationState.isActive) {
-      this.particleSystem.update(deltaTime);
     }
     
     // Render based on mode
@@ -601,6 +602,15 @@ export class HybridEngine extends ParticleEngine {
    */
   startHybridTransition(sourceImage, targetImage, config = {}) {
     console.log('[HybridEngine] Starting hybrid transition with disintegration effect...');
+    
+    // Reset any active transition states
+    this.disintegrationState.isActive = false;
+    this.solidificationState.isActive = false;
+    
+    // Clear any active presets
+    if (this.presetManager.hasActivePreset()) {
+      this.presetManager.clearPreset();
+    }
     
     // Store images for bidirectional support
     this.triangulationImages.source = sourceImage;
