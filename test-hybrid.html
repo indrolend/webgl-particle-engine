@@ -45,6 +45,82 @@
             font-size: 14px;
             color: #aaa;
         }
+        
+        .slider-group {
+            margin: 15px;
+        }
+        
+        .slider-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #ccc;
+        }
+        
+        .slider-value {
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        
+        .file-label:hover {
+            background: #764ba2;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover,
+        input[type="range"]::-webkit-slider-thumb:focus {
+            background: #764ba2;
+            transform: scale(1.1);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            outline: none;
+        }
+        
+        input[type="range"]::-moz-range-thumb:hover,
+        input[type="range"]::-moz-range-thumb:focus {
+            background: #764ba2;
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
@@ -52,16 +128,32 @@
     <canvas id="canvas" width="800" height="600"></canvas>
     
     <div class="controls">
+        <label class="file-label" for="image1Input">Choose Image 1</label>
         <input type="file" id="image1Input" accept="image/*">
-        <label>Image 1</label>
+        <label class="file-label" for="image2Input">Choose Image 2</label>
         <input type="file" id="image2Input" accept="image/*">
-        <label>Image 2</label>
     </div>
     
     <div class="controls">
         <button id="initBtn">Initialize with Image 1</button>
         <button id="transitionBtn">Transition to Image 2</button>
         <button id="reverseBtn">Reverse Transition</button>
+    </div>
+    
+    <div class="controls">
+        <div class="slider-group">
+            <label class="slider-label">
+                Static Display Duration: <span class="slider-value" id="staticDurationValue">500ms</span>
+            </label>
+            <input type="range" id="staticDurationSlider" min="0" max="2000" step="100" value="500">
+        </div>
+        
+        <div class="slider-group">
+            <label class="slider-label">
+                Disintegration Duration: <span class="slider-value" id="disintegrationDurationValue">1000ms</span>
+            </label>
+            <input type="range" id="disintegrationDurationSlider" min="0" max="3000" step="100" value="1000">
+        </div>
     </div>
     
     <div class="status" id="status">Load two images and click Initialize</div>
@@ -76,6 +168,10 @@
         const initBtn = document.getElementById('initBtn');
         const transitionBtn = document.getElementById('transitionBtn');
         const reverseBtn = document.getElementById('reverseBtn');
+        const staticDurationSlider = document.getElementById('staticDurationSlider');
+        const staticDurationValue = document.getElementById('staticDurationValue');
+        const disintegrationDurationSlider = document.getElementById('disintegrationDurationSlider');
+        const disintegrationDurationValue = document.getElementById('disintegrationDurationValue');
         
         let engine = null;
         let image1 = null;
@@ -153,12 +249,23 @@
                 blendDuration: 1500,
                 recombinationChaos: 0.3,
                 vacuumStrength: 0.15,
-                particleFadeRate: 0.7
+                particleFadeRate: 0.7,
+                staticDisplayDuration: parseInt(staticDurationSlider.value, 10),
+                disintegrationDuration: parseInt(disintegrationDurationSlider.value, 10)
             };
             
             engine.setRenderMode('hybrid');
             engine.startHybridTransition(image1, image2, config);
             status.textContent = 'Transitioning from Image 1 to Image 2...';
+        });
+        
+        // Slider event listeners
+        staticDurationSlider.addEventListener('input', () => {
+            staticDurationValue.textContent = `${staticDurationSlider.value}ms`;
+        });
+        
+        disintegrationDurationSlider.addEventListener('input', () => {
+            disintegrationDurationValue.textContent = `${disintegrationDurationSlider.value}ms`;
         });
         
         // Reverse button

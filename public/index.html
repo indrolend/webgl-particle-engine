@@ -453,6 +453,22 @@
                     
                     <div class="slider-group">
                         <div class="slider-label">
+                            <span>Static Display Duration (ms):</span>
+                            <span class="slider-value" id="staticDisplayDurationValue">500</span>
+                        </div>
+                        <input type="range" id="staticDisplayDuration" min="0" max="2000" step="100" value="500">
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Disintegration Duration (ms):</span>
+                            <span class="slider-value" id="disintegrationDurationValue">1000</span>
+                        </div>
+                        <input type="range" id="disintegrationDuration" min="500" max="3000" step="100" value="1000">
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
                             <span>Explosion Intensity:</span>
                             <span class="slider-value" id="explosionIntensityValue">150</span>
                         </div>
@@ -757,6 +773,18 @@
         });
 
         // Hybrid transition sliders
+        const staticDisplayDuration = document.getElementById('staticDisplayDuration');
+        const staticDisplayDurationValue = document.getElementById('staticDisplayDurationValue');
+        staticDisplayDuration.addEventListener('input', () => {
+            staticDisplayDurationValue.textContent = staticDisplayDuration.value;
+        });
+        
+        const disintegrationDuration = document.getElementById('disintegrationDuration');
+        const disintegrationDurationValue = document.getElementById('disintegrationDurationValue');
+        disintegrationDuration.addEventListener('input', () => {
+            disintegrationDurationValue.textContent = disintegrationDuration.value;
+        });
+        
         const explosionIntensity = document.getElementById('explosionIntensity');
         const explosionIntensityValue = document.getElementById('explosionIntensityValue');
         explosionIntensity.addEventListener('input', () => {
@@ -803,20 +831,21 @@
         modeParticles.addEventListener('click', () => setRenderMode('particles'));
         modeTriangulation.addEventListener('click', () => setRenderMode('triangulation'));
         
-        // Hybrid Transition button - triggers multi-phase transition (explosion → recombination → blend)
+        // Hybrid Transition button - triggers multi-phase transition (disintegration → explosion → recombination → blend)
         modeHybrid.addEventListener('click', () => {
             if (!engine || !image1 || !image2) return;
             
             // Get configuration values
             const config = {
-                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
-                explosionTime: parseInt(document.getElementById('explosionTime').value),
-                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value),
-                blendDuration: parseInt(document.getElementById('blendDuration').value),
+                staticDisplayDuration: parseInt(document.getElementById('staticDisplayDuration').value, 10),
+                disintegrationDuration: parseInt(document.getElementById('disintegrationDuration').value, 10),
+                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value, 10),
+                explosionTime: parseInt(document.getElementById('explosionTime').value, 10),
+                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value, 10),
+                blendDuration: parseInt(document.getElementById('blendDuration').value, 10),
                 recombinationChaos: 0.3,
                 vacuumStrength: 0.15,
                 particleFadeRate: 0.7,
-                staticDisplayDuration: 500,  // Show static image for 500ms before atomizing
                 finalStaticDuration: 2000    // Show final static image for 2000ms after blend
             };
             
@@ -830,7 +859,7 @@
             engine.startHybridTransition(image1, image2, config);
             currentImageIndex = 1;
             
-            showStatus('🌟 Static → Explosion → Recombination → Blend → Static', 'success');
+            showStatus('🌟 Static → Disintegration → Explosion → Recombination → Blend → Static', 'success');
         });
 
         // Reverse Hybrid Transition button - transitions back from image 2 to image 1
@@ -840,14 +869,15 @@
             
             // Get configuration values
             const config = {
-                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
-                explosionTime: parseInt(document.getElementById('explosionTime').value),
-                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value),
-                blendDuration: parseInt(document.getElementById('blendDuration').value),
+                staticDisplayDuration: parseInt(document.getElementById('staticDisplayDuration').value, 10),
+                disintegrationDuration: parseInt(document.getElementById('disintegrationDuration').value, 10),
+                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value, 10),
+                explosionTime: parseInt(document.getElementById('explosionTime').value, 10),
+                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value, 10),
+                blendDuration: parseInt(document.getElementById('blendDuration').value, 10),
                 recombinationChaos: 0.3,
                 vacuumStrength: 0.15,
                 particleFadeRate: 0.7,
-                staticDisplayDuration: 500,
                 finalStaticDuration: 2000
             };
             
@@ -861,7 +891,7 @@
             engine.reverseHybridTransition(config);
             currentImageIndex = 0;
             
-            showStatus('🔄 Reversing: Static → Explosion → Recombination → Blend → Static', 'success');
+            showStatus('🔄 Reversing: Static → Disintegration → Explosion → Recombination → Blend → Static', 'success');
         });
 
         // Triangulation controls
