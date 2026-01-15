@@ -17,6 +17,12 @@ export class ParticleSystem {
     this.isTransitioning = false;
     this.transitionProgress = 0;
     
+    // Smooth image-to-particle transition state
+    this.isDisintegrating = false;
+    this.disintegrationProgress = 0;
+    this.disintegrationDuration = 0;
+    this.disintegrationStartTime = 0;
+    
     // Transition and animation constants for image morphing optimization
     this.INTERPOLATION_FACTOR = 0.15;        // Enhanced from 0.1 for smoother convergence
     this.DRIFT_FACTOR = 0.1;                 // Reduced drift to maintain image structure
@@ -391,6 +397,74 @@ export class ParticleSystem {
     console.log(`[ParticleSystem] Target positions, colors, and sizes set for seamless morphing (size: ${targetParticleSize.toFixed(2)})`);
   }
 
+  /**
+   * Start the disintegration effect from solid image to particles
+   * @param {number} duration - Duration of the disintegration in milliseconds
+   */
+  startDisintegration(duration = 2000) {
+    console.log(`[ParticleSystem] Starting disintegration effect (${duration}ms)...`);
+    
+    this.isDisintegrating = true;
+    this.disintegrationProgress = 0;
+    this.disintegrationDuration = duration;
+    this.disintegrationStartTime = Date.now();
+    
+    // Initialize particle dispersion targets once, outside the loop
+    for (let i = 0; i < this.particles.length; i++) {
+      const particle = this.particles[i];
+      
+      // Store initial particle positions as targets (only if not already set)
+      if (particle.initialX === undefined) {
+        particle.initialX = particle.x;
+        particle.initialY = particle.y;
+        particle.initialSize = particle.size;
+      }
+    }
+    
+    // Set dispersion targets for all particles
+    for (let i = 0; i < this.particles.length; i++) {
+      const particle = this.particles[i];
+      
+      // Set dispersion targets with easing
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 50 + Math.random() * 200; // Particles will disperse 50-250 pixels
+      
+      particle.disperseX = particle.initialX + Math.cos(angle) * distance;
+      particle.disperseY = particle.initialY + Math.sin(angle) * distance;
+      particle.disperseSize = particle.initialSize * (0.5 + Math.random() * 1.0); // Varying sizes
+    }
+  }
+
+  /**
+   * Stop the disintegration effect
+   */
+  stopDisintegration() {
+    this.isDisintegrating = false;
+    this.disintegrationProgress = 0;
+    console.log('[ParticleSystem] Disintegration stopped');
+  }
+
+  /**
+   * Get the current disintegration progress (0.0 to 1.0)
+   */
+  getDisintegrationProgress() {
+    return this.disintegrationProgress;
+  }
+
+  /**
+   * Set disintegration progress manually (0.0 to 1.0)
+   * Useful for external control via slider
+   */
+  setDisintegrationProgress(progress) {
+    this.disintegrationProgress = Math.max(0, Math.min(1, progress));
+    
+    if (progress > 0 && !this.isDisintegrating) {
+      this.isDisintegrating = true;
+    } else if (progress <= 0) {
+      this.isDisintegrating = false;
+    }
+  }
+
   _startTransition(duration) {
     this.isTransitioning = true;
     this.transitionProgress = 0;
@@ -484,6 +558,17 @@ export class ParticleSystem {
   }
 
   update(deltaTime) {
+    // Update disintegration progress
+    if (this.isDisintegrating && this.disintegrationDuration > 0) {
+      const elapsed = Date.now() - this.disintegrationStartTime;
+      this.disintegrationProgress = Math.min(elapsed / this.disintegrationDuration, 1);
+      
+      if (this.disintegrationProgress >= 1) {
+        this.isDisintegrating = false;
+        console.log('[ParticleSystem] Disintegration complete');
+      }
+    }
+    
     // Update transition progress
     if (this.isTransitioning) {
       const elapsed = Date.now() - this.transitionStartTime;
@@ -499,7 +584,24 @@ export class ParticleSystem {
     for (let i = 0; i < this.particles.length; i++) {
       const particle = this.particles[i];
       
-      if (this.isTransitioning) {
+      // Handle disintegration effect
+      if (this.disintegrationProgress > 0) {
+        const t = this.easeInOutCubic(this.disintegrationProgress);
+        
+        // Interpolate position from initial to dispersed
+        if (particle.initialX !== undefined && particle.disperseX !== undefined) {
+          particle.x = particle.initialX + (particle.disperseX - particle.initialX) * t;
+          particle.y = particle.initialY + (particle.disperseY - particle.initialY) * t;
+          
+          // Size transition: start small, grow to dispersed size
+          if (particle.initialSize !== undefined && particle.disperseSize !== undefined) {
+            particle.size = particle.initialSize + (particle.disperseSize - particle.initialSize) * t;
+          }
+          
+          // Particle opacity increases during disintegration
+          particle.alpha = 0.3 + 0.7 * t; // Start at 30%, grow to 100%
+        }
+      } else if (this.isTransitioning) {
         // Enhanced easing function for smoother image transitions
         // Using ease-in-out-cubic provides a more natural, fluid morph effect
         const t = this.easeInOutCubic(this.transitionProgress);

@@ -1,14 +1,19 @@
 /**
  * WebGL Renderer for Particle Engine
  * Handles WebGL context initialization, shader compilation, and rendering
+ * Supports both solid image rendering and particle rendering with smooth transitions
  */
 export class Renderer {
   constructor(canvas) {
     this.canvas = canvas;
     this.gl = null;
     this.program = null;
+    this.imageProgram = null;
     this.buffers = {};
     this.uniformLocations = {};
+    this.imageUniformLocations = {};
+    this.texture = null;
+    this.imageLoaded = false;
     
     this.init();
   }
@@ -33,8 +38,9 @@ export class Renderer {
     this.gl.enable(this.gl.BLEND);
     this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
     
-    // Compile shaders and create program
+    // Compile shaders and create programs
     this.createShaderProgram();
+    this.createImageShaderProgram();
     
     console.log('[Renderer] Initialization complete');
   }
@@ -113,6 +119,146 @@ export class Renderer {
     console.log('[Renderer] Buffers created');
   }
 
+  createImageShaderProgram() {
+    console.log('[Renderer] Creating image shader program...');
+    
+    // Vertex shader for rendering solid image
+    const vertexShaderSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      
+      varying vec2 v_texCoord;
+      
+      void main() {
+        gl_Position = vec4(a_position, 0, 1);
+        v_texCoord = a_texCoord;
+      }
+    `;
+    
+    // Fragment shader for rendering solid image with opacity control
+    const fragmentShaderSource = `
+      precision mediump float;
+      
+      uniform sampler2D u_image;
+      uniform float u_opacity;
+      
+      varying vec2 v_texCoord;
+      
+      void main() {
+        vec4 texColor = texture2D(u_image, v_texCoord);
+        gl_FragColor = vec4(texColor.rgb, texColor.a * u_opacity);
+      }
+    `;
+    
+    const vertexShader = this.compileShader(vertexShaderSource, this.gl.VERTEX_SHADER);
+    const fragmentShader = this.compileShader(fragmentShaderSource, this.gl.FRAGMENT_SHADER);
+    
+    // Create program
+    this.imageProgram = this.gl.createProgram();
+    this.gl.attachShader(this.imageProgram, vertexShader);
+    this.gl.attachShader(this.imageProgram, fragmentShader);
+    this.gl.linkProgram(this.imageProgram);
+    
+    if (!this.gl.getProgramParameter(this.imageProgram, this.gl.LINK_STATUS)) {
+      const info = this.gl.getProgramInfoLog(this.imageProgram);
+      console.error('[Renderer] Failed to link image shader program:', info);
+      throw new Error('Failed to link image shader program: ' + info);
+    }
+    
+    console.log('[Renderer] Image shader program created successfully');
+    
+    // Get attribute and uniform locations
+    this.imagePositionLocation = this.gl.getAttribLocation(this.imageProgram, 'a_position');
+    this.imageTexCoordLocation = this.gl.getAttribLocation(this.imageProgram, 'a_texCoord');
+    this.imageUniformLocations.image = this.gl.getUniformLocation(this.imageProgram, 'u_image');
+    this.imageUniformLocations.opacity = this.gl.getUniformLocation(this.imageProgram, 'u_opacity');
+    
+    // Create buffers for image rendering
+    this.buffers.imagePosition = this.gl.createBuffer();
+    this.buffers.imageTexCoord = this.gl.createBuffer();
+    
+    // Setup image quad vertices (full screen)
+    const positions = new Float32Array([
+      -1, -1,  // bottom left
+       1, -1,  // bottom right
+      -1,  1,  // top left
+       1,  1,  // top right
+    ]);
+    
+    const texCoords = new Float32Array([
+      0, 1,  // bottom left
+      1, 1,  // bottom right
+      0, 0,  // top left
+      1, 0,  // top right
+    ]);
+    
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.imagePosition);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, positions, this.gl.STATIC_DRAW);
+    
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.imageTexCoord);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, texCoords, this.gl.STATIC_DRAW);
+    
+    console.log('[Renderer] Image buffers created');
+  }
+
+  loadImageTexture(image) {
+    console.log('[Renderer] Loading image texture...');
+    
+    const gl = this.gl;
+    
+    // Create texture if it doesn't exist
+    if (!this.texture) {
+      this.texture = gl.createTexture();
+    }
+    
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    
+    // Set texture parameters
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    
+    // Upload the image into the texture
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    
+    this.imageLoaded = true;
+    console.log('[Renderer] Image texture loaded successfully');
+  }
+
+  renderImage(opacity = 1.0) {
+    if (!this.imageLoaded || !this.texture) {
+      // Image not loaded yet, skip rendering
+      return;
+    }
+    
+    const gl = this.gl;
+    
+    // Use image shader program
+    gl.useProgram(this.imageProgram);
+    
+    // Set opacity uniform
+    gl.uniform1f(this.imageUniformLocations.opacity, opacity);
+    
+    // Bind texture
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    gl.uniform1i(this.imageUniformLocations.image, 0);
+    
+    // Setup position attribute
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.imagePosition);
+    gl.enableVertexAttribArray(this.imagePositionLocation);
+    gl.vertexAttribPointer(this.imagePositionLocation, 2, gl.FLOAT, false, 0, 0);
+    
+    // Setup texture coordinate attribute
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.imageTexCoord);
+    gl.enableVertexAttribArray(this.imageTexCoordLocation);
+    gl.vertexAttribPointer(this.imageTexCoordLocation, 2, gl.FLOAT, false, 0, 0);
+    
+    // Draw the quad
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
   compileShader(source, type) {
     const shader = this.gl.createShader(type);
     this.gl.shaderSource(shader, source);
@@ -129,12 +275,27 @@ export class Renderer {
     return shader;
   }
 
-  render(particles) {
+  render(particles, options = {}) {
     const gl = this.gl;
+    const { imageOpacity = 0, particleOpacity = 1 } = options;
     
     // Clear canvas
     gl.clearColor(0.05, 0.05, 0.1, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    
+    // Render solid image if opacity > 0
+    if (imageOpacity > 0 && this.imageLoaded) {
+      this.renderImage(imageOpacity);
+    }
+    
+    // Render particles if opacity > 0 and particles exist
+    if (particleOpacity > 0 && particles.length > 0) {
+      this.renderParticles(particles, particleOpacity);
+    }
+  }
+
+  renderParticles(particles, globalOpacity = 1.0) {
+    const gl = this.gl;
     
     if (particles.length === 0) {
       return;
@@ -160,7 +321,7 @@ export class Renderer {
       colors[i * 4] = particle.r;
       colors[i * 4 + 1] = particle.g;
       colors[i * 4 + 2] = particle.b;
-      colors[i * 4 + 3] = particle.alpha;
+      colors[i * 4 + 3] = particle.alpha * globalOpacity;
       
       sizes[i] = particle.size;
     }
@@ -203,9 +364,15 @@ export class Renderer {
     if (this.buffers.position) gl.deleteBuffer(this.buffers.position);
     if (this.buffers.color) gl.deleteBuffer(this.buffers.color);
     if (this.buffers.size) gl.deleteBuffer(this.buffers.size);
+    if (this.buffers.imagePosition) gl.deleteBuffer(this.buffers.imagePosition);
+    if (this.buffers.imageTexCoord) gl.deleteBuffer(this.buffers.imageTexCoord);
     
-    // Delete program
+    // Delete texture
+    if (this.texture) gl.deleteTexture(this.texture);
+    
+    // Delete programs
     if (this.program) gl.deleteProgram(this.program);
+    if (this.imageProgram) gl.deleteProgram(this.imageProgram);
     
     console.log('[Renderer] Cleanup complete');
   }
