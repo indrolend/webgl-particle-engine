@@ -67,6 +67,15 @@ export class HybridEngine extends ParticleEngine {
       sourceImage: null
     };
     
+    // Solidification state (for smooth particle-to-solid transition - reverse of disintegration)
+    this.solidificationState = {
+      isActive: false,
+      progress: 0,
+      startTime: 0,
+      duration: 0,
+      targetImage: null
+    };
+    
     // Create overlay canvas for static image display
     this.staticImageCanvas = document.createElement('canvas');
     this.staticImageCanvas.style.position = 'absolute';
@@ -287,9 +296,55 @@ export class HybridEngine extends ParticleEngine {
       }
     }
     
+    // Update solidification progress (reverse of disintegration)
+    if (this.solidificationState.isActive && this.solidificationState.duration > 0) {
+      const elapsed = currentTime - this.solidificationState.startTime;
+      const progress = Math.min(elapsed / this.solidificationState.duration, 1.0);
+      this.solidificationState.progress = progress;
+      
+      if (progress >= 1.0) {
+        // Solidification complete, show final static image
+        console.log('[HybridEngine] Solidification complete, showing final static image...');
+        this.solidificationState.isActive = false;
+        
+        // Clear preset and show static image
+        if (this.presetManager.hasActivePreset()) {
+          this.presetManager.clearPreset();
+        }
+        
+        // Display target image as static
+        if (this.solidificationState.targetImage) {
+          this.staticImageState.isDisplaying = true;
+          this.staticImageState.image = this.solidificationState.targetImage;
+          this.staticImageState.startTime = currentTime;
+          this.staticImageState.displayDuration = Infinity;
+          
+          // Update triangulation source for next transition
+          if (this.triangulationConfig.enabled) {
+            this.triangulationImages.source = this.solidificationState.targetImage;
+          }
+        }
+      }
+    }
+    
     // Update triangulation transition
     if (this.triangulationConfig.enabled) {
       this.updateTriangulationTransition(currentTime);
+    }
+    
+    // Check if preset just entered finalStatic phase and trigger solidification
+    if (this.presetManager.hasActivePreset() && !this.solidificationState.isActive) {
+      const activePreset = this.presetManager.getActivePreset();
+      if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
+        // Preset is in finalStatic phase, start solidification effect
+        if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
+          const solidificationDuration = this.hybridTransitionState.config.solidificationDuration || 
+                                        this.hybridTransitionState.config.disintegrationDuration || 
+                                        DEFAULT_DISINTEGRATION_DURATION;
+          console.log('[HybridEngine] Final static phase detected, starting solidification...');
+          this.startSolidification(this.hybridTransitionState.targetImage, solidificationDuration);
+        }
+      }
     }
     
     // Update particles (preset or default)
@@ -332,8 +387,24 @@ export class HybridEngine extends ParticleEngine {
       return;
     }
     
+    // If in solidification phase, render with dual rendering (appearing image + fading particles)
+    // This is the reverse of disintegration
+    if (this.solidificationState.isActive) {
+      const progress = this.solidificationState.progress;
+      const imageOpacity = progress; // Image fades in
+      const particleOpacity = 1.0 - progress; // Particles fade out
+      
+      const particles = this.particleSystem.getParticles();
+      this.renderer.render(particles, {
+        imageOpacity: imageOpacity,
+        particleOpacity: particleOpacity
+      });
+      return;
+    }
+    
     // Check if in final static phase (show target image as static)
-    if (this.presetManager.hasActivePreset()) {
+    // But skip if solidification is active (it handles the gradual fade)
+    if (this.presetManager.hasActivePreset() && !this.solidificationState.isActive) {
       const activePreset = this.presetManager.getActivePreset();
       if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
         // Display target image as solid static image
@@ -632,6 +703,30 @@ export class HybridEngine extends ParticleEngine {
     this.startHybridTransition(sourceImage, targetImage, mergedConfig);
     
     console.log('[HybridEngine] Reverse hybrid transition started');
+  }
+
+  /**
+   * Start solidification effect (reverse of disintegration)
+   * @param {HTMLImageElement} targetImage - The target image to solidify into
+   * @param {number} duration - Solidification duration in milliseconds
+   */
+  startSolidification(targetImage, duration = 1000) {
+    console.log('[HybridEngine] Starting solidification effect...');
+    
+    const currentTime = performance.now();
+    
+    this.solidificationState = {
+      isActive: true,
+      progress: 0,
+      startTime: currentTime,
+      duration: duration,
+      targetImage: targetImage
+    };
+    
+    // Load image texture for dual rendering with particle system config
+    this.renderer.loadImageTexture(targetImage, this.particleSystem.config);
+    
+    console.log('[HybridEngine] Solidification effect started');
   }
 
   /**
