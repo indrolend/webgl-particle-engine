@@ -67,16 +67,6 @@ export class HybridEngine extends ParticleEngine {
       sourceImage: null
     };
     
-    // Solidification state (for smooth particle-to-solid transition - reverse of disintegration)
-    this.solidificationState = {
-      isActive: false,
-      progress: 0,
-      startTime: 0,
-      duration: 0,
-      targetImage: null,
-      hasTriggered: false  // Track if solidification has been triggered for current transition
-    };
-    
     // Create overlay canvas for static image display
     this.staticImageCanvas = document.createElement('canvas');
     this.staticImageCanvas.style.position = 'absolute';
@@ -297,63 +287,18 @@ export class HybridEngine extends ParticleEngine {
       }
     }
     
-    // Update solidification progress (reverse of disintegration)
-    if (this.solidificationState.isActive && this.solidificationState.duration > 0) {
-      const elapsed = currentTime - this.solidificationState.startTime;
-      const progress = Math.min(elapsed / this.solidificationState.duration, 1.0);
-      this.solidificationState.progress = progress;
-      
-      if (progress >= 1.0) {
-        // Solidification complete
-        console.log('[HybridEngine] Solidification complete');
-        this.solidificationState.isActive = false;
-        
-        // Hide the static image overlay - we don't want an overlay in the final state
-        this.hideStaticImage();
-        
-        // Update triangulation source for next transition
-        if (this.triangulationConfig.enabled) {
-          this.triangulationImages.source = this.solidificationState.targetImage;
-        }
-        
-        // Particles remain in their final positions forming the target image
-        // No need to show static image overlay - final state is just particles
-      }
-    }
-    
     // Update triangulation transition
     if (this.triangulationConfig.enabled) {
       this.updateTriangulationTransition(currentTime);
     }
     
     // Update particles (preset or default)
-    // Skip preset updates during solidification - solidification controls the rendering
-    if (this.presetManager.hasActivePreset() && !this.solidificationState.isActive) {
+    if (this.presetManager.hasActivePreset()) {
       const particles = this.particleSystem.getParticles();
       const dimensions = { width: this.canvas.width, height: this.canvas.height };
       this.presetManager.update(particles, deltaTime, dimensions);
-    } else if (!this.solidificationState.isActive) {
+    } else {
       this.particleSystem.update(deltaTime);
-    }
-    
-    // Check if preset just entered finalStatic phase and trigger solidification
-    // This check happens AFTER preset update so we catch the phase transition immediately
-    // Only trigger if not already triggered for this transition (prevents re-triggering)
-    if (this.presetManager.hasActivePreset() && 
-        !this.solidificationState.isActive && 
-        !this.solidificationState.hasTriggered) {
-      const activePreset = this.presetManager.getActivePreset();
-      if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
-        // Preset is in finalStatic phase, start solidification effect
-        if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
-          const solidificationDuration = this.hybridTransitionState.config.solidificationDuration || 
-                                        this.hybridTransitionState.config.disintegrationDuration || 
-                                        DEFAULT_DISINTEGRATION_DURATION;
-          console.log('[HybridEngine] Final static phase detected, starting solidification...');
-          this.startSolidification(this.hybridTransitionState.targetImage, solidificationDuration);
-          this.solidificationState.hasTriggered = true;  // Mark as triggered
-        }
-      }
     }
     
     // Render based on mode
@@ -387,24 +332,8 @@ export class HybridEngine extends ParticleEngine {
       return;
     }
     
-    // If in solidification phase, render with dual rendering (appearing image + fading particles)
-    // This is the reverse of disintegration
-    if (this.solidificationState.isActive) {
-      const progress = this.solidificationState.progress;
-      const imageOpacity = progress; // Image fades in
-      const particleOpacity = 1.0 - progress; // Particles fade out
-      
-      const particles = this.particleSystem.getParticles();
-      this.renderer.render(particles, {
-        imageOpacity: imageOpacity,
-        particleOpacity: particleOpacity
-      });
-      return;
-    }
-    
     // Check if in final static phase (show target image as static)
-    // But skip if solidification is active (it handles the gradual fade)
-    if (this.presetManager.hasActivePreset() && !this.solidificationState.isActive) {
+    if (this.presetManager.hasActivePreset()) {
       const activePreset = this.presetManager.getActivePreset();
       if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
         // Display target image as solid static image
@@ -598,42 +527,8 @@ export class HybridEngine extends ParticleEngine {
    * @param {HTMLImageElement} targetImage - Target image  
    * @param {Object} config - Transition configuration
    */
-  startHybridTransition(image1, image2, config = {}) {
-    console.log('[HybridEngine] Starting/continuing hybrid transition...');
-    
-    // Determine source and target based on current state
-    let sourceImage, targetImage;
-    
-    if (!this.hybridTransitionState) {
-      // First transition: image1 -> image2
-      sourceImage = image1;
-      targetImage = image2;
-      console.log('[HybridEngine] First transition: image1 -> image2');
-    } else {
-      // Subsequent transitions: swap source and target to alternate
-      const lastTarget = this.hybridTransitionState.targetImage;
-      if (lastTarget === image2) {
-        // Last transition ended at image2, now go to image1
-        sourceImage = image2;
-        targetImage = image1;
-        console.log('[HybridEngine] Alternating: image2 -> image1');
-      } else {
-        // Last transition ended at image1, now go to image2
-        sourceImage = image1;
-        targetImage = image2;
-        console.log('[HybridEngine] Alternating: image1 -> image2');
-      }
-    }
-    
-    // Reset any active transition states
-    this.disintegrationState.isActive = false;
-    this.solidificationState.isActive = false;
-    this.solidificationState.hasTriggered = false;  // Reset trigger flag for new transition
-    
-    // Clear any active presets
-    if (this.presetManager.hasActivePreset()) {
-      this.presetManager.clearPreset();
-    }
+  startHybridTransition(sourceImage, targetImage, config = {}) {
+    console.log('[HybridEngine] Starting hybrid transition with disintegration effect...');
     
     // Store images for bidirectional support
     this.triangulationImages.source = sourceImage;
@@ -641,8 +536,6 @@ export class HybridEngine extends ParticleEngine {
     this.hybridTransitionState = {
       sourceImage: sourceImage,
       targetImage: targetImage,
-      image1: image1,  // Store both images for alternation
-      image2: image2,
       config: config
     };
     
@@ -716,46 +609,29 @@ export class HybridEngine extends ParticleEngine {
   /**
    * Reverse the hybrid transition (go back from target to source)
    * @param {Object} config - Optional configuration overrides
-   * @deprecated Use startHybridTransition() with the same images - it will automatically alternate
    */
   reverseHybridTransition(config = {}) {
-    console.log('[HybridEngine] reverseHybridTransition is deprecated - use startHybridTransition() for automatic alternation');
+    console.log('[HybridEngine] Reversing hybrid transition...');
     
     if (!this.hybridTransitionState) {
       console.warn('[HybridEngine] No hybrid transition state found, cannot reverse');
       return;
     }
     
-    // For backwards compatibility, just call startHybridTransition with the stored images
-    this.startHybridTransition(
-      this.hybridTransitionState.image1,
-      this.hybridTransitionState.image2,
-      { ...this.hybridTransitionState.config, ...config }
-    );
-  }
-
-  /**
-   * Start solidification effect (reverse of disintegration)
-   * @param {HTMLImageElement} targetImage - The target image to solidify into
-   * @param {number} duration - Solidification duration in milliseconds
-   */
-  startSolidification(targetImage, duration = 1000) {
-    console.log('[HybridEngine] Starting solidification effect...');
+    // Swap source and target images for reverse transition
+    const sourceImage = this.hybridTransitionState.targetImage;
+    const targetImage = this.hybridTransitionState.sourceImage;
     
-    const currentTime = performance.now();
-    
-    this.solidificationState = {
-      isActive: true,
-      progress: 0,
-      startTime: currentTime,
-      duration: duration,
-      targetImage: targetImage
+    // Merge with stored config
+    const mergedConfig = {
+      ...this.hybridTransitionState.config,
+      ...config
     };
     
-    // Load image texture for dual rendering with particle system config
-    this.renderer.loadImageTexture(targetImage, this.particleSystem.config);
+    // Start new transition with swapped images
+    this.startHybridTransition(sourceImage, targetImage, mergedConfig);
     
-    console.log('[HybridEngine] Solidification effect started');
+    console.log('[HybridEngine] Reverse hybrid transition started');
   }
 
   /**
