@@ -439,15 +439,36 @@ export class HybridEngine extends ParticleEngine {
     // Clear the overlay canvas completely (transparent background, no black fill)
     ctx.clearRect(0, 0, this.staticImageCanvas.width, this.staticImageCanvas.height);
     
-    // Calculate scaling to fit canvas while maintaining aspect ratio
-    const scaleX = this.staticImageCanvas.width / image.width;
-    const scaleY = this.staticImageCanvas.height / image.height;
-    const scale = Math.min(scaleX, scaleY) * 0.9; // Use same padding factor as particles
+    // Calculate grid dimensions matching particle system logic
+    // This ensures the static image is the same size as the particulated image
+    const maxParticles = this.particleSystem.config.particleCount;
+    const aspectRatio = image.width / image.height;
+    let gridWidth, gridHeight;
     
-    const scaledWidth = image.width * scale;
-    const scaledHeight = image.height * scale;
+    if (aspectRatio >= 1) {
+      gridWidth = Math.floor(Math.sqrt(maxParticles * aspectRatio));
+      gridHeight = Math.floor(gridWidth / aspectRatio);
+    } else {
+      gridHeight = Math.floor(Math.sqrt(maxParticles / aspectRatio));
+      gridWidth = Math.floor(gridHeight * aspectRatio);
+    }
     
-    // Center the image
+    // Apply same constraints as ParticleSystem
+    const MIN_GRID_DIMENSION = 10;
+    const MAX_GRID_DIMENSION = 200;
+    gridWidth = Math.max(MIN_GRID_DIMENSION, Math.min(gridWidth, MAX_GRID_DIMENSION));
+    gridHeight = Math.max(MIN_GRID_DIMENSION, Math.min(gridHeight, MAX_GRID_DIMENSION));
+    
+    // Calculate scaling to match particle system (using grid dimensions, not original image dimensions)
+    const scaleX = this.staticImageCanvas.width / gridWidth;
+    const scaleY = this.staticImageCanvas.height / gridHeight;
+    const IMAGE_PADDING_FACTOR = 0.9; // Match ParticleSystem
+    const scale = Math.min(scaleX, scaleY) * IMAGE_PADDING_FACTOR;
+    
+    const scaledWidth = gridWidth * scale;
+    const scaledHeight = gridHeight * scale;
+    
+    // Center the image (matching particle system positioning)
     const offsetX = (this.staticImageCanvas.width - scaledWidth) / 2;
     const offsetY = (this.staticImageCanvas.height - scaledHeight) / 2;
     
