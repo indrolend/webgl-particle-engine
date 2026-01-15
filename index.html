@@ -805,21 +805,21 @@
                 blendDuration: parseInt(document.getElementById('blendDuration').value),
                 recombinationChaos: 0.3,
                 vacuumStrength: 0.15,
-                particleFadeRate: 0.7
+                particleFadeRate: 0.7,
+                staticDisplayDuration: 500  // Show static image for 500ms before atomizing
             };
             
-            // Initialize with image1 if not already done
-            if (currentImageIndex === 0) {
-                engine.initializeFromImage(image1);
+            // Start the engine if not already running
+            if (!engine.isRunning) {
                 engine.start();
-                currentImageIndex = 1;
             }
             
-            // Start the hybrid transition
+            // Start the hybrid transition (will show static image first, then atomize)
             engine.setRenderMode('hybrid');
             engine.startHybridTransition(image1, image2, config);
+            currentImageIndex = 1;
             
-            showStatus('🌟 Hybrid transition started: Explosion → Recombination → Blend', 'success');
+            showStatus('🌟 Displaying static image → Explosion → Recombination → Blend', 'success');
         });
 
         // Triangulation controls
