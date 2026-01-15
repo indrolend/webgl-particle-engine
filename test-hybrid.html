@@ -81,6 +81,12 @@
             cursor: pointer;
         }
         
+        input[type="range"]::-webkit-slider-thumb:hover,
+        input[type="range"]::-webkit-slider-thumb:focus {
+            background: #764ba2;
+            transform: scale(1.1);
+        }
+        
         input[type="range"]::-moz-range-thumb {
             width: 16px;
             height: 16px;
@@ -88,6 +94,13 @@
             background: #667eea;
             cursor: pointer;
             border: none;
+            outline: none;
+        }
+        
+        input[type="range"]::-moz-range-thumb:hover,
+        input[type="range"]::-moz-range-thumb:focus {
+            background: #764ba2;
+            transform: scale(1.1);
         }
     </style>
 </head>
@@ -218,8 +231,8 @@
                 recombinationChaos: 0.3,
                 vacuumStrength: 0.15,
                 particleFadeRate: 0.7,
-                staticDisplayDuration: parseInt(staticDurationSlider.value),
-                disintegrationDuration: parseInt(disintegrationDurationSlider.value)
+                staticDisplayDuration: parseInt(staticDurationSlider.value, 10),
+                disintegrationDuration: parseInt(disintegrationDurationSlider.value, 10)
             };
             
             engine.setRenderMode('hybrid');
