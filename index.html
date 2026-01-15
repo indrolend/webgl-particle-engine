@@ -499,6 +499,12 @@
                 </div>
 
                 <div class="control-group">
+                    <button class="mode-btn" id="modeHybridReverse" disabled style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        🔄 Reverse Transition (Back to Image 1)
+                    </button>
+                </div>
+
+                <div class="control-group">
                     <h3>🔺 Triangulation</h3>
                     
                     <div class="slider-group">
@@ -695,10 +701,14 @@
                     morphButton.disabled = false;
                     morphButton.textContent = 'Start Morph ✨';
                     
-                    // Enable hybrid transition button
+                    // Enable hybrid transition buttons
                     const modeHybrid = document.getElementById('modeHybrid');
+                    const modeHybridReverse = document.getElementById('modeHybridReverse');
                     if (modeHybrid) {
                         modeHybrid.disabled = false;
+                    }
+                    if (modeHybridReverse) {
+                        modeHybridReverse.disabled = false;
                     }
                     
                     // Show hybrid transition config
@@ -821,6 +831,37 @@
             currentImageIndex = 1;
             
             showStatus('🌟 Static → Explosion → Recombination → Blend → Static', 'success');
+        });
+
+        // Reverse Hybrid Transition button - transitions back from image 2 to image 1
+        const modeHybridReverse = document.getElementById('modeHybridReverse');
+        modeHybridReverse.addEventListener('click', () => {
+            if (!engine || !image1 || !image2) return;
+            
+            // Get configuration values
+            const config = {
+                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
+                explosionTime: parseInt(document.getElementById('explosionTime').value),
+                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value),
+                blendDuration: parseInt(document.getElementById('blendDuration').value),
+                recombinationChaos: 0.3,
+                vacuumStrength: 0.15,
+                particleFadeRate: 0.7,
+                staticDisplayDuration: 500,
+                finalStaticDuration: 2000
+            };
+            
+            // Start the engine if not already running
+            if (!engine.isRunning) {
+                engine.start();
+            }
+            
+            // Reverse the hybrid transition (image 2 → image 1)
+            engine.setRenderMode('hybrid');
+            engine.reverseHybridTransition(config);
+            currentImageIndex = 0;
+            
+            showStatus('🔄 Reversing: Static → Explosion → Recombination → Blend → Static', 'success');
         });
 
         // Triangulation controls
