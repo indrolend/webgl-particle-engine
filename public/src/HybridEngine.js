@@ -304,25 +304,20 @@ export class HybridEngine extends ParticleEngine {
       this.solidificationState.progress = progress;
       
       if (progress >= 1.0) {
-        // Solidification complete, show final static image
-        console.log('[HybridEngine] Solidification complete, showing final static image...');
+        // Solidification complete
+        console.log('[HybridEngine] Solidification complete');
         this.solidificationState.isActive = false;
         
-        // DON'T clear preset immediately - let it transition to idle naturally
-        // Just mark that solidification is done
+        // Hide the static image overlay - we don't want an overlay in the final state
+        this.hideStaticImage();
         
-        // Display target image as static
-        if (this.solidificationState.targetImage) {
-          this.staticImageState.isDisplaying = true;
-          this.staticImageState.image = this.solidificationState.targetImage;
-          this.staticImageState.startTime = currentTime;
-          this.staticImageState.displayDuration = Infinity;
-          
-          // Update triangulation source for next transition
-          if (this.triangulationConfig.enabled) {
-            this.triangulationImages.source = this.solidificationState.targetImage;
-          }
+        // Update triangulation source for next transition
+        if (this.triangulationConfig.enabled) {
+          this.triangulationImages.source = this.solidificationState.targetImage;
         }
+        
+        // Particles remain in their final positions forming the target image
+        // No need to show static image overlay - final state is just particles
       }
     }
     
