@@ -453,6 +453,14 @@
                     
                     <div class="slider-group">
                         <div class="slider-label">
+                            <span>Static Display Duration (ms):</span>
+                            <span class="slider-value" id="staticDisplayDurationValue">500</span>
+                        </div>
+                        <input type="range" id="staticDisplayDuration" min="0" max="2000" step="100" value="500">
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
                             <span>Disintegration Duration (ms):</span>
                             <span class="slider-value" id="disintegrationDurationValue">1000</span>
                         </div>
@@ -765,6 +773,12 @@
         });
 
         // Hybrid transition sliders
+        const staticDisplayDuration = document.getElementById('staticDisplayDuration');
+        const staticDisplayDurationValue = document.getElementById('staticDisplayDurationValue');
+        staticDisplayDuration.addEventListener('input', () => {
+            staticDisplayDurationValue.textContent = staticDisplayDuration.value;
+        });
+        
         const disintegrationDuration = document.getElementById('disintegrationDuration');
         const disintegrationDurationValue = document.getElementById('disintegrationDurationValue');
         disintegrationDuration.addEventListener('input', () => {
@@ -823,6 +837,7 @@
             
             // Get configuration values
             const config = {
+                staticDisplayDuration: parseInt(document.getElementById('staticDisplayDuration').value),
                 disintegrationDuration: parseInt(document.getElementById('disintegrationDuration').value),
                 explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
                 explosionTime: parseInt(document.getElementById('explosionTime').value),
@@ -831,7 +846,6 @@
                 recombinationChaos: 0.3,
                 vacuumStrength: 0.15,
                 particleFadeRate: 0.7,
-                staticDisplayDuration: 500,  // Show static image for 500ms before disintegration
                 finalStaticDuration: 2000    // Show final static image for 2000ms after blend
             };
             
@@ -855,6 +869,7 @@
             
             // Get configuration values
             const config = {
+                staticDisplayDuration: parseInt(document.getElementById('staticDisplayDuration').value),
                 disintegrationDuration: parseInt(document.getElementById('disintegrationDuration').value),
                 explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
                 explosionTime: parseInt(document.getElementById('explosionTime').value),
@@ -863,7 +878,6 @@
                 recombinationChaos: 0.3,
                 vacuumStrength: 0.15,
                 particleFadeRate: 0.7,
-                staticDisplayDuration: 500,
                 finalStaticDuration: 2000
             };
             
