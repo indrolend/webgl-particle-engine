@@ -10,8 +10,6 @@ import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
 // Constants
 const DEFAULT_STATIC_DISPLAY_DURATION = 500; // ms - how long to show static image before disintegration
 const DEFAULT_DISINTEGRATION_DURATION = 1000; // ms - how long the disintegration effect takes
-const FINAL_FADE_PARTICLE_FADE_RATE = 0.5; // How fast particles fade during final static fade-in
-const FINAL_FADE_MIN_PARTICLE_OPACITY = 0.05; // Minimum particle opacity threshold before stopping render
 
 export class HybridEngine extends ParticleEngine {
   constructor(canvas, config = {}) {
@@ -67,15 +65,6 @@ export class HybridEngine extends ParticleEngine {
       startTime: 0,
       duration: 0,
       sourceImage: null
-    };
-    
-    // Final static fade-in state (for showing target image after blend)
-    this.finalStaticFadeState = {
-      isActive: false,
-      progress: 0,
-      startTime: 0,
-      duration: 1000, // Default 1 second fade-in
-      targetImage: null
     };
     
     // Create overlay canvas for static image display
@@ -298,54 +287,9 @@ export class HybridEngine extends ParticleEngine {
       }
     }
     
-    // Update final static fade-in progress
-    if (this.finalStaticFadeState.isActive && this.finalStaticFadeState.duration > 0) {
-      const elapsed = currentTime - this.finalStaticFadeState.startTime;
-      const progress = Math.min(elapsed / this.finalStaticFadeState.duration, 1.0);
-      this.finalStaticFadeState.progress = progress;
-      
-      if (progress >= 1.0) {
-        // Fade-in complete - transition to showing target as static
-        console.log('[HybridEngine] Final static fade-in complete, showing target image as static');
-        this.finalStaticFadeState.isActive = false;
-        
-        // Clear the preset so normal rendering can continue
-        if (this.presetManager.hasActivePreset()) {
-          this.presetManager.clearPreset();
-        }
-        
-        // Set up to display the target image as static
-        if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
-          this.staticImageState.isDisplaying = true;
-          this.staticImageState.image = this.hybridTransitionState.targetImage;
-          this.staticImageState.startTime = currentTime;
-          this.staticImageState.displayDuration = Infinity; // Keep showing until next transition
-          
-          // Update triangulation source for next transition
-          if (this.triangulationConfig.enabled) {
-            this.triangulationImages.source = this.hybridTransitionState.targetImage;
-          }
-        }
-      }
-    }
-    
     // Update triangulation transition
     if (this.triangulationConfig.enabled) {
       this.updateTriangulationTransition(currentTime);
-    }
-    
-    // Check if blend phase is complete and trigger final static fade-in
-    if (this.presetManager.hasActivePreset() && !this.finalStaticFadeState.isActive) {
-      const activePreset = this.presetManager.getActivePreset();
-      if (activePreset && activePreset.phase === 'blend' && activePreset.blendComplete) {
-        // Blend is complete, start final static fade-in
-        console.log('[HybridEngine] Blend phase complete, starting final static fade-in...');
-        this.finalStaticFadeState.isActive = true;
-        this.finalStaticFadeState.progress = 0;
-        this.finalStaticFadeState.startTime = currentTime;
-        this.finalStaticFadeState.duration = this.hybridTransitionState?.config?.finalStaticFadeDuration || 1000;
-        this.finalStaticFadeState.targetImage = this.hybridTransitionState?.targetImage || null;
-      }
     }
     
     // Update particles (preset or default)
@@ -385,39 +329,6 @@ export class HybridEngine extends ParticleEngine {
         imageOpacity: imageOpacity,
         particleOpacity: particleOpacity
       });
-      return;
-    }
-    
-    // If in final static fade-in phase, render static image with fade-in opacity
-    if (this.finalStaticFadeState.isActive && this.finalStaticFadeState.targetImage) {
-      const progress = this.finalStaticFadeState.progress;
-      const opacity = progress; // Image fades in
-      
-      // Also render particles fading out
-      const particles = this.particleSystem.getParticles();
-      const particleOpacity = 1.0 - progress * FINAL_FADE_PARTICLE_FADE_RATE; // Particles fade out more gradually
-      
-      // Clear main canvas first
-      this.renderer.clear(0, 0, 0, 1);
-      
-      // Render particles with reduced opacity
-      if (particleOpacity > FINAL_FADE_MIN_PARTICLE_OPACITY) {
-        this.originalAlphasCache.clear();
-        particles.forEach((p, i) => {
-          this.originalAlphasCache.set(i, p.alpha);
-          p.alpha = p.alpha * particleOpacity;
-        });
-        
-        this.renderer.render(particles);
-        
-        // Restore original alpha values
-        particles.forEach((p, i) => {
-          p.alpha = this.originalAlphasCache.get(i);
-        });
-      }
-      
-      // Render static image overlay with fade-in
-      this.renderStaticImage(this.finalStaticFadeState.targetImage, opacity);
       return;
     }
     
@@ -507,9 +418,8 @@ export class HybridEngine extends ParticleEngine {
    * Render a static image on an overlay canvas (for pre-explosion display)
    * Uses a 2D canvas overlay to display the image clearly and reliably
    * @param {HTMLImageElement} image - The image to render
-   * @param {number} opacity - Optional opacity for fade effects (0-1)
    */
-  renderStaticImage(image, opacity = 1.0) {
+  renderStaticImage(image) {
     if (!this.staticImageCanvas) {
       return;
     }
@@ -526,7 +436,7 @@ export class HybridEngine extends ParticleEngine {
     // Get 2D context from overlay canvas
     const ctx = this.staticImageCanvas.getContext('2d');
     
-    // Clear the overlay canvas completely (transparent background)
+    // Clear the overlay canvas completely (transparent background, no black fill)
     ctx.clearRect(0, 0, this.staticImageCanvas.width, this.staticImageCanvas.height);
     
     // Calculate scaling to fit canvas while maintaining aspect ratio
@@ -541,14 +451,8 @@ export class HybridEngine extends ParticleEngine {
     const offsetX = (this.staticImageCanvas.width - scaledWidth) / 2;
     const offsetY = (this.staticImageCanvas.height - scaledHeight) / 2;
     
-    // Set opacity for fade effects
-    ctx.globalAlpha = opacity;
-    
     // Draw the centered image
     ctx.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight);
-    
-    // Reset global alpha
-    ctx.globalAlpha = 1.0;
   }
   
   /**

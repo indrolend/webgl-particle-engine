@@ -123,7 +123,6 @@ export class HybridTransitionPreset extends Preset {
     this.phase = 'blend';
     this.phaseStartTime = Date.now();
     this.blendProgress = 0;
-    this.blendComplete = false; // Track if blend phase is complete
   }
 
   update(particles, deltaTime, dimensions) {
@@ -271,14 +270,9 @@ export class HybridTransitionPreset extends Preset {
     });
 
     // Check if blend is complete
-    if (progress >= 1 && !this.blendComplete) {
-      console.log('[HybridTransition] Blend complete - transitioning to final static fade-in');
-      this.blendComplete = true;
-      // Don't change phase - let engine handle final static fade-in
-      // Signal that blend is done via callback if available
-      if (this.onBlendComplete) {
-        this.onBlendComplete();
-      }
+    if (progress >= 1) {
+      console.log('[HybridTransition] Blend complete - showing final static image');
+      this.startFinalStatic();
     }
   }
 
