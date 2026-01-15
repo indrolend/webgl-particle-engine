@@ -57,6 +57,15 @@ export class HybridEngine extends ParticleEngine {
       displayDuration: 0
     };
     
+    // Disintegration state (for smooth solid-to-particle transition)
+    this.disintegrationState = {
+      isActive: false,
+      progress: 0,
+      startTime: 0,
+      duration: 0,
+      sourceImage: null
+    };
+    
     // Create overlay canvas for static image display
     this.staticImageCanvas = document.createElement('canvas');
     this.staticImageCanvas.style.position = 'absolute';
@@ -221,8 +230,8 @@ export class HybridEngine extends ParticleEngine {
     if (this.staticImageState.isDisplaying) {
       const elapsed = currentTime - this.staticImageState.startTime;
       if (elapsed >= this.staticImageState.displayDuration) {
-        // Time to atomize into particles
-        console.log('[HybridEngine] Static image display complete, atomizing into particles...');
+        // Time to start disintegration
+        console.log('[HybridEngine] Static image display complete, starting disintegration...');
         this.staticImageState.isDisplaying = false;
         
         // Hide the static image overlay
@@ -231,7 +240,44 @@ export class HybridEngine extends ParticleEngine {
         // Initialize particles from the static image
         this.initializeFromImage(this.staticImageState.image);
         
-        // Start the hybrid transition preset
+        // Start disintegration effect instead of immediate transition
+        if (this.staticImageState.disintegrationDuration > 0) {
+          this.disintegrationState = {
+            isActive: true,
+            progress: 0,
+            startTime: currentTime,
+            duration: this.staticImageState.disintegrationDuration,
+            sourceImage: this.staticImageState.image
+          };
+          
+          // Load image texture for dual rendering
+          this.renderer.loadImageTexture(this.staticImageState.image);
+          
+          // Initialize particle dispersion targets
+          this.particleSystem.startDisintegration(this.staticImageState.disintegrationDuration);
+        } else {
+          // No disintegration, start transition immediately
+          if (this.staticImageState.onComplete) {
+            this.staticImageState.onComplete();
+          }
+        }
+      }
+    }
+    
+    // Update disintegration progress
+    if (this.disintegrationState.isActive) {
+      const elapsed = currentTime - this.disintegrationState.startTime;
+      const progress = Math.min(elapsed / this.disintegrationState.duration, 1.0);
+      this.disintegrationState.progress = progress;
+      
+      // Update particle system disintegration
+      this.particleSystem.setDisintegrationProgress(progress);
+      
+      if (progress >= 1.0) {
+        // Disintegration complete, start the hybrid transition preset
+        console.log('[HybridEngine] Disintegration complete, starting transition...');
+        this.disintegrationState.isActive = false;
+        
         if (this.staticImageState.onComplete) {
           this.staticImageState.onComplete();
         }
@@ -266,6 +312,20 @@ export class HybridEngine extends ParticleEngine {
     // If displaying static image, render it and return
     if (this.staticImageState.isDisplaying && this.staticImageState.image) {
       this.renderStaticImage(this.staticImageState.image);
+      return;
+    }
+    
+    // If in disintegration phase, render with dual rendering (fading image + appearing particles)
+    if (this.disintegrationState.isActive) {
+      const progress = this.disintegrationState.progress;
+      const imageOpacity = 1.0 - progress; // Image fades out
+      const particleOpacity = progress; // Particles fade in
+      
+      const particles = this.particleSystem.getParticles();
+      this.renderer.render(particles, {
+        imageOpacity: imageOpacity,
+        particleOpacity: particleOpacity
+      });
       return;
     }
     
@@ -433,14 +493,14 @@ export class HybridEngine extends ParticleEngine {
   }
 
   /**
-   * Start hybrid transition with explosion and recombination
-   * Now starts with a static image display before atomizing into particles
+   * Start hybrid transition with all phases:
+   * 1. Static display → 2. Disintegration → 3. Explosion → 4. Recombination → 5. Blend
    * @param {HTMLImageElement} sourceImage - Source image (displayed as static first)
    * @param {HTMLImageElement} targetImage - Target image  
    * @param {Object} config - Transition configuration
    */
   startHybridTransition(sourceImage, targetImage, config = {}) {
-    console.log('[HybridEngine] Starting hybrid transition with static image display...');
+    console.log('[HybridEngine] Starting hybrid transition with disintegration effect...');
     
     // Store images for bidirectional support
     this.triangulationImages.source = sourceImage;
@@ -451,20 +511,24 @@ export class HybridEngine extends ParticleEngine {
       config: config
     };
     
-    // Set up static image display (show for a brief moment before atomizing)
+    // Set up static image display and disintegration phases
     const staticDisplayDuration = config.staticDisplayDuration || DEFAULT_STATIC_DISPLAY_DURATION;
+    const disintegrationDuration = config.disintegrationDuration || 1000; // Default 1 second
+    
     this.staticImageState = {
       isDisplaying: true,
       image: sourceImage,
       startTime: performance.now(),
       displayDuration: staticDisplayDuration,
+      disintegrationDuration: disintegrationDuration,
       onComplete: () => {
-        // After static display, start the particle transition
+        // After static display and disintegration, start the particle transition
         this.startParticleTransition(sourceImage, targetImage, config);
       }
     };
     
-    console.log(`[HybridEngine] Displaying static image for ${staticDisplayDuration}ms before atomization...`);
+    console.log(`[HybridEngine] Phase 1: Static display for ${staticDisplayDuration}ms`);
+    console.log(`[HybridEngine] Phase 2: Disintegration for ${disintegrationDuration}ms`);
   }
 
   /**
