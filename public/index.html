@@ -69,7 +69,7 @@
         }
 
         .controls-panel {
-            width: 380px;
+            width: 400px;
             background: rgba(20, 20, 35, 0.95);
             padding: 20px;
             overflow-y: auto;
@@ -87,19 +87,19 @@
 
         .tabs {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 20px;
             border-bottom: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .tab {
             flex: 1;
-            padding: 10px;
+            padding: 10px 5px;
             background: rgba(0, 0, 0, 0.3);
             border: none;
             color: #aaa;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             transition: all 0.3s;
             border-radius: 8px 8px 0 0;
         }
@@ -354,23 +354,6 @@
             color: #ff5252;
         }
 
-        @media (max-width: 1024px) {
-            .container {
-                flex-direction: column;
-            }
-
-            .controls-panel {
-                width: 100%;
-                max-height: 400px;
-                border-left: none;
-                border-top: 2px solid rgba(102, 126, 234, 0.3);
-            }
-
-            canvas {
-                height: 400px;
-            }
-        }
-
         .github-badge {
             position: absolute;
             top: 10px;
@@ -396,6 +379,49 @@
             background: rgba(102, 126, 234, 0.3);
             transform: translateY(-2px);
         }
+
+        #log {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            line-height: 1.4;
+            margin-top: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry {
+            margin-bottom: 3px;
+            word-wrap: break-word;
+        }
+
+        .log-time {
+            color: #888;
+        }
+
+        .log-message {
+            color: #0f0;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .controls-panel {
+                width: 100%;
+                max-height: 400px;
+                border-left: none;
+                border-top: 2px solid rgba(102, 126, 234, 0.3);
+            }
+
+            canvas {
+                height: 400px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -409,7 +435,7 @@
     <div class="container">
         <div class="canvas-section">
             <h1>🎨 WebGL Particle Engine</h1>
-            <p class="subtitle">Advanced particle & triangulation morphing with hybrid rendering</p>
+            <p class="subtitle">Unified Demo - Particles, Morphing, Presets & Advanced Effects</p>
             <canvas id="canvas" width="1200" height="800"></canvas>
         </div>
 
@@ -417,15 +443,76 @@
             <div class="panel-header">🎮 Controls</div>
 
             <div class="tabs">
-                <button class="tab active" data-tab="images">🖼️ Images</button>
-                <button class="tab" data-tab="patterns">✨ Patterns</button>
-                <button class="tab" data-tab="settings">⚙️ Settings</button>
+                <button class="tab active" data-tab="quickstart">🏠 Quick Start</button>
+                <button class="tab" data-tab="images">🖼️ Images</button>
+                <button class="tab" data-tab="advanced">⚙️ Advanced</button>
+                <button class="tab" data-tab="debug">🐛 Debug</button>
             </div>
 
             <div id="status" class="status-message info" style="display: none;">Ready</div>
 
+            <!-- Quick Start Tab -->
+            <div class="tab-content active" id="tab-quickstart">
+                <div class="control-group">
+                    <h3>🎯 Pattern Selector</h3>
+                    <button onclick="initPattern('grid')">Grid</button>
+                    <button onclick="initPattern('circle')">Circle</button>
+                    <button onclick="initPattern('spiral')">Spiral</button>
+                    <button onclick="initPattern('random')">Random</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>✨ Pattern Transitions</h3>
+                    <button class="secondary" onclick="transitionPattern('grid')">→ Grid</button>
+                    <button class="secondary" onclick="transitionPattern('circle')">→ Circle</button>
+                    <button class="secondary" onclick="transitionPattern('spiral')">→ Spiral</button>
+                    <button class="secondary" onclick="transitionPattern('random')">→ Random</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>🎬 Animation Presets</h3>
+                    <button onclick="activateSchoolOfFish()">🐟 School of Fish</button>
+                    <button class="secondary" onclick="deactivatePreset()">Stop Preset</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>📁 Preset Management</h3>
+                    <button onclick="exportPreset()">💾 Export Current Preset</button>
+                    <label class="file-label" for="presetImportInput" style="padding: 8px; margin-bottom: 0;">
+                        📂 Import Preset JSON
+                    </label>
+                    <input type="file" id="presetImportInput" accept=".json">
+                </div>
+
+                <div class="control-group">
+                    <h3>📄 Page Transitions (DOM Content)</h3>
+                    <button onclick="demoPageTransition()">🎬 Demo Page Transition</button>
+                    <p style="font-size: 11px; color: #aaa; margin-top: 8px;">
+                        Demonstrates transitioning between HTML div elements using particle effects
+                    </p>
+                </div>
+
+                <div class="control-group">
+                    <h3>ℹ️ Info</h3>
+                    <div class="info-display">
+                        <div class="info-row">
+                            <span class="info-label">FPS:</span>
+                            <span class="info-value" id="fpsValue">0</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Particles:</span>
+                            <span class="info-value" id="particleCount">0</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Mode:</span>
+                            <span class="info-value" id="currentMode">Hybrid</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Images Tab -->
-            <div class="tab-content active" id="tab-images">
+            <div class="tab-content" id="tab-images">
                 <div class="control-group">
                     <h3>📸 Image Upload</h3>
                     
@@ -448,12 +535,35 @@
                     <button id="morphButton" disabled>Start Morph ✨</button>
                 </div>
 
-                <div class="control-group" id="hybridTransitionConfig" style="display: none;">
+                <div class="control-group">
+                    <h3>🎨 Render Mode</h3>
+                    <div class="mode-buttons">
+                        <button class="mode-btn" id="modeParticles">Particles</button>
+                        <button class="mode-btn" id="modeTriangulation">Triangulation</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <button class="mode-btn" id="modeHybrid" disabled style="width: 100%; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        🌟 Hybrid Transition (Explosion + Blend)
+                    </button>
+                </div>
+
+                <div class="control-group">
+                    <button class="mode-btn" id="modeHybridReverse" disabled style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        🔄 Reverse Transition (Back to Image 1)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Advanced Tab -->
+            <div class="tab-content" id="tab-advanced">
+                <div class="control-group" id="hybridTransitionConfig">
                     <h3>💥 Hybrid Transition Settings</h3>
                     
                     <div class="slider-group">
                         <div class="slider-label">
-                            <span>Static Display Duration (ms):</span>
+                            <span>Static Display (ms):</span>
                             <span class="slider-value" id="staticDisplayDurationValue">500</span>
                         </div>
                         <input type="range" id="staticDisplayDuration" min="0" max="2000" step="100" value="500">
@@ -461,7 +571,7 @@
                     
                     <div class="slider-group">
                         <div class="slider-label">
-                            <span>Disintegration Duration (ms):</span>
+                            <span>Disintegration (ms):</span>
                             <span class="slider-value" id="disintegrationDurationValue">1000</span>
                         </div>
                         <input type="range" id="disintegrationDuration" min="500" max="3000" step="100" value="1000">
@@ -485,7 +595,7 @@
 
                     <div class="slider-group">
                         <div class="slider-label">
-                            <span>Recombination Duration (ms):</span>
+                            <span>Recombination (ms):</span>
                             <span class="slider-value" id="recombinationDurationValue">2000</span>
                         </div>
                         <input type="range" id="recombinationDuration" min="1000" max="4000" step="100" value="2000">
@@ -498,26 +608,6 @@
                         </div>
                         <input type="range" id="blendDuration" min="500" max="3000" step="100" value="1500">
                     </div>
-                </div>
-
-                <div class="control-group">
-                    <h3>🎨 Render Mode</h3>
-                    <div class="mode-buttons">
-                        <button class="mode-btn" id="modeParticles">Particles</button>
-                        <button class="mode-btn" id="modeTriangulation">Triangulation</button>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <button class="mode-btn" id="modeHybrid" disabled style="width: 100%; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                        🌟 Hybrid Transition (Explosion + Blend)
-                    </button>
-                </div>
-
-                <div class="control-group">
-                    <button class="mode-btn" id="modeHybridReverse" disabled style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        🔄 Reverse Transition (Back to Image 1)
-                    </button>
                 </div>
 
                 <div class="control-group">
@@ -552,35 +642,7 @@
                         <input type="range" id="particleOpacity" min="0" max="100" value="50">
                     </div>
                 </div>
-            </div>
 
-            <!-- Patterns Tab -->
-            <div class="tab-content" id="tab-patterns">
-                <div class="control-group">
-                    <h3>🎯 Initialize Pattern</h3>
-                    <button class="secondary" onclick="initPattern('grid')">Grid</button>
-                    <button class="secondary" onclick="initPattern('circle')">Circle</button>
-                    <button class="secondary" onclick="initPattern('spiral')">Spiral</button>
-                    <button class="secondary" onclick="initPattern('random')">Random</button>
-                </div>
-
-                <div class="control-group">
-                    <h3>✨ Transition To</h3>
-                    <button class="secondary" onclick="transitionPattern('grid')">→ Grid</button>
-                    <button class="secondary" onclick="transitionPattern('circle')">→ Circle</button>
-                    <button class="secondary" onclick="transitionPattern('spiral')">→ Spiral</button>
-                    <button class="secondary" onclick="transitionPattern('random')">→ Random</button>
-                </div>
-
-                <div class="control-group">
-                    <h3>🎬 Presets</h3>
-                    <button onclick="activateSchoolOfFish()">🐟 School of Fish</button>
-                    <button class="secondary" onclick="deactivatePreset()">Stop Preset</button>
-                </div>
-            </div>
-
-            <!-- Settings Tab -->
-            <div class="tab-content" id="tab-settings">
                 <div class="control-group">
                     <h3>⚡ Performance</h3>
                     
@@ -602,7 +664,10 @@
 
                     <button onclick="applySettings()">Apply Settings</button>
                 </div>
+            </div>
 
+            <!-- Debug Tab -->
+            <div class="tab-content" id="tab-debug">
                 <div class="control-group">
                     <h3>🎮 Engine Controls</h3>
                     <button onclick="engine.start()">▶️ Start</button>
@@ -611,28 +676,47 @@
                 </div>
 
                 <div class="control-group">
-                    <h3>ℹ️ Info</h3>
+                    <h3>📊 Debug Info</h3>
                     <div class="info-display">
                         <div class="info-row">
                             <span class="info-label">FPS:</span>
-                            <span class="info-value" id="fpsValue">0</span>
+                            <span class="info-value" id="debugFps">0</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Particles:</span>
-                            <span class="info-value" id="particleCount">0</span>
+                            <span class="info-value" id="debugParticleCount">0</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Triangles:</span>
                             <span class="info-value" id="triangleCount">0</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Mode:</span>
-                            <span class="info-value" id="currentMode">Hybrid</span>
+                            <span class="info-label">Status:</span>
+                            <span class="info-value" id="debugStatus">Running</span>
                         </div>
                     </div>
                 </div>
+
+                <div class="control-group">
+                    <h3>📋 Debug Log</h3>
+                    <button class="secondary" onclick="clearLog()">Clear Log</button>
+                    <div id="log"></div>
+                </div>
             </div>
         </div>
+    </div>
+
+    <!-- Hidden demo DIV elements for page transitions -->
+    <div id="demoDiv1" style="position: absolute; left: -9999px; width: 800px; height: 600px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 50px; color: white; border-radius: 20px;">
+        <h2 style="font-size: 48px; margin-bottom: 20px;">Welcome to</h2>
+        <h1 style="font-size: 72px; margin-bottom: 30px;">Page One</h1>
+        <p style="font-size: 24px; line-height: 1.6;">This is a demonstration of particle-based page transitions using WebGL</p>
+    </div>
+    
+    <div id="demoDiv2" style="position: absolute; left: -9999px; width: 800px; height: 600px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 50px; color: white; border-radius: 20px;">
+        <h2 style="font-size: 48px; margin-bottom: 20px;">Now on</h2>
+        <h1 style="font-size: 72px; margin-bottom: 30px;">Page Two</h1>
+        <p style="font-size: 24px; line-height: 1.6;">Smooth transitions between HTML content rendered as particles</p>
     </div>
 
     <script type="module">
@@ -657,24 +741,47 @@
         let image2 = null;
         let currentImageIndex = 0;
 
-        // DOM Elements
-        const image1Input = document.getElementById('image1Input');
-        const image2Input = document.getElementById('image2Input');
-        const preview1 = document.getElementById('preview1');
-        const preview2 = document.getElementById('preview2');
-        const morphButton = document.getElementById('morphButton');
-        const statusMessage = document.getElementById('status');
+        // Debug logging
+        const logElement = document.getElementById('log');
+        const maxLogEntries = 50;
+
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLogEntry(args.join(' '));
+        };
+
+        function addLogEntry(message, type = 'info') {
+            if (!logElement) return;
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            let color = '#0f0';
+            if (type === 'error') color = '#f55';
+            if (type === 'warn') color = '#fa0';
+            
+            entry.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-message" style="color: ${color}">${message}</span>`;
+            
+            logElement.insertBefore(entry, logElement.firstChild);
+            
+            while (logElement.children.length > maxLogEntries) {
+                logElement.removeChild(logElement.lastChild);
+            }
+        }
+
+        window.clearLog = function() {
+            if (logElement) logElement.innerHTML = '';
+        };
 
         // Tab switching
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 const tabName = tab.dataset.tab;
                 
-                // Update tab buttons
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 
-                // Update tab content
                 document.querySelectorAll('.tab-content').forEach(content => {
                     content.classList.remove('active');
                 });
@@ -684,6 +791,7 @@
 
         // Status message helper
         function showStatus(message, type = 'info') {
+            const statusMessage = document.getElementById('status');
             statusMessage.textContent = message;
             statusMessage.className = `status-message ${type}`;
             statusMessage.style.display = 'block';
@@ -712,26 +820,10 @@
                     image2 = img;
                 }
                 
-                // Enable morph button if both images are loaded
                 if (image1 && image2) {
-                    morphButton.disabled = false;
-                    morphButton.textContent = 'Start Morph ✨';
-                    
-                    // Enable hybrid transition buttons
-                    const modeHybrid = document.getElementById('modeHybrid');
-                    const modeHybridReverse = document.getElementById('modeHybridReverse');
-                    if (modeHybrid) {
-                        modeHybrid.disabled = false;
-                    }
-                    if (modeHybridReverse) {
-                        modeHybridReverse.disabled = false;
-                    }
-                    
-                    // Show hybrid transition config
-                    const hybridConfig = document.getElementById('hybridTransitionConfig');
-                    if (hybridConfig) {
-                        hybridConfig.style.display = 'block';
-                    }
+                    document.getElementById('morphButton').disabled = false;
+                    document.getElementById('modeHybrid').disabled = false;
+                    document.getElementById('modeHybridReverse').disabled = false;
                 }
                 
                 showStatus(`Image ${imageIndex} loaded successfully`, 'success');
@@ -746,129 +838,55 @@
             reader.readAsDataURL(file);
         }
 
-        image1Input.addEventListener('change', e => handleImageUpload(e, preview1, 1));
-        image2Input.addEventListener('change', e => handleImageUpload(e, preview2, 2));
+        document.getElementById('image1Input').addEventListener('change', e => handleImageUpload(e, document.getElementById('preview1'), 1));
+        document.getElementById('image2Input').addEventListener('change', e => handleImageUpload(e, document.getElementById('preview2'), 2));
 
         // Morph button handler
-        morphButton.addEventListener('click', () => {
+        document.getElementById('morphButton').addEventListener('click', () => {
             if (!engine) return;
             
             if (currentImageIndex === 0) {
                 engine.initializeFromImage(image1);
                 engine.start();
                 currentImageIndex = 1;
-                morphButton.textContent = 'Morph to Image 2 →';
+                document.getElementById('morphButton').textContent = 'Morph to Image 2 →';
                 showStatus('Initialized with Image 1', 'success');
             } else if (currentImageIndex === 1) {
                 engine.transitionToImage(image2, 2000);
                 currentImageIndex = 2;
-                morphButton.textContent = 'Morph to Image 1 ←';
+                document.getElementById('morphButton').textContent = 'Morph to Image 1 ←';
                 showStatus('Morphing to Image 2...', 'info');
             } else {
                 engine.transitionToImage(image1, 2000);
                 currentImageIndex = 1;
-                morphButton.textContent = 'Morph to Image 2 →';
+                document.getElementById('morphButton').textContent = 'Morph to Image 2 →';
                 showStatus('Morphing to Image 1...', 'info');
             }
         });
 
-        // Hybrid transition sliders
-        const staticDisplayDuration = document.getElementById('staticDisplayDuration');
-        const staticDisplayDurationValue = document.getElementById('staticDisplayDurationValue');
-        staticDisplayDuration.addEventListener('input', () => {
-            staticDisplayDurationValue.textContent = staticDisplayDuration.value;
-        });
-        
-        const disintegrationDuration = document.getElementById('disintegrationDuration');
-        const disintegrationDurationValue = document.getElementById('disintegrationDurationValue');
-        disintegrationDuration.addEventListener('input', () => {
-            disintegrationDurationValue.textContent = disintegrationDuration.value;
-        });
-        
-        const explosionIntensity = document.getElementById('explosionIntensity');
-        const explosionIntensityValue = document.getElementById('explosionIntensityValue');
-        explosionIntensity.addEventListener('input', () => {
-            explosionIntensityValue.textContent = explosionIntensity.value;
-        });
-
-        const explosionTime = document.getElementById('explosionTime');
-        const explosionTimeValue = document.getElementById('explosionTimeValue');
-        explosionTime.addEventListener('input', () => {
-            explosionTimeValue.textContent = explosionTime.value;
-        });
-
-        const recombinationDuration = document.getElementById('recombinationDuration');
-        const recombinationDurationValue = document.getElementById('recombinationDurationValue');
-        recombinationDuration.addEventListener('input', () => {
-            recombinationDurationValue.textContent = recombinationDuration.value;
-        });
-
-        const blendDuration = document.getElementById('blendDuration');
-        const blendDurationValue = document.getElementById('blendDurationValue');
-        blendDuration.addEventListener('input', () => {
-            blendDurationValue.textContent = blendDuration.value;
+        // Slider handlers
+        ['staticDisplayDuration', 'disintegrationDuration', 'explosionIntensity', 'explosionTime', 'recombinationDuration', 'blendDuration'].forEach(id => {
+            const slider = document.getElementById(id);
+            const valueSpan = document.getElementById(id + 'Value');
+            slider.addEventListener('input', () => {
+                valueSpan.textContent = slider.value;
+            });
         });
 
         // Render mode buttons
-        const modeParticles = document.getElementById('modeParticles');
-        const modeTriangulation = document.getElementById('modeTriangulation');
-        const modeHybrid = document.getElementById('modeHybrid');
-
-        function setRenderMode(mode) {
-            if (!engine) return;
-            
-            engine.setRenderMode(mode);
-            
-            // Update active button
-            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            if (mode === 'particles') modeParticles.classList.add('active');
-            if (mode === 'triangulation') modeTriangulation.classList.add('active');
-            if (mode === 'hybrid') modeHybrid.classList.add('active');
-            
-            showStatus(`Render mode: ${mode}`, 'info');
-        }
-
-        modeParticles.addEventListener('click', () => setRenderMode('particles'));
-        modeTriangulation.addEventListener('click', () => setRenderMode('triangulation'));
-        
-        // Hybrid Transition button - triggers multi-phase transition (disintegration → explosion → recombination → blend)
-        modeHybrid.addEventListener('click', () => {
-            if (!engine || !image1 || !image2) return;
-            
-            // Get configuration values
-            const config = {
-                staticDisplayDuration: parseInt(document.getElementById('staticDisplayDuration').value, 10),
-                disintegrationDuration: parseInt(document.getElementById('disintegrationDuration').value, 10),
-                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value, 10),
-                explosionTime: parseInt(document.getElementById('explosionTime').value, 10),
-                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value, 10),
-                blendDuration: parseInt(document.getElementById('blendDuration').value, 10),
-                recombinationChaos: 0.3,
-                vacuumStrength: 0.15,
-                particleFadeRate: 0.7,
-                finalStaticDuration: 2000    // Show final static image for 2000ms after blend
-            };
-            
-            // Start the engine if not already running
-            if (!engine.isRunning) {
-                engine.start();
-            }
-            
-            // Start the hybrid transition (will show static image first, then atomize)
-            engine.setRenderMode('hybrid');
-            engine.startHybridTransition(image1, image2, config);
-            currentImageIndex = 1;
-            
-            showStatus('🌟 Static → Disintegration → Explosion → Recombination → Blend → Static', 'success');
+        document.getElementById('modeParticles').addEventListener('click', () => {
+            engine.setRenderMode('particles');
+            showStatus('Render mode: particles', 'info');
         });
 
-        // Reverse Hybrid Transition button - transitions back from image 2 to image 1
-        const modeHybridReverse = document.getElementById('modeHybridReverse');
-        modeHybridReverse.addEventListener('click', () => {
-            if (!engine || !image1 || !image2) return;
-            
-            // Get configuration values
-            const config = {
+        document.getElementById('modeTriangulation').addEventListener('click', () => {
+            engine.setRenderMode('triangulation');
+            showStatus('Render mode: triangulation', 'info');
+        });
+        
+        // Helper function to get hybrid transition config from sliders
+        function getHybridTransitionConfig() {
+            return {
                 staticDisplayDuration: parseInt(document.getElementById('staticDisplayDuration').value, 10),
                 disintegrationDuration: parseInt(document.getElementById('disintegrationDuration').value, 10),
                 explosionIntensity: parseInt(document.getElementById('explosionIntensity').value, 10),
@@ -880,54 +898,62 @@
                 particleFadeRate: 0.7,
                 finalStaticDuration: 2000
             };
+        }
+        
+        // Hybrid Transition button
+        document.getElementById('modeHybrid').addEventListener('click', () => {
+            if (!engine || !image1 || !image2) return;
             
-            // Start the engine if not already running
+            const config = getHybridTransitionConfig();
+            
             if (!engine.isRunning) {
                 engine.start();
             }
             
-            // Reverse the hybrid transition (image 2 → image 1)
+            engine.setRenderMode('hybrid');
+            engine.startHybridTransition(image1, image2, config);
+            currentImageIndex = 1;
+            
+            showStatus('🌟 Hybrid Transition Started', 'success');
+        });
+
+        // Reverse Hybrid Transition button
+        document.getElementById('modeHybridReverse').addEventListener('click', () => {
+            if (!engine || !image1 || !image2) return;
+            
+            const config = getHybridTransitionConfig();
+            
+            if (!engine.isRunning) {
+                engine.start();
+            }
+            
             engine.setRenderMode('hybrid');
             engine.reverseHybridTransition(config);
             currentImageIndex = 0;
             
-            showStatus('🔄 Reversing: Static → Disintegration → Explosion → Recombination → Blend → Static', 'success');
+            showStatus('🔄 Reverse Transition Started', 'success');
         });
 
         // Triangulation controls
-        const gridSizeInput = document.getElementById('gridSize');
-        const gridSizeValue = document.getElementById('gridSizeValue');
-        const keyPointMethodSelect = document.getElementById('keyPointMethod');
-        const methodValue = document.getElementById('methodValue');
-
-        gridSizeInput.addEventListener('input', () => {
-            const value = parseInt(gridSizeInput.value);
-            gridSizeValue.textContent = value;
-            
+        document.getElementById('gridSize').addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            document.getElementById('gridSizeValue').textContent = value;
             if (engine) {
                 engine.updateTriangulationConfig({ gridSize: value });
-                showStatus('Grid size updated. Re-morph to see changes.', 'info');
             }
         });
 
-        keyPointMethodSelect.addEventListener('change', () => {
-            const method = keyPointMethodSelect.value;
-            methodValue.textContent = method.charAt(0).toUpperCase() + method.slice(1);
-            
+        document.getElementById('keyPointMethod').addEventListener('change', (e) => {
+            const method = e.target.value;
+            document.getElementById('methodValue').textContent = method.charAt(0).toUpperCase() + method.slice(1);
             if (engine) {
                 engine.updateTriangulationConfig({ keyPointMethod: method });
-                showStatus(`Key point method: ${method}`, 'info');
             }
         });
 
-        // Blend controls
-        const particleOpacityInput = document.getElementById('particleOpacity');
-        const particleOpacityValue = document.getElementById('particleOpacityValue');
-
-        particleOpacityInput.addEventListener('input', () => {
-            const value = parseInt(particleOpacityInput.value);
-            particleOpacityValue.textContent = value + '%';
-            
+        document.getElementById('particleOpacity').addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            document.getElementById('particleOpacityValue').textContent = value + '%';
             if (engine) {
                 engine.updateTriangulationConfig({ particleOpacity: value / 100 });
             }
@@ -972,29 +998,167 @@
             showStatus('Preset deactivated', 'info');
         };
 
-        // Settings controls
-        const particleCountSlider = document.getElementById('particleCountSlider');
-        const particleCountValue = document.getElementById('particleCountValue');
-        const speedSlider = document.getElementById('speedSlider');
-        const speedValue = document.getElementById('speedValue');
+        // Preset Export/Import
+        window.exportPreset = function() {
+            if (!engine) {
+                showStatus('Engine not initialized', 'error');
+                return;
+            }
 
-        particleCountSlider.addEventListener('input', () => {
-            particleCountValue.textContent = particleCountSlider.value;
+            const config = {
+                particleCount: engine.getParticleCount(),
+                speed: engine.config.speed,
+                triangulationConfig: engine.getTriangulationConfig(),
+                hybridTransitionConfig: {
+                    staticDisplayDuration: parseInt(document.getElementById('staticDisplayDuration').value, 10),
+                    disintegrationDuration: parseInt(document.getElementById('disintegrationDuration').value, 10),
+                    explosionIntensity: parseInt(document.getElementById('explosionIntensity').value, 10),
+                    explosionTime: parseInt(document.getElementById('explosionTime').value, 10),
+                    recombinationDuration: parseInt(document.getElementById('recombinationDuration').value, 10),
+                    blendDuration: parseInt(document.getElementById('blendDuration').value, 10)
+                },
+                timestamp: new Date().toISOString(),
+                version: '1.0.0'
+            };
+
+            const json = JSON.stringify(config, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `preset-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showStatus('Preset exported successfully', 'success');
+        };
+
+        document.getElementById('presetImportInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const config = JSON.parse(event.target.result);
+                    
+                    // Apply configuration
+                    if (config.particleCount) {
+                        document.getElementById('particleCountSlider').value = config.particleCount;
+                        document.getElementById('particleCountValue').textContent = config.particleCount;
+                    }
+                    
+                    if (config.speed) {
+                        document.getElementById('speedSlider').value = config.speed;
+                        document.getElementById('speedValue').textContent = config.speed + 'x';
+                    }
+
+                    if (config.triangulationConfig) {
+                        const tc = config.triangulationConfig;
+                        if (tc.gridSize) {
+                            document.getElementById('gridSize').value = tc.gridSize;
+                            document.getElementById('gridSizeValue').textContent = tc.gridSize;
+                        }
+                        if (tc.keyPointMethod) {
+                            document.getElementById('keyPointMethod').value = tc.keyPointMethod;
+                            document.getElementById('methodValue').textContent = tc.keyPointMethod.charAt(0).toUpperCase() + tc.keyPointMethod.slice(1);
+                        }
+                        if (tc.particleOpacity !== undefined) {
+                            document.getElementById('particleOpacity').value = tc.particleOpacity * 100;
+                            document.getElementById('particleOpacityValue').textContent = (tc.particleOpacity * 100) + '%';
+                        }
+                    }
+
+                    if (config.hybridTransitionConfig) {
+                        const htc = config.hybridTransitionConfig;
+                        Object.keys(htc).forEach(key => {
+                            const elem = document.getElementById(key);
+                            const valueElem = document.getElementById(key + 'Value');
+                            if (elem && valueElem) {
+                                elem.value = htc[key];
+                                valueElem.textContent = htc[key];
+                            }
+                        });
+                    }
+
+                    // Apply settings to engine
+                    if (engine) {
+                        engine.updateConfig({
+                            particleCount: config.particleCount || 2000,
+                            speed: config.speed || 1.0
+                        });
+                        
+                        if (config.triangulationConfig) {
+                            engine.updateTriangulationConfig(config.triangulationConfig);
+                        }
+                    }
+
+                    showStatus('Preset imported and applied successfully', 'success');
+                } catch (error) {
+                    showStatus('Failed to import preset: Invalid JSON', 'error');
+                    console.error('Import error:', error);
+                }
+            };
+            reader.readAsText(file);
         });
 
-        speedSlider.addEventListener('input', () => {
-            speedValue.textContent = speedSlider.value + 'x';
+        // Settings controls
+        document.getElementById('particleCountSlider').addEventListener('input', (e) => {
+            document.getElementById('particleCountValue').textContent = e.target.value;
+        });
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            document.getElementById('speedValue').textContent = e.target.value + 'x';
         });
 
         window.applySettings = function() {
             if (!engine) return;
             
             engine.updateConfig({
-                particleCount: parseInt(particleCountSlider.value),
-                speed: parseFloat(speedSlider.value)
+                particleCount: parseInt(document.getElementById('particleCountSlider').value),
+                speed: parseFloat(document.getElementById('speedSlider').value)
             });
             
             showStatus('Settings applied', 'success');
+        };
+
+        // Page transition demo function
+        let pageTransitionState = 0;
+        window.demoPageTransition = async function() {
+            if (!engine) return;
+            
+            try {
+                const div1 = document.getElementById('demoDiv1');
+                const div2 = document.getElementById('demoDiv2');
+                
+                if (pageTransitionState === 0) {
+                    // Initialize from first div
+                    showStatus('Initializing from Page One...', 'info');
+                    await engine.initializeFromDOMElement(div1);
+                    engine.start();
+                    pageTransitionState = 1;
+                    showStatus('Showing Page One. Click again to transition to Page Two', 'success');
+                } else if (pageTransitionState === 1) {
+                    // Transition to second div
+                    showStatus('Transitioning to Page Two...', 'info');
+                    await engine.transitionToDOMElement(div2, 2500);
+                    pageTransitionState = 2;
+                    setTimeout(() => {
+                        showStatus('Showing Page Two. Click again to go back to Page One', 'success');
+                    }, 2500);
+                } else {
+                    // Transition back to first div
+                    showStatus('Transitioning back to Page One...', 'info');
+                    await engine.transitionToDOMElement(div1, 2500);
+                    pageTransitionState = 1;
+                    setTimeout(() => {
+                        showStatus('Showing Page One. Click again to transition to Page Two', 'success');
+                    }, 2500);
+                }
+            } catch (error) {
+                showStatus('Page transition failed. Check console for details.', 'error');
+                console.error('[Demo] Page transition error:', error);
+            }
         };
 
         // Update info display
@@ -1003,6 +1167,8 @@
             
             document.getElementById('fpsValue').textContent = engine.getFPS();
             document.getElementById('particleCount').textContent = engine.getParticleCount();
+            document.getElementById('debugFps').textContent = engine.getFPS();
+            document.getElementById('debugParticleCount').textContent = engine.getParticleCount();
             
             const config = engine.getTriangulationConfig();
             const morphData = engine.triangulationMorph ? 
@@ -1021,6 +1187,7 @@
         updateInfo();
 
         showStatus('Engine ready! Upload images or select patterns.', 'success');
+        console.log('Unified Demo initialized successfully');
     </script>
 </body>
 </html>
