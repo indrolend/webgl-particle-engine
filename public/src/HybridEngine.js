@@ -667,7 +667,8 @@ export class HybridEngine extends ParticleEngine {
       const text = element.textContent || element.innerText || '';
       if (text.trim()) {
         ctx.fillStyle = computedStyle.color || '#000000';
-        ctx.font = `${computedStyle.fontSize || '16px'} ${computedStyle.fontFamily || 'Arial'}`;
+        const fontSize = parseInt(computedStyle.fontSize) || 16;
+        ctx.font = `${fontSize}px ${computedStyle.fontFamily || 'Arial'}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
@@ -690,7 +691,7 @@ export class HybridEngine extends ParticleEngine {
         if (currentLine) lines.push(currentLine);
         
         // Draw lines
-        const lineHeight = parseInt(computedStyle.fontSize || '16') * 1.5;
+        const lineHeight = fontSize * 1.5;
         const startY = (tempCanvas.height - (lines.length * lineHeight)) / 2;
         lines.forEach((line, i) => {
           ctx.fillText(line, tempCanvas.width / 2, startY + (i * lineHeight) + lineHeight / 2);
@@ -699,7 +700,8 @@ export class HybridEngine extends ParticleEngine {
       
       // Draw element outline
       ctx.strokeStyle = computedStyle.borderColor || computedStyle.color || '#000000';
-      ctx.lineWidth = parseInt(computedStyle.borderWidth) || 2;
+      const borderWidth = parseInt(computedStyle.borderWidth);
+      ctx.lineWidth = !isNaN(borderWidth) && borderWidth > 0 ? borderWidth : 2;
       ctx.strokeRect(0, 0, tempCanvas.width, tempCanvas.height);
       
       // Convert canvas to image
