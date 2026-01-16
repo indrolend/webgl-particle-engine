@@ -637,6 +637,143 @@ export class HybridEngine extends ParticleEngine {
   /**
    * Clean up resources
    */
+  /**
+   * Capture DOM element and convert to particle-ready image
+   * @param {HTMLElement} element - DOM element to capture
+   * @returns {Promise<Image>} - Promise resolving to captured image
+   */
+  async captureDOMElement(element) {
+    console.log('[HybridEngine] Capturing DOM element:', element);
+    
+    try {
+      // Get element's computed styles and dimensions
+      const rect = element.getBoundingClientRect();
+      const computedStyle = window.getComputedStyle(element);
+      
+      // Create a temporary canvas to render the element
+      const tempCanvas = document.createElement('canvas');
+      const ctx = tempCanvas.getContext('2d');
+      
+      // Set canvas dimensions to match element
+      tempCanvas.width = Math.ceil(rect.width) || 800;
+      tempCanvas.height = Math.ceil(rect.height) || 600;
+      
+      // Fill background with element's background color
+      const bgColor = computedStyle.backgroundColor;
+      ctx.fillStyle = bgColor !== 'rgba(0, 0, 0, 0)' ? bgColor : '#ffffff';
+      ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+      
+      // Draw text content if present
+      const text = element.textContent || element.innerText || '';
+      if (text.trim()) {
+        ctx.fillStyle = computedStyle.color || '#000000';
+        ctx.font = `${computedStyle.fontSize || '16px'} ${computedStyle.fontFamily || 'Arial'}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Simple text wrapping
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+        const maxWidth = tempCanvas.width * 0.9;
+        
+        words.forEach(word => {
+          const testLine = currentLine + (currentLine ? ' ' : '') + word;
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > maxWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        });
+        if (currentLine) lines.push(currentLine);
+        
+        // Draw lines
+        const lineHeight = parseInt(computedStyle.fontSize || '16') * 1.5;
+        const startY = (tempCanvas.height - (lines.length * lineHeight)) / 2;
+        lines.forEach((line, i) => {
+          ctx.fillText(line, tempCanvas.width / 2, startY + (i * lineHeight) + lineHeight / 2);
+        });
+      }
+      
+      // Draw element outline
+      ctx.strokeStyle = computedStyle.borderColor || computedStyle.color || '#000000';
+      ctx.lineWidth = parseInt(computedStyle.borderWidth) || 2;
+      ctx.strokeRect(0, 0, tempCanvas.width, tempCanvas.height);
+      
+      // Convert canvas to image
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = tempCanvas.toDataURL();
+      });
+      
+      console.log('[HybridEngine] DOM element captured successfully');
+      return img;
+    } catch (error) {
+      console.error('[HybridEngine] Failed to capture DOM element:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Initialize particles from DOM element
+   * @param {HTMLElement} element - DOM element to initialize from
+   */
+  async initializeFromDOMElement(element) {
+    console.log('[HybridEngine] Initializing from DOM element');
+    
+    try {
+      const img = await this.captureDOMElement(element);
+      this.initializeFromImage(img);
+      console.log('[HybridEngine] Initialized from DOM element successfully');
+    } catch (error) {
+      console.error('[HybridEngine] Failed to initialize from DOM element:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Transition to a DOM element
+   * @param {HTMLElement} element - Target DOM element
+   * @param {number} duration - Transition duration in milliseconds
+   */
+  async transitionToDOMElement(element, duration = 2000) {
+    console.log('[HybridEngine] Transitioning to DOM element');
+    
+    try {
+      const img = await this.captureDOMElement(element);
+      this.transitionToImage(img, duration);
+      console.log('[HybridEngine] Transition to DOM element started');
+    } catch (error) {
+      console.error('[HybridEngine] Failed to transition to DOM element:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Start hybrid transition between two DOM elements
+   * @param {HTMLElement} sourceElement - Source DOM element
+   * @param {HTMLElement} targetElement - Target DOM element
+   * @param {Object} config - Transition configuration
+   */
+  async startHybridTransitionBetweenElements(sourceElement, targetElement, config = {}) {
+    console.log('[HybridEngine] Starting hybrid transition between DOM elements');
+    
+    try {
+      const sourceImg = await this.captureDOMElement(sourceElement);
+      const targetImg = await this.captureDOMElement(targetElement);
+      
+      this.startHybridTransition(sourceImg, targetImg, config);
+      console.log('[HybridEngine] Hybrid transition between DOM elements started');
+    } catch (error) {
+      console.error('[HybridEngine] Failed to start hybrid transition between DOM elements:', error);
+      throw error;
+    }
+  }
+
   destroy() {
     console.log('[HybridEngine] Destroying hybrid engine...');
     
