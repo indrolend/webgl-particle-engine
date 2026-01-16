@@ -108,8 +108,8 @@ export class ParticleEngine {
     console.log('[ParticleEngine] Initializing particles from image...');
     this.particleSystem.initializeFromImage(image);
     
-    // Load the image texture for solid rendering
-    this.renderer.loadImageTexture(image);
+    // Load the image texture for solid rendering with particle system config
+    this.renderer.loadImageTexture(image, this.particleSystem.config);
     
     console.log('[ParticleEngine] Particles initialized from image');
   }
@@ -125,8 +125,8 @@ export class ParticleEngine {
     // Initialize particles (they will be hidden initially by opacity)
     this.particleSystem.initializeFromImage(image);
     
-    // Load the image texture for solid rendering
-    this.renderer.loadImageTexture(image);
+    // Load the image texture for solid rendering with particle system config
+    this.renderer.loadImageTexture(image, this.particleSystem.config);
     
     // Start the disintegration effect only if duration > 0
     if (duration > 0) {

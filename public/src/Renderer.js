@@ -201,7 +201,7 @@ export class Renderer {
     console.log('[Renderer] Image buffers created');
   }
 
-  loadImageTexture(image) {
+  loadImageTexture(image, particleSystemConfig = null) {
     console.log('[Renderer] Loading image texture...');
     
     const gl = this.gl;
@@ -222,8 +222,70 @@ export class Renderer {
     // Upload the image into the texture
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
     
+    // Update image quad size to match particle system sizing
+    if (particleSystemConfig) {
+      this.updateImageQuadSize(image, particleSystemConfig);
+    }
+    
     this.imageLoaded = true;
     console.log('[Renderer] Image texture loaded successfully');
+  }
+
+  updateImageQuadSize(image, config) {
+    console.log('[Renderer] Updating image quad size to match particles...');
+    
+    // Calculate grid dimensions matching particle system logic
+    const maxParticles = config.particleCount || 5000;
+    const aspectRatio = image.width / image.height;
+    let gridWidth, gridHeight;
+    
+    if (aspectRatio >= 1) {
+      gridWidth = Math.floor(Math.sqrt(maxParticles * aspectRatio));
+      gridHeight = Math.floor(gridWidth / aspectRatio);
+    } else {
+      gridHeight = Math.floor(Math.sqrt(maxParticles / aspectRatio));
+      gridWidth = Math.floor(gridHeight * aspectRatio);
+    }
+    
+    // Apply same constraints as ParticleSystem
+    const MIN_GRID_DIMENSION = 10;
+    const MAX_GRID_DIMENSION = 200;
+    gridWidth = Math.max(MIN_GRID_DIMENSION, Math.min(gridWidth, MAX_GRID_DIMENSION));
+    gridHeight = Math.max(MIN_GRID_DIMENSION, Math.min(gridHeight, MAX_GRID_DIMENSION));
+    
+    // Calculate scaling to match particle system
+    const canvasWidth = this.canvas.width;
+    const canvasHeight = this.canvas.height;
+    const scaleX = canvasWidth / gridWidth;
+    const scaleY = canvasHeight / gridHeight;
+    const IMAGE_PADDING_FACTOR = 0.9;
+    const scale = Math.min(scaleX, scaleY) * IMAGE_PADDING_FACTOR;
+    
+    const scaledWidth = gridWidth * scale;
+    const scaledHeight = gridHeight * scale;
+    
+    // Convert to NDC (Normalized Device Coordinates: -1 to 1)
+    const ndcWidth = (scaledWidth / canvasWidth) * 2;
+    const ndcHeight = (scaledHeight / canvasHeight) * 2;
+    
+    // Center the quad
+    const left = -ndcWidth / 2;
+    const right = ndcWidth / 2;
+    const bottom = -ndcHeight / 2;
+    const top = ndcHeight / 2;
+    
+    // Update position buffer with new quad size
+    const positions = new Float32Array([
+      left, bottom,   // bottom left
+      right, bottom,  // bottom right
+      left, top,      // top left
+      right, top,     // top right
+    ]);
+    
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.imagePosition);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, positions, this.gl.STATIC_DRAW);
+    
+    console.log('[Renderer] Image quad size updated to match particles');
   }
 
   renderImage(opacity = 1.0) {

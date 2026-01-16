@@ -78,6 +78,8 @@ export class HybridEngine extends ParticleEngine {
       // Match main canvas dimensions and position
       this.staticImageCanvas.width = this.canvas.width;
       this.staticImageCanvas.height = this.canvas.height;
+      this.staticImageCanvas.style.width = this.canvas.clientWidth + 'px';
+      this.staticImageCanvas.style.height = this.canvas.clientHeight + 'px';
       this.staticImageCanvas.style.left = this.canvas.offsetLeft + 'px';
       this.staticImageCanvas.style.top = this.canvas.offsetTop + 'px';
       this.canvas.parentElement.appendChild(this.staticImageCanvas);
@@ -251,8 +253,8 @@ export class HybridEngine extends ParticleEngine {
             sourceImage: this.staticImageState.image
           };
           
-          // Load image texture for dual rendering
-          this.renderer.loadImageTexture(this.staticImageState.image);
+          // Load image texture for dual rendering with particle system config
+          this.renderer.loadImageTexture(this.staticImageState.image, this.particleSystem.config);
           
           // Initialize particle dispersion targets
           this.particleSystem.startDisintegration(this.staticImageState.disintegrationDuration);
@@ -422,26 +424,51 @@ export class HybridEngine extends ParticleEngine {
       return;
     }
     
+    // Update overlay canvas dimensions to match main canvas
+    this.staticImageCanvas.width = this.canvas.width;
+    this.staticImageCanvas.height = this.canvas.height;
+    this.staticImageCanvas.style.width = this.canvas.clientWidth + 'px';
+    this.staticImageCanvas.style.height = this.canvas.clientHeight + 'px';
+    
     // Show the overlay canvas
     this.staticImageCanvas.style.display = 'block';
     
     // Get 2D context from overlay canvas
     const ctx = this.staticImageCanvas.getContext('2d');
     
-    // Clear the overlay canvas
+    // Clear the overlay canvas completely (transparent background, no black fill)
     ctx.clearRect(0, 0, this.staticImageCanvas.width, this.staticImageCanvas.height);
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, this.staticImageCanvas.width, this.staticImageCanvas.height);
     
-    // Calculate scaling to fit canvas while maintaining aspect ratio
-    const scaleX = this.staticImageCanvas.width / image.width;
-    const scaleY = this.staticImageCanvas.height / image.height;
-    const scale = Math.min(scaleX, scaleY) * 0.9; // Use same padding factor as particles
+    // Calculate grid dimensions matching particle system logic
+    // This ensures the static image is the same size as the particulated image
+    const maxParticles = this.particleSystem.config.particleCount;
+    const aspectRatio = image.width / image.height;
+    let gridWidth, gridHeight;
     
-    const scaledWidth = image.width * scale;
-    const scaledHeight = image.height * scale;
+    if (aspectRatio >= 1) {
+      gridWidth = Math.floor(Math.sqrt(maxParticles * aspectRatio));
+      gridHeight = Math.floor(gridWidth / aspectRatio);
+    } else {
+      gridHeight = Math.floor(Math.sqrt(maxParticles / aspectRatio));
+      gridWidth = Math.floor(gridHeight * aspectRatio);
+    }
     
-    // Center the image
+    // Apply same constraints as ParticleSystem
+    const MIN_GRID_DIMENSION = 10;
+    const MAX_GRID_DIMENSION = 200;
+    gridWidth = Math.max(MIN_GRID_DIMENSION, Math.min(gridWidth, MAX_GRID_DIMENSION));
+    gridHeight = Math.max(MIN_GRID_DIMENSION, Math.min(gridHeight, MAX_GRID_DIMENSION));
+    
+    // Calculate scaling to match particle system (using grid dimensions, not original image dimensions)
+    const scaleX = this.staticImageCanvas.width / gridWidth;
+    const scaleY = this.staticImageCanvas.height / gridHeight;
+    const IMAGE_PADDING_FACTOR = 0.9; // Match ParticleSystem
+    const scale = Math.min(scaleX, scaleY) * IMAGE_PADDING_FACTOR;
+    
+    const scaledWidth = gridWidth * scale;
+    const scaledHeight = gridHeight * scale;
+    
+    // Center the image (matching particle system positioning)
     const offsetX = (this.staticImageCanvas.width - scaledWidth) / 2;
     const offsetY = (this.staticImageCanvas.height - scaledHeight) / 2;
     
