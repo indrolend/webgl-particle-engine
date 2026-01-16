@@ -3,92 +3,121 @@
 # Build script to prepare static files for Cloudflare Pages deployment
 echo "Building project for Cloudflare Pages deployment..."
 
+# Exit on error
+set -e
+
+# Function to copy file if it exists
+copy_if_exists() {
+    local src="$1"
+    local dest="$2"
+    if [ -f "$src" ]; then
+        cp "$src" "$dest"
+        echo "  ✓ Copied: $src"
+    else
+        echo "  ⚠ Skipped (not found): $src"
+    fi
+}
+
+# Function to check and copy required file
+copy_required() {
+    local src="$1"
+    local dest="$2"
+    if [ -f "$src" ]; then
+        cp "$src" "$dest"
+        echo "  ✓ Copied: $src"
+    else
+        echo "  ✗ Error: Required file not found: $src"
+        exit 1
+    fi
+}
+
 # Create public directory if it doesn't exist
 mkdir -p public
 
 # Copy HTML files
 echo "Copying HTML files..."
-if [ -f index.html ]; then
-  cp index.html public/
-else
-  echo "Warning: index.html not found"
-  exit 1
-fi
+copy_required "index.html" "public/"
+copy_required "debug.html" "public/"
+copy_if_exists "demo.html" "public/"
+copy_if_exists "landing.html" "public/"
+copy_if_exists "morph.html" "public/"
+copy_if_exists "triangulation-demo.html" "public/"
+copy_if_exists "disintegration-demo.html" "public/"
 
-if [ -f debug.html ]; then
-  cp debug.html public/
-else
-  echo "Warning: debug.html not found"
-  exit 1
-fi
-
-if [ -f landing.html ]; then
-  cp landing.html public/
-fi
-
-if [ -f morph.html ]; then
-  cp morph.html public/
-fi
-
-if [ -f triangulation-demo.html ]; then
-  cp triangulation-demo.html public/
-fi
-
-# Copy JavaScript files needed by index.html
+# Copy JavaScript files needed by HTML pages
 echo "Copying JavaScript files..."
-if [ -f morph-ui.js ]; then
-  cp morph-ui.js public/
-fi
+copy_if_exists "morph-ui.js" "public/"
+copy_if_exists "webgl-engine.js" "public/"
+copy_if_exists "triangulation-demo.js" "public/"
 
-if [ -f webgl-engine.js ]; then
-  cp webgl-engine.js public/
-fi
-
-if [ -f triangulation-demo.js ]; then
-  cp triangulation-demo.js public/
-fi
-
-# Copy src directory (excluding Worker entry point)
+# Copy src directory
 echo "Copying src directory..."
 mkdir -p public/src
 
-if [ -f src/ParticleEngine.js ]; then
-  cp src/ParticleEngine.js public/src/
-else
-  echo "Warning: src/ParticleEngine.js not found"
-  exit 1
-fi
+# Copy required core files
+copy_required "src/ParticleEngine.js" "public/src/"
+copy_required "src/ParticleSystem.js" "public/src/"
+copy_required "src/Renderer.js" "public/src/"
 
-if [ -f src/ParticleSystem.js ]; then
-  cp src/ParticleSystem.js public/src/
-else
-  echo "Warning: src/ParticleSystem.js not found"
-  exit 1
-fi
-
-if [ -f src/Renderer.js ]; then
-  cp src/Renderer.js public/src/
-else
-  echo "Warning: src/Renderer.js not found"
-  exit 1
-fi
-
-# Copy HybridEngine if exists
-if [ -f src/HybridEngine.js ]; then
-  cp src/HybridEngine.js public/src/
-fi
+# Copy optional core files
+copy_if_exists "src/HybridEngine.js" "public/src/"
 
 # Copy presets directory if exists
-if [ -d src/presets ]; then
-  mkdir -p public/src/presets
-  cp -r src/presets/* public/src/presets/
+if [ -d "src/presets" ]; then
+    echo "Copying presets directory..."
+    mkdir -p public/src/presets
+    
+    # Copy all preset files
+    for preset_file in src/presets/*.js; do
+        if [ -f "$preset_file" ]; then
+            cp "$preset_file" "public/src/presets/"
+            echo "  ✓ Copied preset: $(basename $preset_file)"
+        fi
+    done
+else
+    echo "  ⚠ Presets directory not found"
 fi
 
 # Copy triangulation directory if exists
-if [ -d src/triangulation ]; then
-  mkdir -p public/src/triangulation
-  cp -r src/triangulation/* public/src/triangulation/
+if [ -d "src/triangulation" ]; then
+    echo "Copying triangulation directory..."
+    mkdir -p public/src/triangulation
+    
+    # Copy all triangulation files
+    for tri_file in src/triangulation/*.js; do
+        if [ -f "$tri_file" ]; then
+            cp "$tri_file" "public/src/triangulation/"
+            echo "  ✓ Copied triangulation: $(basename $tri_file)"
+        fi
+    done
+else
+    echo "  ⚠ Triangulation directory not found"
 fi
 
-echo "Build complete! Files are ready in ./public directory"
-echo "To deploy: npx wrangler pages deploy ./public --project-name=webgl-particle-engine"
+# Copy examples directory if exists
+if [ -d "examples" ]; then
+    echo "Copying examples directory..."
+    mkdir -p public/examples
+    cp -r examples/* public/examples/
+    echo "  ✓ Copied examples"
+fi
+
+# Create a build info file
+echo "Creating build info..."
+cat > public/build-info.json << EOF
+{
+  "buildDate": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "buildScript": "build.sh",
+  "version": "1.0.0"
+}
+EOF
+echo "  ✓ Created build-info.json"
+
+echo ""
+echo "✅ Build complete! Files are ready in ./public directory"
+echo ""
+echo "📦 Deployment options:"
+echo "  • Cloudflare Pages: npx wrangler pages deploy ./public --project-name=webgl-particle-engine"
+echo "  • GitHub Pages: Push to repository and enable Pages in settings"
+echo "  • Local preview: cd public && python3 -m http.server 8000"
+echo ""

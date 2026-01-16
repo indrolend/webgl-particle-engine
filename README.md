@@ -43,6 +43,7 @@ php -S localhost:8000
 
 3. Open your browser and navigate to:
 ```
+http://localhost:8000/demo.html                # 🚀 NEW! Unified Demo - All features in one place
 http://localhost:8000/minimal-example.html     # ⚡ Minimal WebGL example - No dependencies, no UI
 http://localhost:8000/                        # 🎨 Main page - Image morphing interface
 http://localhost:8000/index.html              # 🎨 Main page - Image morphing interface (same as above)
@@ -50,6 +51,30 @@ http://localhost:8000/triangulation-demo.html # 🔺 Triangulation morphing demo
 http://localhost:8000/debug.html              # 🐛 Full debug interface with all features
 http://localhost:8000/landing.html            # 🏠 Original landing page with links
 ```
+
+## 🚀 NEW: Unified Demo Page
+
+The **demo.html** page consolidates all features from `index.html`, `debug.html`, and `disintegration-demo.html` into a single, comprehensive interface. This is now the **recommended starting point** for exploring the engine's capabilities.
+
+### Features
+
+- **4 Organized Tabs**: Quick Start, Images, Advanced, and Debug
+- **Pattern Controls**: Initialize and transition between geometric patterns
+- **Image Morphing**: Upload and morph between two images
+- **Hybrid Transitions**: Multi-phase transitions with explosion, recombination, and blend effects
+- **Animation Presets**: Pre-built effects like "School of Fish"
+- **Preset Export/Import**: Save and load configurations as JSON files
+- **Page Transitions**: NEW! Transition between HTML div elements using particle effects
+- **Advanced Settings**: Fine-tune all transition parameters with sliders
+- **Debug Console**: Real-time logging and performance monitoring
+
+### Quick Start with demo.html
+
+1. Navigate to `http://localhost:8000/demo.html`
+2. Try the **Pattern Selector** buttons to see different formations
+3. Upload images in the **Images** tab for morphing effects
+4. Click **"Demo Page Transition"** to see HTML content morph into particles
+5. Export your configuration with **"Export Current Preset"**
 
 ## 🔺 Triangulation-Based Image Morphing
 
@@ -264,6 +289,102 @@ engine.transitionPresetTo('pattern', 'circle', 2000);
 engine.transitionPresetTo('image', imageElement, 2000);
 ```
 
+## 📁 Preset Export/Import
+
+The engine supports saving and loading configuration presets as JSON files, allowing you to share and reuse your favorite settings.
+
+### Exporting Presets
+
+Export the current engine configuration including particle count, speed, triangulation settings, and hybrid transition parameters:
+
+```javascript
+// Get current configuration
+const config = {
+    particleCount: engine.getParticleCount(),
+    speed: engine.config.speed,
+    triangulationConfig: engine.getTriangulationConfig(),
+    hybridTransitionConfig: {
+        staticDisplayDuration: 500,
+        disintegrationDuration: 1000,
+        explosionIntensity: 150,
+        explosionTime: 800,
+        recombinationDuration: 2000,
+        blendDuration: 1500
+    },
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+};
+
+// Convert to JSON and download
+const json = JSON.stringify(config, null, 2);
+const blob = new Blob([json], { type: 'application/json' });
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = `preset-${Date.now()}.json`;
+a.click();
+URL.revokeObjectURL(url);
+```
+
+### Importing Presets
+
+Load and apply a preset configuration from a JSON file:
+
+```javascript
+// Read JSON file
+const file = event.target.files[0];
+const reader = new FileReader();
+
+reader.onload = (event) => {
+    const config = JSON.parse(event.target.result);
+    
+    // Apply configuration to engine
+    engine.updateConfig({
+        particleCount: config.particleCount || 2000,
+        speed: config.speed || 1.0
+    });
+    
+    if (config.triangulationConfig) {
+        engine.updateTriangulationConfig(config.triangulationConfig);
+    }
+    
+    // Configuration is now loaded!
+};
+
+reader.readAsText(file);
+```
+
+### Preset JSON Format
+
+```json
+{
+  "particleCount": 2000,
+  "speed": 1.0,
+  "triangulationConfig": {
+    "enabled": true,
+    "mode": "hybrid",
+    "keyPointMethod": "grid",
+    "gridSize": 8,
+    "particleOpacity": 0.5,
+    "triangleOpacity": 0.5
+  },
+  "hybridTransitionConfig": {
+    "staticDisplayDuration": 500,
+    "disintegrationDuration": 1000,
+    "explosionIntensity": 150,
+    "explosionTime": 800,
+    "recombinationDuration": 2000,
+    "blendDuration": 1500
+  },
+  "timestamp": "2026-01-16T14:00:00.000Z",
+  "version": "1.0.0"
+}
+```
+
+**The unified demo page (`demo.html`) includes built-in export and import buttons for easy preset management.**
+
+## 🔧 API Methods (continued)
+
 #### `getPresets()`
 Get all registered presets.
 ```javascript
@@ -429,6 +550,51 @@ engine.reverseHybridTransition({
 ```
 
 This method automatically swaps the source and target images, allowing seamless bidirectional transitions between images.
+
+#### `captureDOMElement(element)`
+Capture a DOM element and convert it to a particle-ready image.
+```javascript
+const divElement = document.getElementById('myDiv');
+const capturedImage = await engine.captureDOMElement(divElement);
+// Returns an Image object that can be used with other engine methods
+```
+
+#### `initializeFromDOMElement(element)`
+Initialize particles directly from a DOM element.
+```javascript
+const divElement = document.getElementById('myDiv');
+await engine.initializeFromDOMElement(divElement);
+engine.start();
+```
+
+#### `transitionToDOMElement(element, duration)`
+Transition to a DOM element (captures it and transitions particles to it).
+```javascript
+const targetDiv = document.getElementById('page2');
+await engine.transitionToDOMElement(targetDiv, 2000); // 2 second transition
+```
+
+#### `startHybridTransitionBetweenElements(sourceElement, targetElement, config)`
+Start a full hybrid transition between two DOM elements.
+```javascript
+const page1 = document.getElementById('page1');
+const page2 = document.getElementById('page2');
+
+await engine.startHybridTransitionBetweenElements(page1, page2, {
+    staticDisplayDuration: 500,
+    disintegrationDuration: 1000,
+    explosionIntensity: 150,
+    explosionTime: 800,
+    recombinationDuration: 2000,
+    blendDuration: 1500
+});
+```
+
+**Use Cases for DOM Transitions:**
+- Page transitions in single-page applications
+- Animated navigation between sections
+- Creative content reveals and morphing effects
+- Transitioning between different UI states
 
 #### `updateTriangulationConfig(config)`
 engine.setRenderMode('triangulation');  // Triangulation only
