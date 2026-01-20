@@ -8,6 +8,7 @@ A high-performance WebGL-based particle system with smooth animated transitions,
 - **🔺 Triangulation Morphing**: Advanced Delaunay triangulation-based image morphing with smooth mesh interpolation
 - **🎭 Hybrid Rendering**: Combine particle and triangulation effects for stunning visual transitions
 - **💥 Hybrid Transition Preset**: Multi-phase transitions with explosion, recombination, and blend effects
+- **🌐 Page Transition API**: High-level API for particle-based page transitions with DOM capture
 - **⚡ WebGL Rendering**: Hardware-accelerated rendering for smooth 60 FPS performance
 - **🖼️ Image-Based Particles**: Upload images and create particle formations from pixel data
 - **✨ Smooth Transitions**: Animated transitions with optimized easing for natural morphing effects
@@ -43,12 +44,13 @@ php -S localhost:8000
 
 3. Open your browser and navigate to:
 ```
-http://localhost:8000/minimal-example.html     # ⚡ Minimal WebGL example - No dependencies, no UI
-http://localhost:8000/                        # 🎨 Main page - Image morphing interface
-http://localhost:8000/index.html              # 🎨 Main page - Image morphing interface (same as above)
-http://localhost:8000/triangulation-demo.html # 🔺 Triangulation morphing demo with hybrid effects
-http://localhost:8000/debug.html              # 🐛 Full debug interface with all features
-http://localhost:8000/landing.html            # 🏠 Original landing page with links
+http://localhost:8000/minimal-example.html              # ⚡ Minimal WebGL example - No dependencies, no UI
+http://localhost:8000/                                 # 🎨 Main page - Image morphing interface
+http://localhost:8000/index.html                       # 🎨 Main page - Image morphing interface (same as above)
+http://localhost:8000/simple-page-transition-demo.html # 🌐 Page Transition API Demo (NEW!)
+http://localhost:8000/triangulation-demo.html          # 🔺 Triangulation morphing demo with hybrid effects
+http://localhost:8000/debug.html                       # 🐛 Full debug interface with all features
+http://localhost:8000/landing.html                     # 🏠 Original landing page with links
 ```
 
 ## 🔺 Triangulation-Based Image Morphing
@@ -493,6 +495,81 @@ engine.updateTriangulationConfig({
 
 - **Particle Count**: With hybrid rendering, 1000-2000 particles provide good balance
 
+## 🌐 HybridPageTransitionAPI - Page Transitions
+
+The `HybridPageTransitionAPI` provides a high-level interface for creating stunning particle-based page transitions with WebGL. Perfect for creating immersive web experiences with seamless page transitions.
+
+### Key Features
+
+- **🎨 DOM Capture**: Automatically captures page states using html2canvas or pre-rendered images
+- **💥 Multi-Phase Transitions**: Disintegrate → Explode → Recombine → Blend
+- **🚀 Auto-Optimization**: Automatically adjusts settings based on device performance
+- **🎮 Debug Controls**: Real-time parameter adjustment via interactive panel
+- **📱 Responsive**: Works on desktop and mobile with performance scaling
+- **🔄 WebGL Fallback**: Graceful CSS-based fallback for non-WebGL browsers
+
+### Quick Start
+
+```javascript
+import { HybridPageTransitionAPI } from './src/HybridPageTransitionAPI.js';
+
+// Create and initialize API
+const transitionAPI = new HybridPageTransitionAPI({
+    autoOptimize: true,
+    showDebugPanel: true
+});
+
+await transitionAPI.initialize();
+
+// Transition between pages
+await transitionAPI.transition(
+    document.getElementById('page1'),
+    document.getElementById('page2')
+);
+```
+
+### Using Pre-Rendered Images
+
+```javascript
+const img1 = new Image();
+img1.src = 'page1.png';
+
+const img2 = new Image();
+img2.src = 'page2.png';
+
+// Transition between images
+await transitionAPI.transitionImages(img1, img2, {
+    explosionTime: 700,
+    recombinationDuration: 1800,
+    explosionIntensity: 150
+});
+```
+
+### Performance Optimization
+
+The API automatically detects device capabilities and adjusts settings:
+
+- **High-End Devices**: 3000 particles, full effects
+- **Medium Devices**: 2000 particles, optimized effects
+- **Low-End Devices**: 1000 particles, reduced effects
+
+### Demo
+
+Visit `simple-page-transition-demo.html` to see the API in action with:
+- 3 pages with smooth transitions
+- Real-time debug panel
+- Performance auto-optimization
+- Clean, modern UI
+
+### Documentation
+
+See [HYBRID_PAGE_TRANSITION_API.md](HYBRID_PAGE_TRANSITION_API.md) for comprehensive documentation including:
+- Full API reference
+- Configuration options
+- Usage examples
+- Performance tuning guide
+- Troubleshooting tips
+
 ## 🖼️ Image-Based Particles
 
 The engine supports creating particle formations from uploaded images. This feature extracts pixel data from images and maps particles to visible pixels, creating stunning visual effects.
@@ -604,30 +681,37 @@ webgl-particle-engine/
 ├── src/
 │   ├── ParticleEngine.js           # Main engine coordinator
 │   ├── HybridEngine.js             # Extended engine with triangulation support
+│   ├── HybridPageTransitionAPI.js  # High-level API for page transitions (NEW!)
 │   ├── ParticleSystem.js           # Particle management and transitions
 │   ├── Renderer.js                 # WebGL particle rendering
 │   ├── presets/                    # Animation presets
 │   │   ├── Preset.js               # Base preset class
 │   │   ├── PresetManager.js        # Preset management system
 │   │   ├── SchoolOfFishPreset.js   # School of Fish implementation
+│   │   ├── HybridTransitionPreset.js # Hybrid transition preset
 │   │   └── index.js                # Module exports
-│   └── triangulation/              # Triangulation morphing system
-│       ├── KeyPointManager.js      # Key point detection (grid/feature)
-│       ├── DelaunayTriangulator.js # Delaunay triangulation algorithm
-│       ├── TriangulationMorph.js   # Core morphing logic
-│       ├── TriangulationRenderer.js # WebGL triangle rendering
-│       └── index.js                # Module exports
+│   ├── triangulation/              # Triangulation morphing system
+│   │   ├── KeyPointManager.js      # Key point detection (grid/feature)
+│   │   ├── DelaunayTriangulator.js # Delaunay triangulation algorithm
+│   │   ├── TriangulationMorph.js   # Core morphing logic
+│   │   ├── TriangulationRenderer.js # WebGL triangle rendering
+│   │   └── index.js                # Module exports
+│   └── utils/                      # Utility modules (NEW!)
+│       └── DevicePerformance.js    # Performance detection and optimization
 ├── examples/                       # Example implementations
 │   └── school-of-fish-demo.html
 ├── public/                         # Built files for deployment
 ├── minimal-example.html            # Minimal WebGL example (no dependencies)
 ├── index.html                      # Main page - Particle morphing interface
+├── simple-page-transition-demo.html # Page Transition API demo (NEW!)
+├── page-transition-demo.html       # Page Transition with DOM capture (NEW!)
 ├── triangulation-demo.html         # Triangulation morphing demo
 ├── morph.html                      # Alternative entry point
 ├── landing.html                    # Landing page with links to demos
 ├── debug.html                      # Interactive debug interface
 ├── build.sh                        # Build script for deployment
-└── README.md                       # Documentation
+├── README.md                       # Main documentation
+└── HYBRID_PAGE_TRANSITION_API.md   # Page Transition API documentation (NEW!)
 ```
 
 ## 🎨 Architecture
@@ -679,6 +763,24 @@ Advanced mesh-based image morphing:
 - **TriangulationRenderer.js**: WebGL renderer for textured triangular meshes
   - Custom shaders for texture mapping
   - Smooth interpolation between source and target images
+
+### HybridPageTransitionAPI
+High-level API for page transitions:
+- **HybridPageTransitionAPI.js**: Main API class
+  - DOM capture using html2canvas
+  - Pre-rendered image support via `transitionImages()`
+  - Texture management and caching
+  - Multi-phase transition orchestration
+  - Debug panel creation and management
+  - WebGL fallback handling
+
+### Utilities
+Helper modules for enhanced functionality:
+- **DevicePerformance.js**: Performance detection and optimization
+  - Detects CPU cores, RAM, WebGL support
+  - Provides performance profiles (high/medium/low)
+  - Recommends optimal settings per device
+  - Mobile vs desktop detection
 
 ## 🌐 Deployment
 

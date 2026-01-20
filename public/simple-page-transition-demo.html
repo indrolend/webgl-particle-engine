@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Page Transition Demo - HybridPageTransitionAPI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            background: #1a1a2e;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
+            color: white;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .description {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            text-align: center;
+            max-width: 800px;
+            line-height: 1.6;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        button.tertiary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .info-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 300px;
+            font-size: 0.9rem;
+            z-index: 1000;
+        }
+
+        .info-panel h3 {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .status-item {
+            margin: 8px 0;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Create visual "pages" by rendering content to canvas */
+        .page-snapshot {
+            position: fixed;
+            top: -10000px;
+            left: -10000px;
+            width: 1280px;
+            height: 720px;
+        }
+
+        #page1-snapshot {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        #page2-snapshot {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        #page3-snapshot {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+    </style>
+</head>
+<body>
+    <!-- Info Panel -->
+    <div class="info-panel">
+        <h3>🎨 Transition Demo</h3>
+        <div class="status-item">
+            <strong>Status:</strong> <span id="status">Initializing...</span>
+        </div>
+        <div class="status-item">
+            <strong>Performance:</strong> <span id="performance">-</span>
+        </div>
+        <div class="status-item">
+            <strong>WebGL:</strong> <span id="webgl">-</span>
+        </div>
+        <div class="status-item">
+            <strong>Current:</strong> <span id="current-page">Page 1</span>
+        </div>
+    </div>
+
+    <!-- Page 1 Content -->
+    <div id="page1" class="container">
+        <h1>🎨 HybridPageTransitionAPI Demo</h1>
+        <p class="description">
+            This demonstrates the HybridPageTransitionAPI with seamless particle-based transitions
+            between pages. The API handles DOM capture, particle physics, and performance optimization
+            automatically.
+        </p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>✨ WebGL Particles</h3>
+                <p>Hardware-accelerated rendering with thousands of particles</p>
+            </div>
+            <div class="feature-card">
+                <h3>💥 Explosion Effects</h3>
+                <p>Dynamic particle explosions and recombination</p>
+            </div>
+            <div class="feature-card">
+                <h3>🎯 Auto-Optimization</h3>
+                <p>Adapts to device performance automatically</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="transitionToPage(2)">Go to Page 2 →</button>
+            <button class="tertiary" onclick="transitionToPage(3)">Jump to Page 3 →</button>
+        </div>
+    </div>
+
+    <!-- Page 2 Content -->
+    <div id="page2" class="container hidden">
+        <h1>🚀 Advanced Features</h1>
+        <p class="description">
+            The API provides real-time debug controls, performance profiling, and fallback support
+            for browsers without WebGL. All transitions are optimized for smooth 60 FPS rendering.
+        </p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>⚡ Performance Profiles</h3>
+                <p>High, medium, and low-end device support</p>
+            </div>
+            <div class="feature-card">
+                <h3>🎮 Debug Controls</h3>
+                <p>Real-time parameter adjustment</p>
+            </div>
+            <div class="feature-card">
+                <h3>📱 Responsive Design</h3>
+                <p>Works on desktop and mobile devices</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="transitionToPage(1)">← Back to Page 1</button>
+            <button class="secondary" onclick="transitionToPage(3)">Go to Page 3 →</button>
+        </div>
+    </div>
+
+    <!-- Page 3 Content -->
+    <div id="page3" class="container hidden">
+        <h1>🌟 Production Ready</h1>
+        <p class="description">
+            Built with a modular architecture, the API is clean, maintainable, and extensible.
+            It follows best practices and includes comprehensive error handling and fallback support.
+        </p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>🔧 Modular Design</h3>
+                <p>Clean separation of concerns</p>
+            </div>
+            <div class="feature-card">
+                <h3>🎨 Customizable</h3>
+                <p>Flexible configuration options</p>
+            </div>
+            <div class="feature-card">
+                <h3>✅ Battle-Tested</h3>
+                <p>Comprehensive error handling</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="transitionToPage(2)">← Back to Page 2</button>
+            <button class="tertiary" onclick="transitionToPage(1)">Return to Start</button>
+        </div>
+    </div>
+
+    <!-- Hidden canvases for page snapshots -->
+    <canvas id="page1-canvas" class="page-snapshot" width="1280" height="720"></canvas>
+    <canvas id="page2-canvas" class="page-snapshot" width="1280" height="720"></canvas>
+    <canvas id="page3-canvas" class="page-snapshot" width="1280" height="720"></canvas>
+
+    <script type="module">
+        import { HybridPageTransitionAPI } from './src/HybridPageTransitionAPI.js';
+
+        // Global state
+        window.transitionAPI = null;
+        window.currentPage = 1;
+        window.pageSnapshots = {};
+
+        // Initialize API
+        async function init() {
+            console.log('Initializing HybridPageTransitionAPI...');
+            
+            try {
+                // Create API instance
+                window.transitionAPI = new HybridPageTransitionAPI({
+                    autoOptimize: true,
+                    debug: true,
+                    showDebugPanel: true,
+                    particleCount: 2000,
+                    explosionDuration: 800,
+                    recombinationDuration: 2000,
+                    explosionIntensity: 150
+                });
+
+                // Initialize
+                await window.transitionAPI.initialize();
+
+                // Create page snapshots
+                await createPageSnapshots();
+
+                // Update info
+                const perfInfo = window.transitionAPI.getPerformanceInfo();
+                document.getElementById('performance').textContent = perfInfo.level;
+                document.getElementById('webgl').textContent = perfInfo.capabilities.webgl ? 'Yes' : 'No';
+                document.getElementById('status').textContent = 'Ready';
+
+                console.log('API ready!');
+            } catch (error) {
+                console.error('Initialization failed:', error);
+                document.getElementById('status').textContent = 'Error';
+            }
+        }
+
+        // Create simple page snapshots
+        async function createPageSnapshots() {
+            // For each page, create a simple gradient canvas
+            const pages = [
+                { id: 1, gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', title: 'Page 1' },
+                { id: 2, gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', title: 'Page 2' },
+                { id: 3, gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', title: 'Page 3' }
+            ];
+
+            for (const page of pages) {
+                const canvas = document.getElementById(`page${page.id}-canvas`);
+                const ctx = canvas.getContext('2d');
+                
+                // Create gradient background
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                if (page.id === 1) {
+                    gradient.addColorStop(0, '#667eea');
+                    gradient.addColorStop(1, '#764ba2');
+                } else if (page.id === 2) {
+                    gradient.addColorStop(0, '#f093fb');
+                    gradient.addColorStop(1, '#f5576c');
+                } else {
+                    gradient.addColorStop(0, '#4facfe');
+                    gradient.addColorStop(1, '#00f2fe');
+                }
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Add page title
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 72px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(page.title, canvas.width / 2, canvas.height / 2);
+                
+                // Convert to image
+                const img = new Image();
+                img.src = canvas.toDataURL();
+                await new Promise(resolve => {
+                    img.onload = resolve;
+                });
+                
+                window.pageSnapshots[page.id] = img;
+            }
+
+            console.log('Page snapshots created');
+        }
+
+        // Transition to page
+        window.transitionToPage = async function(pageNum) {
+            if (!window.transitionAPI || window.currentPage === pageNum) {
+                return;
+            }
+
+            console.log(`Transitioning from Page ${window.currentPage} to Page ${pageNum}`);
+            document.getElementById('status').textContent = 'Transitioning...';
+
+            try {
+                // Get images
+                const currentImage = window.pageSnapshots[window.currentPage];
+                const nextImage = window.pageSnapshots[pageNum];
+
+                if (!currentImage || !nextImage) {
+                    console.error('Page snapshots not ready');
+                    return;
+                }
+
+                // Run transition
+                await window.transitionAPI.transitionImages(currentImage, nextImage, {
+                    staticDisplayDuration: 300,
+                    disintegrationDuration: 800,
+                    explosionTime: 700,
+                    recombinationDuration: 1800,
+                    blendDuration: 1200,
+                    finalStaticDuration: 300
+                });
+
+                // Update UI
+                document.getElementById(`page${window.currentPage}`).classList.add('hidden');
+                document.getElementById(`page${pageNum}`).classList.remove('hidden');
+                
+                window.currentPage = pageNum;
+                document.getElementById('current-page').textContent = `Page ${pageNum}`;
+                document.getElementById('status').textContent = 'Ready';
+
+                console.log('Transition complete!');
+            } catch (error) {
+                console.error('Transition failed:', error);
+                document.getElementById('status').textContent = 'Error';
+            }
+        };
+
+        // Initialize on load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>

@@ -34,6 +34,14 @@ if [ -f triangulation-demo.html ]; then
   cp triangulation-demo.html public/
 fi
 
+if [ -f page-transition-demo.html ]; then
+  cp page-transition-demo.html public/
+fi
+
+if [ -f simple-page-transition-demo.html ]; then
+  cp simple-page-transition-demo.html public/
+fi
+
 # Copy JavaScript files needed by index.html
 echo "Copying JavaScript files..."
 if [ -f morph-ui.js ]; then
@@ -78,6 +86,11 @@ if [ -f src/HybridEngine.js ]; then
   cp src/HybridEngine.js public/src/
 fi
 
+# Copy HybridPageTransitionAPI if exists
+if [ -f src/HybridPageTransitionAPI.js ]; then
+  cp src/HybridPageTransitionAPI.js public/src/
+fi
+
 # Copy presets directory if exists
 if [ -d src/presets ]; then
   mkdir -p public/src/presets
@@ -88,6 +101,12 @@ fi
 if [ -d src/triangulation ]; then
   mkdir -p public/src/triangulation
   cp -r src/triangulation/* public/src/triangulation/
+fi
+
+# Copy utils directory if exists
+if [ -d src/utils ]; then
+  mkdir -p public/src/utils
+  cp -r src/utils/* public/src/utils/
 fi
 
 echo "Build complete! Files are ready in ./public directory"
