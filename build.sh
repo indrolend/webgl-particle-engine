@@ -38,6 +38,10 @@ if [ -f page-transition-demo.html ]; then
   cp page-transition-demo.html public/
 fi
 
+if [ -f simple-page-transition-demo.html ]; then
+  cp simple-page-transition-demo.html public/
+fi
+
 # Copy JavaScript files needed by index.html
 echo "Copying JavaScript files..."
 if [ -f morph-ui.js ]; then
