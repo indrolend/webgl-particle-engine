@@ -268,6 +268,9 @@ export class HybridPageTransitionAPI {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      // Add SRI for security
+      script.integrity = 'sha512-Hjbb7ILvQ4VbJVLXzaS8EG3b4lfJcpuaCdRfRGZEi0f3rNwMkGw7f8lLg+QCTD3CLNU6p6lUxdH0R2fTJtFT7A==';
+      script.crossOrigin = 'anonymous';
       script.onload = () => {
         resolve(window.html2canvas);
       };
@@ -718,23 +721,43 @@ export class HybridPageTransitionAPI {
   destroy() {
     console.log('[HybridPageTransitionAPI] Destroying...');
     
-    if (this.engine) {
-      this.engine.destroy();
+    try {
+      if (this.engine) {
+        this.engine.destroy();
+      }
+    } catch (error) {
+      console.error('[HybridPageTransitionAPI] Error destroying engine:', error);
     }
     
-    if (this.canvas && this.canvas.parentElement) {
-      this.canvas.parentElement.removeChild(this.canvas);
+    try {
+      if (this.canvas && this.canvas.parentElement) {
+        this.canvas.parentElement.removeChild(this.canvas);
+      }
+    } catch (error) {
+      console.error('[HybridPageTransitionAPI] Error removing canvas:', error);
     }
     
-    if (this.debugPanel && this.debugPanel.parentElement) {
-      this.debugPanel.parentElement.removeChild(this.debugPanel);
+    try {
+      if (this.debugPanel && this.debugPanel.parentElement) {
+        this.debugPanel.parentElement.removeChild(this.debugPanel);
+      }
+    } catch (error) {
+      console.error('[HybridPageTransitionAPI] Error removing debug panel:', error);
     }
     
-    if (this.fallbackOverlay && this.fallbackOverlay.parentElement) {
-      this.fallbackOverlay.parentElement.removeChild(this.fallbackOverlay);
+    try {
+      if (this.fallbackOverlay && this.fallbackOverlay.parentElement) {
+        this.fallbackOverlay.parentElement.removeChild(this.fallbackOverlay);
+      }
+    } catch (error) {
+      console.error('[HybridPageTransitionAPI] Error removing fallback overlay:', error);
     }
     
-    this.clearCache();
+    try {
+      this.clearCache();
+    } catch (error) {
+      console.error('[HybridPageTransitionAPI] Error clearing cache:', error);
+    }
     
     this.isInitialized = false;
     console.log('[HybridPageTransitionAPI] Destroyed');

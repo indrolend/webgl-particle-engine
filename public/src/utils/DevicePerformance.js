@@ -13,6 +13,21 @@ export class DevicePerformance {
   }
 
   /**
+   * Check if device is mobile
+   * @returns {boolean}
+   */
+  isMobileDevice() {
+    // Check for touch capability combined with smaller screen
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const smallScreen = window.innerWidth < 768;
+    
+    // Fallback to user agent if needed (less reliable but useful)
+    const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    return (hasTouch && smallScreen) || mobileUA;
+  }
+
+  /**
    * Detect device performance level
    * @returns {string} 'high', 'medium', or 'low'
    */
@@ -24,7 +39,7 @@ export class DevicePerformance {
     const memory = navigator.deviceMemory || 4;
     
     // Check if mobile device
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isMobile = this.isMobileDevice();
     
     // High-end: Desktop with 8+ cores and 8+ GB RAM
     if (!isMobile && cores >= 8 && memory >= 8) {
@@ -50,7 +65,7 @@ export class DevicePerformance {
       webgl2: this.hasWebGL2(),
       hardwareConcurrency: navigator.hardwareConcurrency || 2,
       deviceMemory: navigator.deviceMemory || 'unknown',
-      isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+      isMobile: this.isMobileDevice(),
       maxTextureSize: this.getMaxTextureSize(),
       pixelRatio: window.devicePixelRatio || 1
     };
