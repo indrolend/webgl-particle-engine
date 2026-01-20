@@ -10,6 +10,8 @@
 
 In which we recount the adventures of a lone developer, who set forth in the year of our Lord 2025 to build a website. Like Don Quixote tilting at windmills, our hero fought valiantly against the formidable enemies of merge conflicts, CORS errors, and OCR inaccuracies. This is their story—told with all the dignity and gravitas such a journey deserves.
 
+> **⚠️ Disclaimer**: This document is a satirical, self-aware reflection on development mistakes and inefficiencies. The humor celebrates the learning process, not the anti-patterns. See the "Lessons Learned" section for what should have been done differently. This is NOT a best practices guide—it's a cautionary tale written with honesty and humor.
+
 ---
 
 ## The Hero's Journey Begins
