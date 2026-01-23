@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streamlined Page Transition API Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        #page1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        #page2 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            display: none;
+        }
+
+        #page3 {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            display: none;
+        }
+
+        .page h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .page p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            text-align: center;
+            max-width: 600px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid white;
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: bold;
+            margin: 10px;
+        }
+
+        button:hover:not(:disabled) {
+            background: white;
+            color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .event-log {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 400px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 9998;
+        }
+
+        .event-log h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+
+        .event-log .event {
+            margin: 5px 0;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .event-log .event .phase {
+            color: #4facfe;
+            font-weight: bold;
+        }
+
+        .event-log .event .timestamp {
+            color: #999;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Page 1 -->
+    <div id="page1" class="page">
+        <h1>🚀 Streamlined API Demo</h1>
+        <p>
+            This demo showcases the new <code>transitionToPage()</code> method - 
+            a simplified API for easy page transitions with WebGL particles.
+        </p>
+        <div>
+            <button id="nextBtn1">Next Page →</button>
+        </div>
+        <p style="margin-top: 30px; font-size: 0.9rem; opacity: 0.8;">
+            Watch the event log below to see lifecycle hooks in action!
+        </p>
+    </div>
+
+    <!-- Page 2 -->
+    <div id="page2" class="page">
+        <h1>✨ Easy Integration</h1>
+        <p>
+            The new API requires minimal code:
+            <br><br>
+            <code style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; display: block;">
+                await api.transitionToPage({<br>
+                &nbsp;&nbsp;currentPage: '#page1',<br>
+                &nbsp;&nbsp;nextPage: '#page2'<br>
+                });
+            </code>
+        </p>
+        <div>
+            <button id="prevBtn2">← Previous</button>
+            <button id="nextBtn2">Next Page →</button>
+        </div>
+    </div>
+
+    <!-- Page 3 -->
+    <div id="page3" class="page">
+        <h1>🎯 Lifecycle Events</h1>
+        <p>
+            Listen to transition phases for full observability:
+            <br><br>
+            <code style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; display: block;">
+                api.on('phaseStart', (data) => {<br>
+                &nbsp;&nbsp;console.log('Phase:', data.phase);<br>
+                });
+            </code>
+        </p>
+        <div>
+            <button id="prevBtn3">← Back to Start</button>
+        </div>
+    </div>
+
+    <!-- Event Log -->
+    <div class="event-log">
+        <h3>Lifecycle Events</h3>
+        <div id="eventList"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { HybridPageTransitionAPI } from './src/HybridPageTransitionAPI.js';
+
+        // Initialize the API with simple configuration
+        const api = new HybridPageTransitionAPI({
+            autoOptimize: true,
+            logLevel: 'info'
+        });
+
+        // Initialize on page load
+        await api.initialize();
+
+        console.log('✅ API initialized successfully!');
+
+        // Setup event logging for demo
+        const eventList = document.getElementById('eventList');
+        let eventCount = 0;
+
+        function logEvent(type, data) {
+            eventCount++;
+            const eventEl = document.createElement('div');
+            eventEl.className = 'event';
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const phaseInfo = data.phase ? `<span class="phase">${data.phase}</span>` : '';
+            const durationInfo = data.duration ? ` (${data.duration}ms)` : '';
+            
+            eventEl.innerHTML = `
+                <div>${eventCount}. ${type} ${phaseInfo}${durationInfo}</div>
+                <div class="timestamp">${timestamp}</div>
+            `;
+            
+            eventList.insertBefore(eventEl, eventList.firstChild);
+            
+            // Keep only last 10 events
+            while (eventList.children.length > 10) {
+                eventList.removeChild(eventList.lastChild);
+            }
+        }
+
+        // Register lifecycle event listeners
+        api.on('transitionStart', (data) => {
+            logEvent('Transition Start', data);
+            disableButtons();
+        });
+
+        api.on('transitionComplete', (data) => {
+            logEvent('Transition Complete', data);
+            enableButtons();
+        });
+
+        api.on('transitionError', (data) => {
+            logEvent('Transition Error', data);
+            enableButtons();
+        });
+
+        api.on('phaseStart', (data) => {
+            logEvent('Phase Start', data);
+        });
+
+        api.on('phaseEnd', (data) => {
+            logEvent('Phase End', data);
+        });
+
+        // Button click handlers
+        document.getElementById('nextBtn1').addEventListener('click', async () => {
+            try {
+                await api.transitionToPage({
+                    currentPage: '#page1',
+                    nextPage: '#page2',
+                    onComplete: () => console.log('✅ Transition 1→2 complete!'),
+                    onError: (error) => console.error('❌ Transition failed:', error)
+                });
+            } catch (error) {
+                console.error('Transition error:', error);
+            }
+        });
+
+        document.getElementById('prevBtn2').addEventListener('click', async () => {
+            await api.transitionToPage({
+                currentPage: '#page2',
+                nextPage: '#page1'
+            });
+        });
+
+        document.getElementById('nextBtn2').addEventListener('click', async () => {
+            await api.transitionToPage({
+                currentPage: '#page2',
+                nextPage: '#page3',
+                config: {
+                    explosionIntensity: 200  // Custom config for this transition
+                }
+            });
+        });
+
+        document.getElementById('prevBtn3').addEventListener('click', async () => {
+            await api.transitionToPage({
+                currentPage: '#page3',
+                nextPage: '#page1'
+            });
+        });
+
+        // Helper functions to disable/enable buttons during transitions
+        function disableButtons() {
+            document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+        }
+
+        function enableButtons() {
+            document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+        }
+
+        // Log initial state
+        logEvent('API Initialized', { 
+            particleCount: api.getConfig().particleCount,
+            performanceLevel: api.getPerformanceInfo().level
+        });
+    </script>
+</body>
+</html>

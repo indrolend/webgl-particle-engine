@@ -7,14 +7,17 @@
  * - Handles transition phases: disintegrate → explode → recombine
  * - Provides debug controls and performance optimization
  * - Includes WebGL fallback support (CSS transitions)
+ * - Event-driven lifecycle hooks for observability
+ * - Streamlined transitionToPage() API for easy integration
  */
 
 import { HybridEngine } from './HybridEngine.js';
 import { DevicePerformance } from './utils/DevicePerformance.js';
+import { TransitionEventEmitter } from './utils/TransitionEventEmitter.js';
 
 export class HybridPageTransitionAPI {
   constructor(config = {}) {
-    console.log('[HybridPageTransitionAPI] Initializing...');
+    this._log('info', 'Initializing...');
     
     // Configuration with defaults
     this.config = {
@@ -43,6 +46,7 @@ export class HybridPageTransitionAPI {
       // Debug settings
       debug: config.debug || false,
       showDebugPanel: config.showDebugPanel || false,
+      logLevel: config.logLevel || 'info', // 'debug', 'info', 'warn', 'error'
       
       // Fallback settings
       enableFallback: config.enableFallback !== false,
@@ -50,6 +54,9 @@ export class HybridPageTransitionAPI {
       
       ...config
     };
+    
+    // Initialize event emitter for lifecycle hooks
+    this.events = new TransitionEventEmitter();
     
     // Initialize performance detector
     this.performance = new DevicePerformance();
@@ -67,6 +74,8 @@ export class HybridPageTransitionAPI {
     this.currentPage = null;
     this.nextPage = null;
     this.debugPanel = null;
+    this.currentPhase = null;
+    this.transitionStartTime = null;
     
     // Texture cache
     this.textureCache = new Map();
@@ -74,8 +83,61 @@ export class HybridPageTransitionAPI {
     // Fallback element
     this.fallbackOverlay = null;
     
-    console.log('[HybridPageTransitionAPI] Configuration:', this.config);
-    console.log('[HybridPageTransitionAPI] Performance level:', this.performance.performanceLevel);
+    this._log('debug', 'Configuration:', this.config);
+    this._log('info', `Performance level: ${this.performance.performanceLevel}`);
+  }
+
+  /**
+   * Structured logging helper with log levels
+   * @param {string} level - Log level ('debug', 'info', 'warn', 'error')
+   * @param {string} message - Log message
+   * @param {any} data - Optional data to log
+   */
+  _log(level, message, data = null) {
+    const logLevels = { debug: 0, info: 1, warn: 2, error: 3 };
+    const configLevel = logLevels[this.config.logLevel] || 1;
+    const messageLevel = logLevels[level] || 1;
+    
+    if (messageLevel < configLevel) {
+      return;
+    }
+    
+    const prefix = '[HybridPageTransitionAPI]';
+    const logData = data ? [message, data] : [message];
+    
+    switch (level) {
+      case 'debug':
+        if (this.config.debug) {
+          console.log(prefix, ...logData);
+        }
+        break;
+      case 'info':
+        console.log(prefix, ...logData);
+        break;
+      case 'warn':
+        console.warn(prefix, ...logData);
+        break;
+      case 'error':
+        console.error(prefix, ...logData);
+        break;
+    }
+  }
+
+  /**
+   * Emit phase event and log
+   * @param {string} phase - Phase name
+   * @param {string} action - 'start' or 'end'
+   * @param {Object} data - Additional data
+   */
+  _emitPhase(phase, action, data = {}) {
+    const eventName = action === 'start' ? 'phaseStart' : 'phaseEnd';
+    const eventData = { phase, timestamp: Date.now(), ...data };
+    
+    this.currentPhase = action === 'start' ? phase : null;
+    this.events.emit(eventName, eventData);
+    
+    const actionText = action === 'start' ? 'Starting' : 'Completed';
+    this._log('debug', `${actionText} ${phase} phase`, data);
   }
 
   /**
@@ -84,18 +146,23 @@ export class HybridPageTransitionAPI {
    */
   async initialize() {
     if (this.isInitialized) {
-      console.warn('[HybridPageTransitionAPI] Already initialized');
+      this._log('warn', 'Already initialized');
       return;
     }
     
-    console.log('[HybridPageTransitionAPI] Initializing canvas and engine...');
+    this._log('info', 'Initializing canvas and engine...');
+    this.events.emit('initializeStart', { timestamp: Date.now() });
     
     // Check WebGL support
     if (!this.performance.capabilities.webgl) {
-      console.warn('[HybridPageTransitionAPI] WebGL not supported, fallback mode enabled');
+      this._log('warn', 'WebGL not supported, fallback mode enabled');
       this.config.enableFallback = true;
       this.initializeFallback();
       this.isInitialized = true;
+      this.events.emit('initializeComplete', { 
+        timestamp: Date.now(), 
+        webglSupported: false 
+      });
       return;
     }
     
@@ -112,12 +179,16 @@ export class HybridPageTransitionAPI {
         autoResize: true
       });
       
-      console.log('[HybridPageTransitionAPI] Engine initialized successfully');
+      this._log('info', 'Engine initialized successfully');
     } catch (error) {
-      console.error('[HybridPageTransitionAPI] Failed to initialize engine:', error);
+      this._log('error', 'Failed to initialize engine:', error);
       this.config.enableFallback = true;
       this.initializeFallback();
       this.isInitialized = true;
+      this.events.emit('initializeError', { 
+        timestamp: Date.now(), 
+        error: error.message 
+      });
       return;
     }
     
@@ -127,7 +198,175 @@ export class HybridPageTransitionAPI {
     }
     
     this.isInitialized = true;
-    console.log('[HybridPageTransitionAPI] Initialization complete');
+    this._log('info', 'Initialization complete');
+    this.events.emit('initializeComplete', { 
+      timestamp: Date.now(), 
+      webglSupported: true 
+    });
+  }
+
+  /**
+   * Streamlined API for page transitions - Easy integration for websites
+   * 
+   * This is the recommended method for most use cases. It provides:
+   * - Simple, clear parameter names
+   * - Sensible defaults for all settings
+   * - Automatic element resolution (accepts selectors or elements)
+   * - Built-in error handling with meaningful messages
+   * - Lifecycle hooks for observability
+   * - Automatic fallback for non-WebGL browsers
+   * 
+   * @param {Object} params - Transition parameters
+   * @param {HTMLElement|string} params.currentPage - Current page element or CSS selector
+   * @param {HTMLElement|string} params.nextPage - Next page element or CSS selector
+   * @param {Function} [params.onComplete] - Callback when transition completes
+   * @param {Function} [params.onError] - Callback if transition fails
+   * @param {Object} [params.config] - Optional configuration overrides
+   * @returns {Promise<void>}
+   * 
+   * @example
+   * // Basic usage
+   * await api.transitionToPage({
+   *   currentPage: '#page1',
+   *   nextPage: '#page2'
+   * });
+   * 
+   * @example
+   * // With callbacks
+   * await api.transitionToPage({
+   *   currentPage: document.getElementById('home'),
+   *   nextPage: document.getElementById('about'),
+   *   onComplete: () => console.log('Transition done!'),
+   *   onError: (error) => console.error('Failed:', error)
+   * });
+   * 
+   * @example
+   * // With custom configuration
+   * await api.transitionToPage({
+   *   currentPage: '#page1',
+   *   nextPage: '#page2',
+   *   config: {
+   *     explosionIntensity: 200,
+   *     particleCount: 3000
+   *   }
+   * });
+   */
+  async transitionToPage({ currentPage, nextPage, onComplete = null, onError = null, config = {} }) {
+    // Validate required parameters
+    if (!currentPage || !nextPage) {
+      const error = new Error('transitionToPage() requires both currentPage and nextPage parameters');
+      this._log('error', error.message);
+      
+      if (onError) {
+        onError(error);
+      }
+      
+      throw error;
+    }
+    
+    // Check if transition already in progress
+    if (this.isTransitioning) {
+      const error = new Error('A transition is already in progress. Please wait for it to complete.');
+      this._log('warn', error.message);
+      
+      if (onError) {
+        onError(error);
+      }
+      
+      return;
+    }
+    
+    // Initialize if needed
+    if (!this.isInitialized) {
+      this._log('info', 'Auto-initializing API for first transition...');
+      try {
+        await this.initialize();
+      } catch (initError) {
+        const error = new Error(`Failed to initialize: ${initError.message}`);
+        this._log('error', error.message);
+        
+        if (onError) {
+          onError(error);
+        }
+        
+        throw error;
+      }
+    }
+    
+    // Resolve page elements
+    let currentElement, nextElement;
+    
+    try {
+      currentElement = typeof currentPage === 'string' 
+        ? document.querySelector(currentPage) 
+        : currentPage;
+      
+      nextElement = typeof nextPage === 'string' 
+        ? document.querySelector(nextPage) 
+        : nextPage;
+      
+      // Validate elements exist
+      if (!currentElement) {
+        throw new Error(`Current page not found: ${typeof currentPage === 'string' ? currentPage : 'invalid element'}`);
+      }
+      
+      if (!nextElement) {
+        throw new Error(`Next page not found: ${typeof nextPage === 'string' ? nextPage : 'invalid element'}`);
+      }
+      
+      // Validate elements are in the DOM
+      if (!document.body.contains(currentElement)) {
+        throw new Error('Current page element is not in the document');
+      }
+      
+      if (!document.body.contains(nextElement)) {
+        throw new Error('Next page element is not in the document');
+      }
+      
+    } catch (error) {
+      this._log('error', 'Page resolution failed:', error.message);
+      
+      if (onError) {
+        onError(error);
+      }
+      
+      throw error;
+    }
+    
+    // Apply config overrides if provided
+    const originalConfig = { ...this.config };
+    if (config && Object.keys(config).length > 0) {
+      this._log('debug', 'Applying config overrides:', config);
+      Object.assign(this.config, config);
+    }
+    
+    try {
+      // Use the existing transition method internally
+      await this.transition(currentElement, nextElement, config);
+      
+      // Call onComplete callback if provided
+      if (onComplete) {
+        onComplete();
+      }
+      
+      this._log('info', 'Page transition completed successfully');
+      
+    } catch (error) {
+      this._log('error', 'Page transition failed:', error.message);
+      
+      // Call onError callback if provided
+      if (onError) {
+        onError(error);
+      }
+      
+      throw error;
+      
+    } finally {
+      // Restore original config if overrides were applied
+      if (config && Object.keys(config).length > 0) {
+        Object.assign(this.config, originalConfig);
+      }
+    }
   }
 
   /**
@@ -161,7 +400,7 @@ export class HybridPageTransitionAPI {
    * Initialize CSS fallback for non-WebGL browsers
    */
   initializeFallback() {
-    console.log('[HybridPageTransitionAPI] Initializing CSS fallback...');
+    this._log('info', 'Initializing CSS fallback...');
     
     this.fallbackOverlay = document.createElement('div');
     this.fallbackOverlay.id = 'page-transition-fallback';
@@ -180,14 +419,14 @@ export class HybridPageTransitionAPI {
     `;
     
     document.body.appendChild(this.fallbackOverlay);
-    console.log('[HybridPageTransitionAPI] CSS fallback initialized');
+    this._log('info', 'CSS fallback initialized');
   }
 
   /**
    * Optimize settings based on device performance
    */
   optimizeForPerformance() {
-    console.log('[HybridPageTransitionAPI] Optimizing for device performance...');
+    this._log('info', 'Optimizing for device performance...');
     
     const profile = this.performance.getPerformanceProfile();
     
@@ -199,7 +438,7 @@ export class HybridPageTransitionAPI {
     // Adjust html2canvas scale
     this.config.html2canvasOptions.scale = profile.canvasScale;
     
-    console.log('[HybridPageTransitionAPI] Optimized settings:', {
+    this._log('info', 'Optimized settings applied', {
       particleCount: this.config.particleCount,
       explosionIntensity: this.config.explosionIntensity,
       canvasScale: profile.canvasScale
@@ -213,11 +452,11 @@ export class HybridPageTransitionAPI {
    * @returns {Promise<HTMLCanvasElement>}
    */
   async captureDOMAsTexture(element, cacheKey = null) {
-    console.log('[HybridPageTransitionAPI] Capturing DOM element as texture...');
+    this._log('debug', 'Capturing DOM element as texture...');
     
     // Check cache
     if (cacheKey && this.textureCache.has(cacheKey)) {
-      console.log('[HybridPageTransitionAPI] Using cached texture:', cacheKey);
+      this._log('debug', `Using cached texture: ${cacheKey}`);
       return this.textureCache.get(cacheKey);
     }
     
@@ -228,7 +467,7 @@ export class HybridPageTransitionAPI {
       // Capture element
       const canvas = await html2canvas(element, this.config.html2canvasOptions);
       
-      console.log('[HybridPageTransitionAPI] DOM captured successfully:', {
+      this._log('debug', 'DOM captured successfully', {
         width: canvas.width,
         height: canvas.height
       });
@@ -240,7 +479,7 @@ export class HybridPageTransitionAPI {
       
       return canvas;
     } catch (error) {
-      console.error('[HybridPageTransitionAPI] Failed to capture DOM:', error);
+      this._log('error', 'Failed to capture DOM:', error.message);
       throw error;
     }
   }
@@ -290,7 +529,7 @@ export class HybridPageTransitionAPI {
    */
   async transitionImages(currentImage, nextImage, options = {}) {
     if (this.isTransitioning) {
-      console.warn('[HybridPageTransitionAPI] Transition already in progress');
+      this._log('warn', 'Transition already in progress');
       return;
     }
     
@@ -298,14 +537,27 @@ export class HybridPageTransitionAPI {
       await this.initialize();
     }
     
-    console.log('[HybridPageTransitionAPI] Starting image transition...');
+    this._log('info', 'Starting image transition...');
     this.isTransitioning = true;
+    this.transitionStartTime = Date.now();
+    
+    // Emit transition start event
+    this.events.emit('transitionStart', { 
+      timestamp: this.transitionStartTime,
+      type: 'image'
+    });
     
     // Use fallback if WebGL not available
     if (this.config.enableFallback && !this.engine) {
+      this._log('info', 'Using fallback transition (WebGL not available)');
       // Simple fade transition
       await new Promise(resolve => setTimeout(resolve, 1000));
       this.isTransitioning = false;
+      this.events.emit('transitionComplete', { 
+        timestamp: Date.now(),
+        duration: Date.now() - this.transitionStartTime,
+        fallback: true
+      });
       return;
     }
     
@@ -327,9 +579,6 @@ export class HybridPageTransitionAPI {
         finalStaticDuration: options.finalStaticDuration || 500
       };
       
-      // Start hybrid transition
-      this.engine.startHybridTransition(currentImage, nextImage, transitionConfig);
-      
       // Calculate total duration
       const totalDuration = 
         transitionConfig.staticDisplayDuration +
@@ -339,20 +588,70 @@ export class HybridPageTransitionAPI {
         transitionConfig.blendDuration +
         transitionConfig.finalStaticDuration;
       
-      // Wait for transition to complete
-      await new Promise(resolve => setTimeout(resolve, totalDuration));
+      this._log('debug', 'Transition configuration', { transitionConfig, totalDuration });
+      
+      // Start hybrid transition
+      this.engine.startHybridTransition(currentImage, nextImage, transitionConfig);
+      
+      // Track phases with timings
+      await this._trackTransitionPhases(transitionConfig);
       
       // Hide canvas
       this.canvas.style.display = 'none';
       
-      console.log('[HybridPageTransitionAPI] Image transition complete');
+      this._log('info', 'Image transition complete');
+      
+      // Emit completion event
+      this.events.emit('transitionComplete', { 
+        timestamp: Date.now(),
+        duration: Date.now() - this.transitionStartTime,
+        fallback: false
+      });
       
     } catch (error) {
-      console.error('[HybridPageTransitionAPI] Image transition failed:', error);
+      this._log('error', 'Image transition failed:', error.message);
       this.canvas.style.display = 'none';
+      
+      // Emit error event
+      this.events.emit('transitionError', { 
+        timestamp: Date.now(),
+        error: error.message,
+        duration: Date.now() - this.transitionStartTime
+      });
+      
+      throw error;
+    } finally {
+      this.isTransitioning = false;
+      this.currentPhase = null;
     }
+  }
+
+  /**
+   * Track and emit events for each transition phase
+   * @param {Object} config - Transition configuration
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _trackTransitionPhases(config) {
+    const phases = [
+      { name: 'staticDisplay', duration: config.staticDisplayDuration },
+      { name: 'disintegration', duration: config.disintegrationDuration },
+      { name: 'explosion', duration: config.explosionTime },
+      { name: 'recombination', duration: config.recombinationDuration },
+      { name: 'blend', duration: config.blendDuration },
+      { name: 'finalStatic', duration: config.finalStaticDuration }
+    ];
     
-    this.isTransitioning = false;
+    for (const phase of phases) {
+      // Emit phase start
+      this._emitPhase(phase.name, 'start', { duration: phase.duration });
+      
+      // Wait for phase duration
+      await new Promise(resolve => setTimeout(resolve, phase.duration));
+      
+      // Emit phase end
+      this._emitPhase(phase.name, 'end', { duration: phase.duration });
+    }
   }
 
   /**
@@ -364,7 +663,7 @@ export class HybridPageTransitionAPI {
    */
   async transition(currentElement, nextElement, options = {}) {
     if (this.isTransitioning) {
-      console.warn('[HybridPageTransitionAPI] Transition already in progress');
+      this._log('warn', 'Transition already in progress');
       return;
     }
     
@@ -372,8 +671,15 @@ export class HybridPageTransitionAPI {
       await this.initialize();
     }
     
-    console.log('[HybridPageTransitionAPI] Starting page transition...');
+    this._log('info', 'Starting page transition...');
     this.isTransitioning = true;
+    this.transitionStartTime = Date.now();
+    
+    // Emit transition start event
+    this.events.emit('transitionStart', { 
+      timestamp: this.transitionStartTime,
+      type: 'page'
+    });
     
     // Resolve elements
     const current = typeof currentElement === 'string' 
@@ -384,21 +690,38 @@ export class HybridPageTransitionAPI {
       : nextElement;
     
     if (!current || !next) {
-      console.error('[HybridPageTransitionAPI] Invalid elements provided');
+      const error = new Error('Invalid elements provided for transition');
+      this._log('error', error.message);
       this.isTransitioning = false;
-      return;
+      
+      this.events.emit('transitionError', { 
+        timestamp: Date.now(),
+        error: error.message
+      });
+      
+      throw error;
     }
     
     // Use fallback if WebGL not available
     if (this.config.enableFallback && !this.engine) {
       await this.fallbackTransition(current, next);
       this.isTransitioning = false;
+      
+      this.events.emit('transitionComplete', { 
+        timestamp: Date.now(),
+        duration: Date.now() - this.transitionStartTime,
+        fallback: true
+      });
+      
       return;
     }
     
     try {
+      // Emit capture phase start
+      this._emitPhase('capture', 'start');
+      
       // Capture both pages as textures
-      console.log('[HybridPageTransitionAPI] Capturing pages...');
+      this._log('info', 'Capturing pages...');
       const [currentTexture, nextTexture] = await Promise.all([
         this.captureDOMAsTexture(current),
         this.captureDOMAsTexture(next)
@@ -407,6 +730,9 @@ export class HybridPageTransitionAPI {
       // Convert canvases to images
       const currentImage = await this.canvasToImage(currentTexture);
       const nextImage = await this.canvasToImage(nextTexture);
+      
+      // Emit capture phase end
+      this._emitPhase('capture', 'end');
       
       // Show canvas
       this.canvas.style.display = 'block';
@@ -432,34 +758,42 @@ export class HybridPageTransitionAPI {
       // Start hybrid transition
       this.engine.startHybridTransition(currentImage, nextImage, transitionConfig);
       
-      // Calculate total duration
-      const totalDuration = 
-        transitionConfig.staticDisplayDuration +
-        transitionConfig.disintegrationDuration +
-        transitionConfig.explosionTime +
-        transitionConfig.recombinationDuration +
-        transitionConfig.blendDuration +
-        transitionConfig.finalStaticDuration;
-      
-      // Wait for transition to complete
-      await new Promise(resolve => setTimeout(resolve, totalDuration));
+      // Track phases
+      await this._trackTransitionPhases(transitionConfig);
       
       // Hide canvas and show next page
       this.canvas.style.display = 'none';
       next.style.display = '';
       
-      console.log('[HybridPageTransitionAPI] Transition complete');
+      this._log('info', 'Transition complete');
+      
+      // Emit completion event
+      this.events.emit('transitionComplete', { 
+        timestamp: Date.now(),
+        duration: Date.now() - this.transitionStartTime,
+        fallback: false
+      });
       
     } catch (error) {
-      console.error('[HybridPageTransitionAPI] Transition failed:', error);
+      this._log('error', 'Transition failed:', error.message);
       
       // Fallback to instant transition
       current.style.display = 'none';
       next.style.display = '';
       this.canvas.style.display = 'none';
+      
+      // Emit error event
+      this.events.emit('transitionError', { 
+        timestamp: Date.now(),
+        error: error.message,
+        duration: Date.now() - this.transitionStartTime
+      });
+      
+      throw error;
+    } finally {
+      this.isTransitioning = false;
+      this.currentPhase = null;
     }
-    
-    this.isTransitioning = false;
   }
 
   /**
@@ -469,7 +803,7 @@ export class HybridPageTransitionAPI {
    * @returns {Promise<void>}
    */
   async fallbackTransition(current, next) {
-    console.log('[HybridPageTransitionAPI] Using CSS fallback transition...');
+    this._log('info', 'Using CSS fallback transition...');
     
     if (!this.fallbackOverlay) {
       // Instant transition if fallback not initialized
@@ -524,7 +858,7 @@ export class HybridPageTransitionAPI {
    * @param {Object} config - Configuration updates
    */
   updateConfig(config) {
-    console.log('[HybridPageTransitionAPI] Updating configuration...');
+    this._log('info', 'Updating configuration...', config);
     
     Object.assign(this.config, config);
     
@@ -535,7 +869,7 @@ export class HybridPageTransitionAPI {
       }
     }
     
-    console.log('[HybridPageTransitionAPI] Configuration updated');
+    this._log('debug', 'Configuration updated');
   }
 
   /**
@@ -562,7 +896,7 @@ export class HybridPageTransitionAPI {
    * Clear texture cache
    */
   clearCache() {
-    console.log('[HybridPageTransitionAPI] Clearing texture cache...');
+    this._log('debug', 'Clearing texture cache...');
     this.textureCache.clear();
   }
 
@@ -570,7 +904,7 @@ export class HybridPageTransitionAPI {
    * Create debug panel for real-time controls
    */
   createDebugPanel() {
-    console.log('[HybridPageTransitionAPI] Creating debug panel...');
+    this._log('info', 'Creating debug panel...');
     
     this.debugPanel = document.createElement('div');
     this.debugPanel.id = 'hybrid-transition-debug-panel';
@@ -719,14 +1053,14 @@ export class HybridPageTransitionAPI {
    * Destroy API and clean up resources
    */
   destroy() {
-    console.log('[HybridPageTransitionAPI] Destroying...');
+    this._log('info', 'Destroying...');
     
     try {
       if (this.engine) {
         this.engine.destroy();
       }
     } catch (error) {
-      console.error('[HybridPageTransitionAPI] Error destroying engine:', error);
+      this._log('error', 'Error destroying engine:', error.message);
     }
     
     try {
@@ -734,7 +1068,7 @@ export class HybridPageTransitionAPI {
         this.canvas.parentElement.removeChild(this.canvas);
       }
     } catch (error) {
-      console.error('[HybridPageTransitionAPI] Error removing canvas:', error);
+      this._log('error', 'Error removing canvas:', error.message);
     }
     
     try {
@@ -742,7 +1076,7 @@ export class HybridPageTransitionAPI {
         this.debugPanel.parentElement.removeChild(this.debugPanel);
       }
     } catch (error) {
-      console.error('[HybridPageTransitionAPI] Error removing debug panel:', error);
+      this._log('error', 'Error removing debug panel:', error.message);
     }
     
     try {
@@ -750,16 +1084,101 @@ export class HybridPageTransitionAPI {
         this.fallbackOverlay.parentElement.removeChild(this.fallbackOverlay);
       }
     } catch (error) {
-      console.error('[HybridPageTransitionAPI] Error removing fallback overlay:', error);
+      this._log('error', 'Error removing fallback overlay:', error.message);
     }
     
     try {
       this.clearCache();
     } catch (error) {
-      console.error('[HybridPageTransitionAPI] Error clearing cache:', error);
+      this._log('error', 'Error clearing cache:', error.message);
+    }
+    
+    try {
+      // Remove all event listeners
+      this.events.removeAllListeners();
+    } catch (error) {
+      this._log('error', 'Error removing event listeners:', error.message);
     }
     
     this.isInitialized = false;
-    console.log('[HybridPageTransitionAPI] Destroyed');
+    this._log('info', 'Destroyed');
+  }
+
+  /**
+   * Register an event listener
+   * @param {string} event - Event name ('transitionStart', 'transitionComplete', 'transitionError', 'phaseStart', 'phaseEnd')
+   * @param {Function} callback - Callback function
+   * @returns {Function} Unsubscribe function
+   * 
+   * @example
+   * // Listen for transition start
+   * const unsubscribe = api.on('transitionStart', (data) => {
+   *   console.log('Transition started at', data.timestamp);
+   * });
+   * 
+   * // Later: unsubscribe
+   * unsubscribe();
+   */
+  on(event, callback) {
+    return this.events.on(event, callback);
+  }
+
+  /**
+   * Register a one-time event listener
+   * @param {string} event - Event name
+   * @param {Function} callback - Callback function
+   * @returns {Function} Unsubscribe function
+   * 
+   * @example
+   * // Listen for next transition completion only
+   * api.once('transitionComplete', (data) => {
+   *   console.log('First transition done in', data.duration, 'ms');
+   * });
+   */
+  once(event, callback) {
+    return this.events.once(event, callback);
+  }
+
+  /**
+   * Remove an event listener
+   * @param {string} event - Event name
+   * @param {Function} callback - Callback function
+   * 
+   * @example
+   * const myCallback = (data) => console.log(data);
+   * api.on('phaseStart', myCallback);
+   * // Later...
+   * api.off('phaseStart', myCallback);
+   */
+  off(event, callback) {
+    this.events.off(event, callback);
+  }
+
+  /**
+   * Get current transition phase
+   * @returns {string|null} Current phase name or null if not transitioning
+   */
+  getCurrentPhase() {
+    return this.currentPhase;
+  }
+
+  /**
+   * Check if a transition is currently in progress
+   * @returns {boolean} True if transitioning
+   */
+  isTransitionInProgress() {
+    return this.isTransitioning;
+  }
+
+  /**
+   * Get transition duration (time since transition started)
+   * @returns {number|null} Duration in milliseconds or null if not transitioning
+   */
+  getTransitionDuration() {
+    if (!this.isTransitioning || !this.transitionStartTime) {
+      return null;
+    }
+    
+    return Date.now() - this.transitionStartTime;
   }
 }
