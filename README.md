@@ -2,13 +2,48 @@
 
 A high-performance WebGL-based particle system with smooth animated transitions, specializing in seamless image morphing effects. Features a modular architecture with detailed logging, both focused and comprehensive interfaces, and **advanced triangulation-based morphing**.
 
+## 🎯 NEW: Easy-to-Use Page Transition API
+
+**Quick integration for page transitions!** The engine now features a streamlined API specifically designed for easy integration into websites.
+
+```javascript
+import { HybridPageTransitionAPI } from './src/HybridPageTransitionAPI.js';
+
+const api = new HybridPageTransitionAPI({ autoOptimize: true });
+await api.initialize();
+
+// Simple page transition
+await api.transitionToPage({
+    currentPage: '#page1',
+    nextPage: '#page2',
+    onComplete: () => console.log('Done!')
+});
+
+// Listen to lifecycle events
+api.on('phaseStart', (data) => {
+    console.log('Phase:', data.phase);
+});
+```
+
+**See it in action:** [streamlined-api-demo.html](streamlined-api-demo.html)  
+**Learn more:** [EASY_API_GUIDE.md](EASY_API_GUIDE.md)
+
+### What's New?
+
+- ✨ **Simplified API** - `transitionToPage()` method with clear parameters
+- 🎭 **Lifecycle Events** - Listen to transition phases for full observability
+- 📊 **Enhanced Logging** - Structured logging with configurable log levels
+- 🛡️ **Better Error Handling** - Clear, actionable error messages
+- 🎯 **Helper Methods** - Check transition status, get current phase, etc.
+- 📚 **Great Documentation** - Comprehensive guide with examples
+
 ## ✨ Features
 
+- **🌐 Page Transition API (NEW!)**: Easy-to-use API for page transitions with lifecycle hooks
 - **🎨 Image Morphing**: Seamless particle-based transitions between images with high visual quality
 - **🔺 Triangulation Morphing**: Advanced Delaunay triangulation-based image morphing with smooth mesh interpolation
 - **🎭 Hybrid Rendering**: Combine particle and triangulation effects for stunning visual transitions
 - **💥 Hybrid Transition Preset**: Multi-phase transitions with explosion, recombination, and blend effects
-- **🌐 Page Transition API**: High-level API for particle-based page transitions with DOM capture
 - **⚡ WebGL Rendering**: Hardware-accelerated rendering for smooth 60 FPS performance
 - **🖼️ Image-Based Particles**: Upload images and create particle formations from pixel data
 - **✨ Smooth Transitions**: Animated transitions with optimized easing for natural morphing effects
@@ -44,13 +79,14 @@ php -S localhost:8000
 
 3. Open your browser and navigate to:
 ```
+http://localhost:8000/streamlined-api-demo.html         # 🎯 NEW! Streamlined API Demo - Easy page transitions
 http://localhost:8000/minimal-example.html              # ⚡ Minimal WebGL example - No dependencies, no UI
-http://localhost:8000/                                 # 🎨 Main page - Image morphing interface
-http://localhost:8000/index.html                       # 🎨 Main page - Image morphing interface (same as above)
-http://localhost:8000/simple-page-transition-demo.html # 🌐 Page Transition API Demo (NEW!)
-http://localhost:8000/triangulation-demo.html          # 🔺 Triangulation morphing demo with hybrid effects
-http://localhost:8000/debug.html                       # 🐛 Full debug interface with all features
-http://localhost:8000/landing.html                     # 🏠 Original landing page with links
+http://localhost:8000/                                  # 🎨 Main page - Image morphing interface
+http://localhost:8000/index.html                        # 🎨 Main page - Image morphing interface (same as above)
+http://localhost:8000/simple-page-transition-demo.html  # 🌐 Page Transition API Demo
+http://localhost:8000/triangulation-demo.html           # 🔺 Triangulation morphing demo with hybrid effects
+http://localhost:8000/debug.html                        # 🐛 Full debug interface with all features
+http://localhost:8000/landing.html                      # 🏠 Original landing page with links
 ```
 
 ## 🔺 Triangulation-Based Image Morphing
