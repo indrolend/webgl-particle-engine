@@ -291,9 +291,10 @@
         }
 
         // Log initial state
+        const perfInfo = api.getPerformanceInfo();
         logEvent('API Initialized', { 
             particleCount: api.getConfig().particleCount,
-            performanceLevel: api.getPerformanceInfo().level
+            performanceLevel: perfInfo ? perfInfo.level : 'unknown'
         });
     </script>
 </body>

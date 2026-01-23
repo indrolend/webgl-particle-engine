@@ -16,6 +16,9 @@ import { DevicePerformance } from './utils/DevicePerformance.js';
 import { TransitionEventEmitter } from './utils/TransitionEventEmitter.js';
 
 export class HybridPageTransitionAPI {
+  // Log level constants for performance
+  static LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
+  
   constructor(config = {}) {
     this._log('info', 'Initializing...');
     
@@ -94,7 +97,7 @@ export class HybridPageTransitionAPI {
    * @param {any} data - Optional data to log
    */
   _log(level, message, data = null) {
-    const logLevels = { debug: 0, info: 1, warn: 2, error: 3 };
+    const logLevels = HybridPageTransitionAPI.LOG_LEVELS;
     const configLevel = logLevels[this.config.logLevel] || 1;
     const messageLevel = logLevels[level] || 1;
     
@@ -307,11 +310,11 @@ export class HybridPageTransitionAPI {
       
       // Validate elements exist
       if (!currentElement) {
-        throw new Error(`Current page not found: ${typeof currentPage === 'string' ? currentPage : 'invalid element'}`);
+        throw new Error(`Current page element not found: ${typeof currentPage === 'string' ? currentPage : 'provided DOM element is invalid'}`);
       }
       
       if (!nextElement) {
-        throw new Error(`Next page not found: ${typeof nextPage === 'string' ? nextPage : 'invalid element'}`);
+        throw new Error(`Next page element not found: ${typeof nextPage === 'string' ? nextPage : 'provided DOM element is invalid'}`);
       }
       
       // Validate elements are in the DOM
@@ -334,7 +337,10 @@ export class HybridPageTransitionAPI {
     }
     
     // Apply config overrides if provided
-    const originalConfig = { ...this.config };
+    const originalConfig = config && Object.keys(config).length > 0 
+      ? JSON.parse(JSON.stringify(this.config))  // Deep clone
+      : null;
+      
     if (config && Object.keys(config).length > 0) {
       this._log('debug', 'Applying config overrides:', config);
       Object.assign(this.config, config);
@@ -363,8 +369,8 @@ export class HybridPageTransitionAPI {
       
     } finally {
       // Restore original config if overrides were applied
-      if (config && Object.keys(config).length > 0) {
-        Object.assign(this.config, originalConfig);
+      if (originalConfig) {
+        this.config = originalConfig;
       }
     }
   }
