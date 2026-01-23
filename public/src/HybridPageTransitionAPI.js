@@ -177,8 +177,6 @@ export class HybridPageTransitionAPI {
       this.engine = new HybridEngine(this.canvas, {
         particleCount: this.config.particleCount,
         speed: 1.0,
-        enableTriangulation: true,
-        triangulationMode: 'hybrid',
         autoResize: true
       });
       

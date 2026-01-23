@@ -1,10 +1,10 @@
-# WebGL Particle Transition Engine
+# WebGL Particle Engine - Page Transition API
 
-A high-performance WebGL-based particle system with smooth animated transitions, specializing in seamless image morphing effects. Features a modular architecture with detailed logging, both focused and comprehensive interfaces, and **advanced triangulation-based morphing**.
+A high-performance WebGL-based particle system for smooth page transitions. Features an easy-to-use API designed for seamless integration into websites with multi-phase particle transitions including explosion, recombination, and blend effects.
 
-## 🎯 NEW: Easy-to-Use Page Transition API
+## 🎯 Easy-to-Use Page Transition API
 
-**Quick integration for page transitions!** The engine now features a streamlined API specifically designed for easy integration into websites.
+**Simple integration for page transitions!** The engine features a streamlined API specifically designed for easy integration into websites.
 
 ```javascript
 import { HybridPageTransitionAPI } from './src/HybridPageTransitionAPI.js';
@@ -39,19 +39,13 @@ api.on('phaseStart', (data) => {
 
 ## ✨ Features
 
-- **🌐 Page Transition API (NEW!)**: Easy-to-use API for page transitions with lifecycle hooks
-- **🎨 Image Morphing**: Seamless particle-based transitions between images with high visual quality
-- **🔺 Triangulation Morphing**: Advanced Delaunay triangulation-based image morphing with smooth mesh interpolation
-- **🎭 Hybrid Rendering**: Combine particle and triangulation effects for stunning visual transitions
-- **💥 Hybrid Transition Preset**: Multi-phase transitions with explosion, recombination, and blend effects
+- **🌐 Page Transition API**: Easy-to-use API for page transitions with lifecycle hooks
+- **💥 Hybrid Transitions**: Multi-phase transitions with explosion, recombination, and blend effects
 - **⚡ WebGL Rendering**: Hardware-accelerated rendering for smooth 60 FPS performance
 - **🖼️ Image-Based Particles**: Upload images and create particle formations from pixel data
 - **✨ Smooth Transitions**: Animated transitions with optimized easing for natural morphing effects
-- **🎯 Customizable Key Points**: Grid-based or feature detection-based triangulation
-- **Multiple Patterns**: Grid, Circle, Spiral, and Random formations (for advanced use)
-- **⚙️ Configurable**: Adjustable particle count, speed, size, and triangulation parameters
-- **🎯 Focused Interface**: Dedicated image morphing UI (main page) for streamlined workflow
-- **🐛 Debug Interface**: Interactive HTML panel with real-time controls and logging
+- **⚙️ Configurable**: Adjustable particle count, speed, size, and transition parameters
+- **🎯 Auto-Optimization**: Automatically adjusts settings based on device performance
 - **📦 Modular Design**: Clean, maintainable code structure in `src/` directory
 - **🚀 Deployment Ready**: Optimized for GitHub Pages and Cloudflare Pages
 
@@ -79,41 +73,31 @@ php -S localhost:8000
 
 3. Open your browser and navigate to:
 ```
-http://localhost:8000/streamlined-api-demo.html         # 🎯 NEW! Streamlined API Demo - Easy page transitions
+http://localhost:8000/streamlined-api-demo.html         # 🎯 Streamlined API Demo - Easy page transitions
 http://localhost:8000/minimal-example.html              # ⚡ Minimal WebGL example - No dependencies, no UI
 http://localhost:8000/                                  # 🎨 Main page - Image morphing interface
 http://localhost:8000/index.html                        # 🎨 Main page - Image morphing interface (same as above)
-http://localhost:8000/simple-page-transition-demo.html  # 🌐 Page Transition API Demo
-http://localhost:8000/triangulation-demo.html           # 🔺 Triangulation morphing demo with hybrid effects
-http://localhost:8000/debug.html                        # 🐛 Full debug interface with all features
-http://localhost:8000/landing.html                      # 🏠 Original landing page with links
+http://localhost:8000/simple-page-transition-demo.html  # 🌐 Page Transition Demo
+http://localhost:8000/debug.html                        # 🐛 Full debug interface
+http://localhost:8000/landing.html                      # 🏠 Landing page with links
 ```
 
-## 🔺 Triangulation-Based Image Morphing
+## 🌐 Page Transitions
 
-The engine now includes an advanced **triangulation-based morphing system** that complements the existing particle effects. This feature uses Delaunay triangulation to create smooth, mesh-based image transitions.
+The **primary focus** of this engine is seamless page transitions using WebGL particles. The `transitionToPage()` API provides a streamlined experience for this core functionality.
 
-### Key Features
+### Multi-Phase Transition System
 
-- **Delaunay Triangulation**: Automatic mesh generation using the Bowyer-Watson algorithm
-- **Customizable Key Points**: Choose between grid-based or feature detection methods
-- **Affine Interpolation**: Smooth triangle-to-triangle morphing with texture mapping
-- **Hybrid Rendering**: Combine particle and triangulation effects for unique visuals
-- **WebGL Accelerated**: High-performance rendering with custom shaders
-- **Real-time Control**: Switch between particles, triangulation, or hybrid modes on the fly
+The engine implements a sophisticated 7-phase transition system:
 
-### Demo
+1. **Static Display** (500ms default) - Shows the current page
+2. **Disintegration** (1000ms default) - Smooth fade from solid image to particles
+3. **Explosion** (800ms default) - Particles scatter in random directions
+4. **Recombination** (2000ms default) - Particles are pulled together to form the next page
+5. **Blend** (1500ms default) - Gradual crossfade to final page
+6. **Final Static** (500ms default) - Shows the target page
 
-Visit the **Triangulation Demo** page (`triangulation-demo.html`) to explore:
-- Interactive controls for switching render modes (Particles / Triangulation / Hybrid)
-- Adjustable grid size for triangulation density
-- Choice between grid-based or feature detection key point methods
-- Real-time FPS and performance metrics
-- Blend opacity controls for hybrid rendering
-
-## 🎨 Image Morphing
-
-The **primary focus** of this engine is seamless image-to-image transitions using WebGL particles. The main page (`index.html`) provides a streamlined experience for this core functionality.
+Each phase is fully configurable while providing sensible defaults for immediate use.
 
 ## 📖 Usage
 
