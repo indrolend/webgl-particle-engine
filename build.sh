@@ -135,20 +135,28 @@ if [ -f indrolend.png ]; then
   cp indrolend.png public/
 fi
 
-# Note: Large files like cover art.jpeg and hybrid-transition-9x16.webm 
-# are excluded from Cloudflare deployment (see wrangler.toml)
-# They are available for local development only
-if [ -f "cover art.jpeg" ]; then
-  cp "cover art.jpeg" public/
-  echo "Note: cover art.jpeg copied for local use (excluded from Cloudflare deployment)"
+# Large demo files (cover art.jpeg, hybrid-transition-9x16.webm) are NOT copied
+# to public/ directory by default to ensure Cloudflare deployment succeeds.
+# These files remain in the root directory for local development use.
+# 
+# To include them for local testing with the public directory:
+#   INCLUDE_LARGE_ASSETS=true ./build.sh
+
+if [ "$INCLUDE_LARGE_ASSETS" = "true" ]; then
+  echo "Including large demo assets (for local development)..."
+  if [ -f "cover art.jpeg" ]; then
+    cp "cover art.jpeg" public/
+    echo "  - Copied cover art.jpeg"
+  fi
+  if [ -f hybrid-transition-9x16.webm ]; then
+    cp hybrid-transition-9x16.webm public/
+    echo "  - Copied hybrid-transition-9x16.webm"
+  fi
+else
+  echo "Skipping large demo assets (use INCLUDE_LARGE_ASSETS=true to include them)"
 fi
 
-# Copy video files if they exist (for local development only)
-if [ -f hybrid-transition-9x16.webm ]; then
-  cp hybrid-transition-9x16.webm public/
-  echo "Note: hybrid-transition-9x16.webm copied for local use (excluded from Cloudflare deployment)"
-fi
-
+echo ""
 echo "Build complete! Files are ready in ./public directory"
-echo "Note: Large demo files (.webm, cover art.jpeg) are excluded from Cloudflare deployment"
+echo "Public directory size: $(du -sh public | cut -f1)"
 echo "To deploy: npx wrangler pages deploy ./public --project-name=webgl-particle-engine"

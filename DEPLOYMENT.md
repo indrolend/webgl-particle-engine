@@ -19,11 +19,14 @@ Source files are in the root directory:
 Run the build script to copy static files to the `public/` directory:
 
 ```bash
-# Using npm script (recommended)
+# Using npm script (recommended for Cloudflare deployment)
 npm run build
 
 # Or directly
 ./build.sh
+
+# For local development with large demo files
+INCLUDE_LARGE_ASSETS=true ./build.sh
 ```
 
 This copies all necessary files (HTML, JavaScript modules) to `public/` for deployment. The build script:
@@ -33,13 +36,25 @@ This copies all necessary files (HTML, JavaScript modules) to `public/` for depl
 - Copies small image assets (e.g., indrolend.png)
 - Maintains correct directory structure for ES6 module imports
 
-### Large Assets Note
-Large demonstration files (`.webm` videos, large images like `cover art.jpeg`) are **excluded from Cloudflare deployment** to comply with asset size limits. These files are:
-- Available for local development (copied by build.sh)
-- Excluded from Cloudflare Workers deployment (configured in wrangler.toml)
-- Optional - the site functions fully without them
+### Large Assets - Not Included by Default
+Large demonstration files are **NOT copied to public/** by default to ensure successful Cloudflare deployment:
 
-See `wrangler.toml` for the complete list of excluded files.
+**Files excluded from public/ (484KB without them):**
+- `hybrid-transition-9x16.webm` (2.4MB) - Example video
+- `cover art.jpeg` (883KB) - Example image
+
+**Why this approach:**
+1. Cloudflare Workers has strict asset size limits (~25MB total, individual file limits)
+2. These are demonstration files, not required for site functionality
+3. They remain in root directory for local development
+4. Deployment succeeds reliably without them
+
+**To include for local testing:**
+```bash
+INCLUDE_LARGE_ASSETS=true ./build.sh
+```
+
+This will copy the large files to `public/` for local development/testing but should NOT be used before Cloudflare deployment.
 
 ## MIME Types
 Ensure your server serves `.js` files with `application/javascript` MIME type for ES6 modules to work correctly.
