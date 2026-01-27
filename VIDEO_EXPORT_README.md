@@ -183,10 +183,14 @@ The video export feature requires:
 ## Troubleshooting
 
 ### MP4 conversion fails or videos save as WebM
+- **Cross-Origin Isolation**: MP4 conversion requires Cross-Origin Isolation headers. The `_headers` file in the deployment directory configures these for Cloudflare Pages:
+  - `Cross-Origin-Embedder-Policy: require-corp`
+  - `Cross-Origin-Opener-Policy: same-origin`
 - Check browser console for FFmpeg loading errors
 - Ensure internet connection is stable (FFmpeg.wasm loads from CDN)
 - Try a different browser (Chrome/Edge recommended)
 - If conversion consistently fails, use the WebM file and convert manually using FFmpeg
+- **For other hosting providers**: Ensure these headers are set for the export page (see DEPLOYMENT.md for details)
 
 ### Video file is empty or corrupt
 - Ensure the transition completes fully before stopping

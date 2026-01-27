@@ -8,6 +8,7 @@ A high-performance WebGL-based particle system with smooth animated transitions,
 - **🔺 Triangulation Morphing**: Advanced Delaunay triangulation-based image morphing with smooth mesh interpolation
 - **🎭 Hybrid Rendering**: Combine particle and triangulation effects for stunning visual transitions
 - **💥 Hybrid Transition Preset**: Multi-phase transitions with explosion, recombination, and blend effects
+- **🎬 Video Export**: Record and export hybrid transitions as MP4 videos (9:16 portrait format)
 - **🌐 Page Transition API**: High-level API for particle-based page transitions with DOM capture
 - **⚡ WebGL Rendering**: Hardware-accelerated rendering for smooth 60 FPS performance
 - **🖼️ Image-Based Particles**: Upload images and create particle formations from pixel data

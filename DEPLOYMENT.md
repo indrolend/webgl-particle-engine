@@ -123,6 +123,34 @@ This is a pure static site configuration. For dynamic functionality with Workers
 ### wrangler.json (Legacy)
 The `wrangler.json` file is also available for compatibility. Both formats are supported by Wrangler v4, but `wrangler.toml` is the recommended modern format.
 
+### _headers (HTTP Headers Configuration)
+The `_headers` file configures HTTP response headers for Cloudflare Pages deployment:
+
+- **Cross-Origin Isolation**: Required for FFmpeg.wasm (used in video export for MP4 conversion)
+  - Sets `Cross-Origin-Embedder-Policy: require-corp` for export-hybrid-video.html
+  - Sets `Cross-Origin-Opener-Policy: same-origin` for export-hybrid-video.html
+  - Enables `SharedArrayBuffer` which FFmpeg.wasm requires
+
+**Note**: These headers are only applied to the video export page. Other pages work normally without these restrictions.
+
+**For other hosting providers**:
+- **Netlify**: Use `_headers` file (same format as Cloudflare)
+- **Vercel**: Add headers in `vercel.json`:
+  ```json
+  {
+    "headers": [
+      {
+        "source": "/export-hybrid-video.html",
+        "headers": [
+          { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" },
+          { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
+        ]
+      }
+    ]
+  }
+  ```
+- **GitHub Pages**: Not supported (cannot set custom headers). Use Cloudflare/Netlify/Vercel instead or videos will export as WebM only.
+
 ## Testing Locally
 
 ### Option 1: Simple HTTP Server
