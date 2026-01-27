@@ -98,6 +98,9 @@
     <script type="module">
         import { HybridEngine } from './src/HybridEngine.js';
         
+        // Constants
+        const FINAL_BUFFER_TIME = 500; // Extra time (ms) to ensure recording captures everything
+        
         const canvas = document.getElementById('canvas');
         const status = document.getElementById('status');
         const startBtn = document.getElementById('startBtn');
@@ -237,7 +240,7 @@
             updateStatus('Transition complete, finalizing video...', 'recording');
             
             // Give a bit more time to ensure everything is captured
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, FINAL_BUFFER_TIME));
         }
         
         // Download video

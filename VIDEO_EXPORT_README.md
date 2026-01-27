@@ -52,7 +52,7 @@ The included `hybrid-transition-9x16.webm` video demonstrates a transition from 
 You can modify the `export-hybrid-video.html` file to customize:
 
 #### Canvas Dimensions
-```javascript
+```html
 <canvas id="canvas" width="720" height="1280"></canvas>
 ```
 
@@ -61,6 +61,8 @@ You can modify the `export-hybrid-video.html` file to customize:
 image1.src = 'your-image-1.png';
 image2.src = 'your-image-2.jpg';
 ```
+
+**Note**: The example uses `'cover art.jpeg'` which contains a space. While this works in modern browsers when loading from the same directory, consider using URL encoding or renaming files without spaces for better compatibility across different environments.
 
 #### Particle Engine Settings
 ```javascript
@@ -181,17 +183,17 @@ Supported browsers:
 ### Different Aspect Ratios
 
 #### 16:9 Landscape
-```javascript
+```html
 <canvas id="canvas" width="1920" height="1080"></canvas>
 ```
 
 #### 1:1 Square
-```javascript
+```html
 <canvas id="canvas" width="1080" height="1080"></canvas>
 ```
 
 #### 21:9 Ultrawide
-```javascript
+```html
 <canvas id="canvas" width="2560" height="1080"></canvas>
 ```
 
