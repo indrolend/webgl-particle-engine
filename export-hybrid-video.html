@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Export Hybrid Transition Video (9:16)</title>
-    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -211,6 +209,9 @@
         let uploadedImage2 = null;
         let ffmpeg = null;
         let ffmpegLoaded = false;
+        let FFmpeg = null;
+        let fetchFile = null;
+        let toBlobURL = null;
         
         // Initialize FFmpeg
         async function loadFFmpeg() {
@@ -218,23 +219,30 @@
             
             try {
                 updateStatus('Loading video converter...', 'info');
-                const { FFmpeg } = FFmpegWASM;
-                const { fetchFile, toBlobURL } = FFmpegUtil;
+                
+                // Dynamically import FFmpeg modules
+                const ffmpegModule = await import('https://esm.sh/@ffmpeg/ffmpeg@0.12.10');
+                const utilModule = await import('https://esm.sh/@ffmpeg/util@0.12.1');
+                
+                FFmpeg = ffmpegModule.FFmpeg;
+                fetchFile = utilModule.fetchFile;
+                toBlobURL = utilModule.toBlobURL;
                 
                 ffmpeg = new FFmpeg();
                 
                 // Load FFmpeg core
-                const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+                const baseURL = 'https://esm.sh/@ffmpeg/core@0.12.6/dist/esm';
                 await ffmpeg.load({
                     coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
                     wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
                 });
                 
                 ffmpegLoaded = true;
+                console.log('FFmpeg loaded successfully');
                 return true;
             } catch (error) {
                 console.error('Failed to load FFmpeg:', error);
-                updateStatus('Warning: Video converter failed to load. Videos will save as WebM.', 'error');
+                console.log('Videos will be saved as WebM format. You can convert them to MP4 using online tools or FFmpeg command line.');
                 return false;
             }
         }
@@ -248,7 +256,6 @@
             
             try {
                 updateStatus('Converting to MP4 format...', 'recording');
-                const { fetchFile } = FFmpegUtil;
                 
                 // Write WebM file to FFmpeg virtual filesystem
                 await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
@@ -399,12 +406,18 @@
             
             mediaRecorder.onstop = async () => {
                 const webmBlob = new Blob(recordedChunks, { type: 'video/webm' });
-                updateStatus('Recording complete, converting to MP4...', 'recording');
                 
-                // Convert to MP4
-                videoBlob = await convertToMP4(webmBlob);
+                if (ffmpegLoaded) {
+                    updateStatus('Recording complete, converting to MP4...', 'recording');
+                    // Convert to MP4
+                    videoBlob = await convertToMP4(webmBlob);
+                    const format = videoBlob.type.includes('mp4') ? 'MP4' : 'WebM';
+                    updateStatus(`Video ready (${format})! Click download to save.`, 'success');
+                } else {
+                    videoBlob = webmBlob;
+                    updateStatus('Video ready (WebM)! Click download to save.', 'success');
+                }
                 
-                updateStatus('Video ready! Click download to save.', 'success');
                 downloadBtn.disabled = false;
             };
             
