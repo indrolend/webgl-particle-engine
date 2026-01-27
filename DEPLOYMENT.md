@@ -19,42 +19,18 @@ Source files are in the root directory:
 Run the build script to copy static files to the `public/` directory:
 
 ```bash
-# Using npm script (recommended for Cloudflare deployment)
+# Using npm script (recommended)
 npm run build
 
 # Or directly
 ./build.sh
-
-# For local development with large demo files
-INCLUDE_LARGE_ASSETS=true ./build.sh
 ```
 
 This copies all necessary files (HTML, JavaScript modules) to `public/` for deployment. The build script:
-- Copies all HTML files (index.html, debug.html, export-hybrid-video.html, etc.)
+- Copies all HTML files (index.html, debug.html, landing.html, etc.)
 - Copies JavaScript files (morph-ui.js, webgl-engine.js, etc.)
 - Copies the entire `src/` directory structure with all modules
-- Copies small image assets (e.g., indrolend.png)
 - Maintains correct directory structure for ES6 module imports
-
-### Large Assets - Not Included by Default
-Large demonstration files are **NOT copied to public/** by default to ensure successful Cloudflare deployment:
-
-**Files excluded from public/ (484KB without them):**
-- `hybrid-transition-9x16.webm` (2.4MB) - Example video
-- `cover art.jpeg` (883KB) - Example image
-
-**Why this approach:**
-1. Cloudflare Workers has strict asset size limits (~25MB total, individual file limits)
-2. These are demonstration files, not required for site functionality
-3. They remain in root directory for local development
-4. Deployment succeeds reliably without them
-
-**To include for local testing:**
-```bash
-INCLUDE_LARGE_ASSETS=true ./build.sh
-```
-
-This will copy the large files to `public/` for local development/testing but should NOT be used before Cloudflare deployment.
 
 ## MIME Types
 Ensure your server serves `.js` files with `application/javascript` MIME type for ES6 modules to work correctly.

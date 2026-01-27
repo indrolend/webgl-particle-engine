@@ -446,26 +446,13 @@
                     </div>
 
                     <button id="morphButton" disabled>Start Morph ✨</button>
+                    <button id="hybridTransitionButton" disabled style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        🌟 Hybrid Transition (Explosion + Blend)
+                    </button>
                 </div>
 
                 <div class="control-group" id="hybridTransitionConfig" style="display: none;">
                     <h3>💥 Hybrid Transition Settings</h3>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>Static Display Duration (ms):</span>
-                            <span class="slider-value" id="staticDisplayDurationValue">500</span>
-                        </div>
-                        <input type="range" id="staticDisplayDuration" min="0" max="2000" step="100" value="500">
-                    </div>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>Disintegration Duration (ms):</span>
-                            <span class="slider-value" id="disintegrationDurationValue">1000</span>
-                        </div>
-                        <input type="range" id="disintegrationDuration" min="500" max="3000" step="100" value="1000">
-                    </div>
                     
                     <div class="slider-group">
                         <div class="slider-label">
@@ -506,18 +493,7 @@
                         <button class="mode-btn" id="modeParticles">Particles</button>
                         <button class="mode-btn" id="modeTriangulation">Triangulation</button>
                     </div>
-                </div>
-
-                <div class="control-group">
-                    <button class="mode-btn" id="modeHybrid" disabled style="width: 100%; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                        🌟 Hybrid Transition (Explosion + Blend)
-                    </button>
-                </div>
-
-                <div class="control-group">
-                    <button class="mode-btn" id="modeHybridReverse" disabled style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        🔄 Reverse Transition (Back to Image 1)
-                    </button>
+                    <button class="mode-btn active" id="modeHybrid" style="width: 100%;">Hybrid (Both)</button>
                 </div>
 
                 <div class="control-group">
@@ -717,14 +693,10 @@
                     morphButton.disabled = false;
                     morphButton.textContent = 'Start Morph ✨';
                     
-                    // Enable hybrid transition buttons
-                    const modeHybrid = document.getElementById('modeHybrid');
-                    const modeHybridReverse = document.getElementById('modeHybridReverse');
-                    if (modeHybrid) {
-                        modeHybrid.disabled = false;
-                    }
-                    if (modeHybridReverse) {
-                        modeHybridReverse.disabled = false;
+                    // Enable hybrid transition button
+                    const hybridButton = document.getElementById('hybridTransitionButton');
+                    if (hybridButton) {
+                        hybridButton.disabled = false;
                     }
                     
                     // Show hybrid transition config
@@ -772,19 +744,37 @@
             }
         });
 
+        // Hybrid Transition button handler
+        const hybridTransitionButton = document.getElementById('hybridTransitionButton');
+        hybridTransitionButton.addEventListener('click', () => {
+            if (!engine || !image1 || !image2) return;
+            
+            // Get configuration values
+            const config = {
+                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value),
+                explosionTime: parseInt(document.getElementById('explosionTime').value),
+                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value),
+                blendDuration: parseInt(document.getElementById('blendDuration').value),
+                recombinationChaos: 0.3,
+                vacuumStrength: 0.15,
+                particleFadeRate: 0.7
+            };
+            
+            // Initialize with image1 if not already done
+            if (currentImageIndex === 0) {
+                engine.initializeFromImage(image1);
+                currentImageIndex = 1;
+            }
+            
+            // Start the hybrid transition
+            engine.setRenderMode('hybrid');
+            engine.startHybridTransition(image1, image2, config);
+            engine.start();
+            
+            showStatus('🌟 Hybrid transition started: Explosion → Recombination → Blend', 'success');
+        });
+
         // Hybrid transition sliders
-        const staticDisplayDuration = document.getElementById('staticDisplayDuration');
-        const staticDisplayDurationValue = document.getElementById('staticDisplayDurationValue');
-        staticDisplayDuration.addEventListener('input', () => {
-            staticDisplayDurationValue.textContent = staticDisplayDuration.value;
-        });
-        
-        const disintegrationDuration = document.getElementById('disintegrationDuration');
-        const disintegrationDurationValue = document.getElementById('disintegrationDurationValue');
-        disintegrationDuration.addEventListener('input', () => {
-            disintegrationDurationValue.textContent = disintegrationDuration.value;
-        });
-        
         const explosionIntensity = document.getElementById('explosionIntensity');
         const explosionIntensityValue = document.getElementById('explosionIntensityValue');
         explosionIntensity.addEventListener('input', () => {
@@ -830,69 +820,7 @@
 
         modeParticles.addEventListener('click', () => setRenderMode('particles'));
         modeTriangulation.addEventListener('click', () => setRenderMode('triangulation'));
-        
-        // Hybrid Transition button - triggers multi-phase transition (disintegration → explosion → recombination → blend)
-        modeHybrid.addEventListener('click', () => {
-            if (!engine || !image1 || !image2) return;
-            
-            // Get configuration values
-            const config = {
-                staticDisplayDuration: parseInt(document.getElementById('staticDisplayDuration').value, 10),
-                disintegrationDuration: parseInt(document.getElementById('disintegrationDuration').value, 10),
-                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value, 10),
-                explosionTime: parseInt(document.getElementById('explosionTime').value, 10),
-                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value, 10),
-                blendDuration: parseInt(document.getElementById('blendDuration').value, 10),
-                recombinationChaos: 0.3,
-                vacuumStrength: 0.15,
-                particleFadeRate: 0.7,
-                finalStaticDuration: 2000    // Show final static image for 2000ms after blend
-            };
-            
-            // Start the engine if not already running
-            if (!engine.isRunning) {
-                engine.start();
-            }
-            
-            // Start the hybrid transition (will show static image first, then atomize)
-            engine.setRenderMode('hybrid');
-            engine.startHybridTransition(image1, image2, config);
-            currentImageIndex = 1;
-            
-            showStatus('🌟 Static → Disintegration → Explosion → Recombination → Blend → Static', 'success');
-        });
-
-        // Reverse Hybrid Transition button - transitions back from image 2 to image 1
-        const modeHybridReverse = document.getElementById('modeHybridReverse');
-        modeHybridReverse.addEventListener('click', () => {
-            if (!engine || !image1 || !image2) return;
-            
-            // Get configuration values
-            const config = {
-                staticDisplayDuration: parseInt(document.getElementById('staticDisplayDuration').value, 10),
-                disintegrationDuration: parseInt(document.getElementById('disintegrationDuration').value, 10),
-                explosionIntensity: parseInt(document.getElementById('explosionIntensity').value, 10),
-                explosionTime: parseInt(document.getElementById('explosionTime').value, 10),
-                recombinationDuration: parseInt(document.getElementById('recombinationDuration').value, 10),
-                blendDuration: parseInt(document.getElementById('blendDuration').value, 10),
-                recombinationChaos: 0.3,
-                vacuumStrength: 0.15,
-                particleFadeRate: 0.7,
-                finalStaticDuration: 2000
-            };
-            
-            // Start the engine if not already running
-            if (!engine.isRunning) {
-                engine.start();
-            }
-            
-            // Reverse the hybrid transition (image 2 → image 1)
-            engine.setRenderMode('hybrid');
-            engine.reverseHybridTransition(config);
-            currentImageIndex = 0;
-            
-            showStatus('🔄 Reversing: Static → Disintegration → Explosion → Recombination → Blend → Static', 'success');
-        });
+        modeHybrid.addEventListener('click', () => setRenderMode('hybrid'));
 
         // Triangulation controls
         const gridSizeInput = document.getElementById('gridSize');

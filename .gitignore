@@ -31,5 +31,3 @@ tmp/
 temp/
 .cache/
 test-import.js
-*.old
-*.backup
