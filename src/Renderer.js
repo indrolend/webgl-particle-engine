@@ -341,8 +341,8 @@ export class Renderer {
     const gl = this.gl;
     const { imageOpacity = 0, particleOpacity = 1 } = options;
     
-    // Clear canvas
-    gl.clearColor(0.05, 0.05, 0.1, 1.0);
+    // Clear canvas with white background for hybrid transitions
+    gl.clearColor(1.0, 1.0, 1.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     
     // Render solid image if opacity > 0
