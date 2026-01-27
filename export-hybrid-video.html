@@ -218,7 +218,7 @@
             if (ffmpegLoaded) return true;
             
             try {
-                updateStatus('Loading video converter...', 'info');
+                updateStatus('Loading video converter (MP4 support)...', 'info');
                 
                 // Dynamically import FFmpeg modules
                 const ffmpegModule = await import('https://esm.sh/@ffmpeg/ffmpeg@0.12.10');
@@ -238,11 +238,14 @@
                 });
                 
                 ffmpegLoaded = true;
-                console.log('FFmpeg loaded successfully');
+                console.log('FFmpeg loaded successfully - MP4 export available');
+                updateStatus('Video converter loaded - MP4 export enabled', 'success');
                 return true;
             } catch (error) {
                 console.error('Failed to load FFmpeg:', error);
                 console.log('Videos will be saved as WebM format. You can convert them to MP4 using online tools or FFmpeg command line.');
+                updateStatus('Warning: MP4 converter failed to load. Videos will be saved as WebM.', 'error');
+                ffmpegLoaded = false;
                 return false;
             }
         }
@@ -255,10 +258,12 @@
             }
             
             try {
-                updateStatus('Converting to MP4 format...', 'recording');
+                updateStatus('Converting to MP4 format (this may take a moment)...', 'recording');
+                console.log('Starting MP4 conversion...');
                 
                 // Write WebM file to FFmpeg virtual filesystem
                 await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
+                console.log('WebM file written to FFmpeg filesystem');
                 
                 // Convert to MP4 with H.264 codec
                 await ffmpeg.exec([
@@ -269,14 +274,17 @@
                     '-movflags', '+faststart',
                     'output.mp4'
                 ]);
+                console.log('FFmpeg conversion completed');
                 
                 // Read the output file
                 const data = await ffmpeg.readFile('output.mp4');
                 const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
+                console.log('MP4 blob created, size:', mp4Blob.size, 'bytes, type:', mp4Blob.type);
                 
                 // Clean up
                 await ffmpeg.deleteFile('input.webm');
                 await ffmpeg.deleteFile('output.mp4');
+                console.log('Temporary files cleaned up');
                 
                 return mp4Blob;
             } catch (error) {
