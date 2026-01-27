@@ -22,8 +22,16 @@ else
   exit 1
 fi
 
-if [ -f landing.html ]; then
-  cp landing.html public/
+if [ -f image-morph-demo.html ]; then
+  cp image-morph-demo.html public/
+fi
+
+if [ -f export-hybrid-video.html ]; then
+  cp export-hybrid-video.html public/
+fi
+
+if [ -f test-hybrid.html ]; then
+  cp test-hybrid.html public/
 fi
 
 if [ -f morph.html ]; then
@@ -34,12 +42,24 @@ if [ -f triangulation-demo.html ]; then
   cp triangulation-demo.html public/
 fi
 
+if [ -f disintegration-demo.html ]; then
+  cp disintegration-demo.html public/
+fi
+
 if [ -f page-transition-demo.html ]; then
   cp page-transition-demo.html public/
 fi
 
 if [ -f simple-page-transition-demo.html ]; then
   cp simple-page-transition-demo.html public/
+fi
+
+if [ -f minimal-example.html ]; then
+  cp minimal-example.html public/
+fi
+
+if [ -f create-test-images.html ]; then
+  cp create-test-images.html public/
 fi
 
 # Copy JavaScript files needed by index.html
@@ -109,5 +129,34 @@ if [ -d src/utils ]; then
   cp -r src/utils/* public/src/utils/
 fi
 
+# Copy image files needed for demos
+echo "Copying image files..."
+if [ -f indrolend.png ]; then
+  cp indrolend.png public/
+fi
+
+# Large demo files (cover art.jpeg, hybrid-transition-9x16.webm) are NOT copied
+# to public/ directory by default to ensure Cloudflare deployment succeeds.
+# These files remain in the root directory for local development use.
+# 
+# To include them for local testing with the public directory:
+#   INCLUDE_LARGE_ASSETS=true ./build.sh
+
+if [ "$INCLUDE_LARGE_ASSETS" = "true" ]; then
+  echo "Including large demo assets (for local development)..."
+  if [ -f "cover art.jpeg" ]; then
+    cp "cover art.jpeg" public/
+    echo "  - Copied cover art.jpeg"
+  fi
+  if [ -f hybrid-transition-9x16.webm ]; then
+    cp hybrid-transition-9x16.webm public/
+    echo "  - Copied hybrid-transition-9x16.webm"
+  fi
+else
+  echo "Skipping large demo assets (use INCLUDE_LARGE_ASSETS=true to include them)"
+fi
+
+echo ""
 echo "Build complete! Files are ready in ./public directory"
+echo "Public directory size: $(du -sh public | cut -f1)"
 echo "To deploy: npx wrangler pages deploy ./public --project-name=webgl-particle-engine"

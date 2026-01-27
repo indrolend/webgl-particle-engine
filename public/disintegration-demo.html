@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Disintegration Demo - WebGL Particle Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 36px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #aaa;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 900px;
+            height: 600px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .controls {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(20, 20, 35, 0.95);
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .file-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .preview-container {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 6px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 4px;
+        }
+
+        .preview-text {
+            color: #666;
+            font-size: 13px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        button.secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .slider-group {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .slider-value {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #00d4ff;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+        }
+
+        .status-message.success {
+            background: rgba(0, 255, 127, 0.2);
+            color: #00ff7f;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .github-badge {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+        }
+
+        .github-badge a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(20, 20, 35, 0.9);
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .github-badge a:hover {
+            background: rgba(102, 126, 234, 0.3);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="github-badge">
+        <a href="https://github.com/indrolend/webgl-particle-engine" target="_blank">
+            <span>⭐</span>
+            <span>GitHub</span>
+        </a>
+    </div>
+
+    <h1>✨ Image Disintegration Effect</h1>
+    <p class="subtitle">Smooth transition from solid image to particles with WebGL</p>
+
+    <canvas id="canvas" width="1200" height="800"></canvas>
+
+    <div class="controls">
+        <div class="info-box">
+            <strong>🎨 How it works:</strong> Upload an image to see it smoothly disintegrate into particles! 
+            Use the slider to control the transition manually, or click "Auto Disintegrate" for an animated effect.
+            The image starts solid (100% opacity) and gradually dissolves as particles appear and disperse.
+        </div>
+
+        <div id="status" class="status-message success">Ready to load an image!</div>
+
+        <div class="control-group">
+            <h3>📸 Upload Image</h3>
+            <label class="file-label" for="imageInput">Choose Image</label>
+            <input type="file" id="imageInput" accept="image/*">
+            <div class="preview-container" id="preview">
+                <span class="preview-text">No image selected</span>
+            </div>
+        </div>
+
+        <div class="control-group" id="transitionControls" style="display: none;">
+            <h3>🎬 Transition Controls</h3>
+            
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Transition Progress:</span>
+                    <span class="slider-value" id="progressValue">0%</span>
+                </div>
+                <input type="range" id="progressSlider" min="0" max="100" value="0">
+            </div>
+
+            <div class="button-group">
+                <button id="autoDisintegrateBtn">🌟 Auto Disintegrate</button>
+                <button id="resetBtn" class="secondary">🔄 Reset to Solid</button>
+            </div>
+        </div>
+
+        <div class="control-group" id="durationControl" style="display: none;">
+            <h3>⏱️ Animation Settings</h3>
+            
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Duration:</span>
+                    <span class="slider-value" id="durationValue">2000ms</span>
+                </div>
+                <input type="range" id="durationSlider" min="500" max="5000" step="100" value="2000">
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ParticleEngine } from './src/ParticleEngine.js';
+
+        // Initialize engine
+        const canvas = document.getElementById('canvas');
+        const engine = new ParticleEngine(canvas, {
+            particleCount: 2000,
+            speed: 1.0,
+            minSize: 2,
+            maxSize: 8
+        });
+
+        // State
+        let currentImage = null;
+        let isAnimating = false;
+
+        // DOM Elements
+        const imageInput = document.getElementById('imageInput');
+        const preview = document.getElementById('preview');
+        const statusMessage = document.getElementById('status');
+        const progressSlider = document.getElementById('progressSlider');
+        const progressValue = document.getElementById('progressValue');
+        const autoDisintegrateBtn = document.getElementById('autoDisintegrateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const durationSlider = document.getElementById('durationSlider');
+        const durationValue = document.getElementById('durationValue');
+        const transitionControls = document.getElementById('transitionControls');
+        const durationControl = document.getElementById('durationControl');
+
+        // Show status message
+        function showStatus(message) {
+            statusMessage.textContent = message;
+            statusMessage.style.display = 'block';
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        // Image upload handler
+        imageInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            
+            if (!file || !file.type.startsWith('image/')) {
+                showStatus('❌ Please select a valid image file');
+                return;
+            }
+            
+            const img = new Image();
+            
+            img.onload = function() {
+                preview.innerHTML = `<img src="${img.src}" class="preview-image" alt="Preview">`;
+                currentImage = img;
+                
+                // Initialize engine with solid image
+                engine.initializeFromSolidImage(img, 0); // 0 duration means no auto animation
+                engine.start();
+                
+                // Reset progress
+                progressSlider.value = 0;
+                progressValue.textContent = '0%';
+                engine.setDisintegrationProgress(0);
+                
+                // Show controls
+                transitionControls.style.display = 'block';
+                durationControl.style.display = 'block';
+                
+                showStatus('✅ Image loaded! Use controls below to disintegrate.');
+            };
+            
+            img.onerror = function() {
+                showStatus('❌ Failed to load image');
+            };
+            
+            const reader = new FileReader();
+            reader.onload = e => { img.src = e.target.result; };
+            reader.readAsDataURL(file);
+        });
+
+        // Progress slider handler
+        progressSlider.addEventListener('input', () => {
+            const progress = parseFloat(progressSlider.value) / 100;
+            progressValue.textContent = `${progressSlider.value}%`;
+            
+            if (currentImage && !isAnimating) {
+                engine.setDisintegrationProgress(progress);
+            }
+        });
+
+        // Auto disintegrate button
+        autoDisintegrateBtn.addEventListener('click', () => {
+            if (!currentImage || isAnimating) return;
+            
+            const duration = parseInt(durationSlider.value);
+            
+            isAnimating = true;
+            autoDisintegrateBtn.disabled = true;
+            progressSlider.disabled = true;
+            
+            // Reset to solid state
+            engine.setDisintegrationProgress(0);
+            progressSlider.value = 0;
+            progressValue.textContent = '0%';
+            
+            // Start automatic disintegration
+            engine.startDisintegration(duration);
+            
+            showStatus(`🌟 Disintegrating over ${duration}ms...`);
+            
+            // Update slider during animation
+            const startTime = Date.now();
+            const updateInterval = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                progressSlider.value = Math.floor(progress * 100);
+                progressValue.textContent = `${Math.floor(progress * 100)}%`;
+                
+                if (progress >= 1) {
+                    clearInterval(updateInterval);
+                    isAnimating = false;
+                    autoDisintegrateBtn.disabled = false;
+                    progressSlider.disabled = false;
+                    showStatus('✅ Disintegration complete!');
+                }
+            }, 50);
+        });
+
+        // Reset button
+        resetBtn.addEventListener('click', () => {
+            if (!currentImage) return;
+            
+            engine.setDisintegrationProgress(0);
+            progressSlider.value = 0;
+            progressValue.textContent = '0%';
+            
+            showStatus('🔄 Reset to solid image');
+        });
+
+        // Duration slider
+        durationSlider.addEventListener('input', () => {
+            durationValue.textContent = `${durationSlider.value}ms`;
+        });
+
+        // Initial display
+        showStatus('📸 Upload an image to get started!');
+    </script>
+</body>
+</html>

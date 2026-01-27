@@ -3,3 +3,5 @@ compatibility_date = "2026-01-12"
 
 [assets]
 directory = "./public"
+# Exclude large demo files that exceed Cloudflare Workers asset size limits
+exclude = ["*.webm", "*.mp4", "cover art.jpeg"]
