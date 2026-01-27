@@ -28,6 +28,78 @@
             background: white;
         }
         
+        .upload-section {
+            background: rgba(52, 152, 219, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 600px;
+            border: 2px solid #3498db;
+        }
+        
+        .upload-group {
+            margin: 15px 0;
+        }
+        
+        .upload-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #3498db;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+        }
+        
+        input[type="file"]::-webkit-file-upload-button {
+            padding: 8px 15px;
+            background: #3498db;
+            border: none;
+            border-radius: 3px;
+            color: white;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        input[type="file"]::-webkit-file-upload-button:hover {
+            background: #2980b9;
+        }
+        
+        .preview {
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .preview img {
+            max-width: 150px;
+            max-height: 150px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            background: white;
+        }
+        
+        .info-box {
+            background: rgba(241, 196, 15, 0.1);
+            border: 2px solid #f1c40f;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
         .controls {
             text-align: center;
             margin: 20px;
@@ -48,7 +120,7 @@
             min-width: 200px;
         }
         
-        button:hover {
+        button:hover:not(:disabled) {
             background: #2980b9;
         }
         
@@ -82,18 +154,37 @@
 <body>
     <h1>Export 9:16 Hybrid Transition Video</h1>
     <p style="text-align: center; color: #bdc3c7;">
-        Transition: indrolend.png → cover art.jpeg<br>
         Aspect Ratio: 9:16 (Portrait) | Background: White
     </p>
+    
+    <div class="upload-section">
+        <h3 style="margin-top: 0; color: #3498db;">📸 Upload Images for Transition</h3>
+        <div class="info-box">
+            <strong>ℹ️ Note:</strong> Upload two images to create a hybrid particle transition video. 
+            For best results, use images with similar dimensions.
+        </div>
+        
+        <div class="upload-group">
+            <label for="image1Input">Source Image (Image 1):</label>
+            <input type="file" id="image1Input" accept="image/*">
+            <div class="preview" id="preview1"></div>
+        </div>
+        
+        <div class="upload-group">
+            <label for="image2Input">Target Image (Image 2):</label>
+            <input type="file" id="image2Input" accept="image/*">
+            <div class="preview" id="preview2"></div>
+        </div>
+    </div>
     
     <canvas id="canvas" width="720" height="1280"></canvas>
     
     <div class="controls">
-        <button id="startBtn">Start Recording & Transition</button>
+        <button id="startBtn" disabled>Start Recording & Transition</button>
         <button id="downloadBtn" disabled>Download Video</button>
     </div>
     
-    <div class="status" id="status">Ready to record</div>
+    <div class="status" id="status">Please upload two images to begin</div>
     
     <script type="module">
         import { HybridEngine } from './src/HybridEngine.js';
@@ -105,11 +196,17 @@
         const status = document.getElementById('status');
         const startBtn = document.getElementById('startBtn');
         const downloadBtn = document.getElementById('downloadBtn');
+        const image1Input = document.getElementById('image1Input');
+        const image2Input = document.getElementById('image2Input');
+        const preview1 = document.getElementById('preview1');
+        const preview2 = document.getElementById('preview2');
         
         let engine = null;
         let mediaRecorder = null;
         let recordedChunks = [];
         let videoBlob = null;
+        let uploadedImage1 = null;
+        let uploadedImage2 = null;
         
         // Update status message
         function updateStatus(message, type = '') {
@@ -117,30 +214,58 @@
             status.className = 'status ' + type;
         }
         
-        // Load images
+        // Handle file upload for image 1
+        image1Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        uploadedImage1 = img;
+                        preview1.innerHTML = `<img src="${event.target.result}" alt="Image 1 Preview">`;
+                        checkImagesReady();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Handle file upload for image 2
+        image2Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        uploadedImage2 = img;
+                        preview2.innerHTML = `<img src="${event.target.result}" alt="Image 2 Preview">`;
+                        checkImagesReady();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Check if both images are uploaded
+        function checkImagesReady() {
+            if (uploadedImage1 && uploadedImage2) {
+                startBtn.disabled = false;
+                updateStatus('Images ready! Click "Start Recording" to begin.', 'success');
+            }
+        }
+        
+        // Load images (now uses uploaded images)
         async function loadImages() {
-            updateStatus('Loading images...');
+            if (!uploadedImage1 || !uploadedImage2) {
+                throw new Error('Please upload both images first');
+            }
             
-            const image1 = new Image();
-            const image2 = new Image();
-            
-            const loadPromise1 = new Promise((resolve, reject) => {
-                image1.onload = resolve;
-                image1.onerror = () => reject(new Error('Failed to load indrolend.png'));
-            });
-            
-            const loadPromise2 = new Promise((resolve, reject) => {
-                image2.onload = resolve;
-                image2.onerror = () => reject(new Error('Failed to load cover art.jpeg'));
-            });
-            
-            image1.src = 'indrolend.png';
-            image2.src = 'cover art.jpeg';
-            
-            await Promise.all([loadPromise1, loadPromise2]);
-            
-            updateStatus('Images loaded successfully', 'success');
-            return { image1, image2 };
+            updateStatus('Using uploaded images...', 'success');
+            return { image1: uploadedImage1, image2: uploadedImage2 };
         }
         
         // Initialize HybridEngine
