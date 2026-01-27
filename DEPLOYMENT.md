@@ -27,10 +27,19 @@ npm run build
 ```
 
 This copies all necessary files (HTML, JavaScript modules) to `public/` for deployment. The build script:
-- Copies all HTML files (index.html, debug.html, landing.html, etc.)
+- Copies all HTML files (index.html, debug.html, export-hybrid-video.html, etc.)
 - Copies JavaScript files (morph-ui.js, webgl-engine.js, etc.)
 - Copies the entire `src/` directory structure with all modules
+- Copies small image assets (e.g., indrolend.png)
 - Maintains correct directory structure for ES6 module imports
+
+### Large Assets Note
+Large demonstration files (`.webm` videos, large images like `cover art.jpeg`) are **excluded from Cloudflare deployment** to comply with asset size limits. These files are:
+- Available for local development (copied by build.sh)
+- Excluded from Cloudflare Workers deployment (configured in wrangler.toml)
+- Optional - the site functions fully without them
+
+See `wrangler.toml` for the complete list of excluded files.
 
 ## MIME Types
 Ensure your server serves `.js` files with `application/javascript` MIME type for ES6 modules to work correctly.

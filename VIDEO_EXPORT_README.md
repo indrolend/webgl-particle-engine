@@ -6,9 +6,16 @@ This document explains how to export videos of hybrid transitions from the WebGL
 
 The `export-hybrid-video.html` file demonstrates how to create and export a video of a hybrid particle transition between two images. The exported video showcases the full transition effect from one image to another with particle disintegration, explosion, recombination, and blending phases.
 
+## Important Note for Cloudflare Deployment
+
+**The video export feature is designed for local development use.** Due to Cloudflare Workers' asset size limits, the example files (`hybrid-transition-9x16.webm`, `cover art.jpeg`) are excluded from cloud deployments. 
+
+- **Local Use**: Full functionality with example images and videos
+- **Cloud Deployment**: Feature available but requires users to provide their own images
+
 ## Example Output
 
-The included `hybrid-transition-9x16.webm` video demonstrates a transition from `indrolend.png` to `cover art.jpeg` in a 9:16 (portrait) aspect ratio with a white background.
+The included `hybrid-transition-9x16.webm` video demonstrates a transition from `indrolend.png` to `cover art.jpeg` in a 9:16 (portrait) aspect ratio with a white background. This file is available for local development only.
 
 ## Features
 

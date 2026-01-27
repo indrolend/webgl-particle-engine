@@ -135,14 +135,20 @@ if [ -f indrolend.png ]; then
   cp indrolend.png public/
 fi
 
+# Note: Large files like cover art.jpeg and hybrid-transition-9x16.webm 
+# are excluded from Cloudflare deployment (see wrangler.toml)
+# They are available for local development only
 if [ -f "cover art.jpeg" ]; then
   cp "cover art.jpeg" public/
+  echo "Note: cover art.jpeg copied for local use (excluded from Cloudflare deployment)"
 fi
 
-# Copy video files if they exist
+# Copy video files if they exist (for local development only)
 if [ -f hybrid-transition-9x16.webm ]; then
   cp hybrid-transition-9x16.webm public/
+  echo "Note: hybrid-transition-9x16.webm copied for local use (excluded from Cloudflare deployment)"
 fi
 
 echo "Build complete! Files are ready in ./public directory"
+echo "Note: Large demo files (.webm, cover art.jpeg) are excluded from Cloudflare deployment"
 echo "To deploy: npx wrangler pages deploy ./public --project-name=webgl-particle-engine"
