@@ -149,6 +149,73 @@
             color: #f39c12;
             font-weight: bold;
         }
+        
+        .slider-group {
+            margin: 15px 0;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #ecf0f1;
+        }
+        
+        .slider-value {
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #2980b9;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            border: none;
+        }
+        
+        input[type="range"]::-moz-range-thumb:hover {
+            background: #2980b9;
+        }
+        
+        .controls-section {
+            background: rgba(52, 152, 219, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 600px;
+            border: 2px solid #3498db;
+        }
+        
+        .controls-section h3 {
+            margin-top: 0;
+            color: #3498db;
+        }
     </style>
 </head>
 <body>
@@ -174,6 +241,71 @@
             <label for="image2Input">Target Image (Image 2):</label>
             <input type="file" id="image2Input" accept="image/*">
             <div class="preview" id="preview2"></div>
+        </div>
+    </div>
+    
+    <div class="controls-section">
+        <h3>🎮 Hybrid Transition Controls</h3>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Particle Count:</span>
+                <span class="slider-value" id="particleCountValue">3000</span>
+            </div>
+            <input type="range" id="particleCountSlider" min="500" max="5000" step="100" value="3000">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Static Display Duration (ms):</span>
+                <span class="slider-value" id="staticDisplayDurationValue">1000</span>
+            </div>
+            <input type="range" id="staticDisplayDuration" min="0" max="2000" step="100" value="1000">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Disintegration Duration (ms):</span>
+                <span class="slider-value" id="disintegrationDurationValue">1200</span>
+            </div>
+            <input type="range" id="disintegrationDuration" min="500" max="3000" step="100" value="1200">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Explosion Intensity:</span>
+                <span class="slider-value" id="explosionIntensityValue">150</span>
+            </div>
+            <input type="range" id="explosionIntensity" min="50" max="300" value="150">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Explosion Time (ms):</span>
+                <span class="slider-value" id="explosionTimeValue">1000</span>
+            </div>
+            <input type="range" id="explosionTime" min="300" max="2000" step="100" value="1000">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Recombination Duration (ms):</span>
+                <span class="slider-value" id="recombinationDurationValue">2500</span>
+            </div>
+            <input type="range" id="recombinationDuration" min="1000" max="4000" step="100" value="2500">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Blend Duration (ms):</span>
+                <span class="slider-value" id="blendDurationValue">2000</span>
+            </div>
+            <input type="range" id="blendDuration" min="500" max="3000" step="100" value="2000">
+        </div>
+        
+        <div class="info-box">
+            <strong>💡 Tip:</strong> Adjust these sliders to control the hybrid transition effect. 
+            Changes will be applied to the next recording.
         </div>
     </div>
     
@@ -212,6 +344,51 @@
         let FFmpeg = null;
         let fetchFile = null;
         let toBlobURL = null;
+        
+        // Get slider elements
+        const particleCountSlider = document.getElementById('particleCountSlider');
+        const particleCountValue = document.getElementById('particleCountValue');
+        const staticDisplayDuration = document.getElementById('staticDisplayDuration');
+        const staticDisplayDurationValue = document.getElementById('staticDisplayDurationValue');
+        const disintegrationDuration = document.getElementById('disintegrationDuration');
+        const disintegrationDurationValue = document.getElementById('disintegrationDurationValue');
+        const explosionIntensity = document.getElementById('explosionIntensity');
+        const explosionIntensityValue = document.getElementById('explosionIntensityValue');
+        const explosionTime = document.getElementById('explosionTime');
+        const explosionTimeValue = document.getElementById('explosionTimeValue');
+        const recombinationDuration = document.getElementById('recombinationDuration');
+        const recombinationDurationValue = document.getElementById('recombinationDurationValue');
+        const blendDuration = document.getElementById('blendDuration');
+        const blendDurationValue = document.getElementById('blendDurationValue');
+        
+        // Add slider event listeners
+        particleCountSlider.addEventListener('input', () => {
+            particleCountValue.textContent = particleCountSlider.value;
+        });
+        
+        staticDisplayDuration.addEventListener('input', () => {
+            staticDisplayDurationValue.textContent = staticDisplayDuration.value;
+        });
+        
+        disintegrationDuration.addEventListener('input', () => {
+            disintegrationDurationValue.textContent = disintegrationDuration.value;
+        });
+        
+        explosionIntensity.addEventListener('input', () => {
+            explosionIntensityValue.textContent = explosionIntensity.value;
+        });
+        
+        explosionTime.addEventListener('input', () => {
+            explosionTimeValue.textContent = explosionTime.value;
+        });
+        
+        recombinationDuration.addEventListener('input', () => {
+            recombinationDurationValue.textContent = recombinationDuration.value;
+        });
+        
+        blendDuration.addEventListener('input', () => {
+            blendDurationValue.textContent = blendDuration.value;
+        });
         
         // Initialize FFmpeg
         async function loadFFmpeg() {
@@ -372,8 +549,10 @@
         function initializeEngine() {
             updateStatus('Initializing particle engine...');
             
+            const particleCount = parseInt(particleCountSlider.value, 10);
+            
             engine = new HybridEngine(canvas, {
-                particleCount: 3000,
+                particleCount: particleCount,
                 speed: 1.0,
                 enableTriangulation: true,
                 triangulationMode: 'hybrid',
@@ -443,17 +622,17 @@
             // Wait a bit for the engine to be fully ready
             await new Promise(resolve => setTimeout(resolve, 100));
             
-            // Configure transition parameters
+            // Configure transition parameters from sliders
             const config = {
-                explosionIntensity: 150,
-                explosionTime: 1000,
-                recombinationDuration: 2500,
-                blendDuration: 2000,
+                explosionIntensity: parseInt(explosionIntensity.value, 10),
+                explosionTime: parseInt(explosionTime.value, 10),
+                recombinationDuration: parseInt(recombinationDuration.value, 10),
+                blendDuration: parseInt(blendDuration.value, 10),
                 recombinationChaos: 0.3,
                 vacuumStrength: 0.15,
                 particleFadeRate: 0.7,
-                staticDisplayDuration: 1000,  // Show source image for 1s
-                disintegrationDuration: 1200  // Disintegrate over 1.2s
+                staticDisplayDuration: parseInt(staticDisplayDuration.value, 10),
+                disintegrationDuration: parseInt(disintegrationDuration.value, 10)
             };
             
             // Set render mode and start transition
