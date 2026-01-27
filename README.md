@@ -44,13 +44,15 @@ php -S localhost:8000
 
 3. Open your browser and navigate to:
 ```
-http://localhost:8000/minimal-example.html              # ⚡ Minimal WebGL example - No dependencies, no UI
-http://localhost:8000/                                 # 🎨 Main page - Image morphing interface
-http://localhost:8000/index.html                       # 🎨 Main page - Image morphing interface (same as above)
-http://localhost:8000/simple-page-transition-demo.html # 🌐 Page Transition API Demo (NEW!)
-http://localhost:8000/triangulation-demo.html          # 🔺 Triangulation morphing demo with hybrid effects
-http://localhost:8000/debug.html                       # 🐛 Full debug interface with all features
-http://localhost:8000/landing.html                     # 🏠 Original landing page with links
+http://localhost:8000/landing.html                      # 🏠 Landing page - Browse all demos and features
+http://localhost:8000/                                  # 🎨 Main page - Image morphing interface
+http://localhost:8000/index.html                        # 🎨 Main page - Image morphing interface (same as above)
+http://localhost:8000/export-hybrid-video.html          # 🎬 Video Export - Record transitions (NEW!)
+http://localhost:8000/test-hybrid.html                  # 🌟 Hybrid Transition Test
+http://localhost:8000/simple-page-transition-demo.html  # 🌐 Page Transition API Demo
+http://localhost:8000/triangulation-demo.html           # 🔺 Triangulation morphing demo
+http://localhost:8000/debug.html                        # 🐛 Full debug interface
+http://localhost:8000/minimal-example.html              # ⚡ Minimal WebGL example
 ```
 
 ## 🔺 Triangulation-Based Image Morphing
@@ -701,17 +703,21 @@ webgl-particle-engine/
 ├── examples/                       # Example implementations
 │   └── school-of-fish-demo.html
 ├── public/                         # Built files for deployment
+├── landing.html                    # Landing page - Browse all demos (START HERE!)
+├── index.html                      # Main page - Image morphing interface
+├── export-hybrid-video.html        # Video Export - Record transitions (NEW!)
+├── test-hybrid.html                # Hybrid Transition Test
 ├── minimal-example.html            # Minimal WebGL example (no dependencies)
-├── index.html                      # Main page - Particle morphing interface
-├── simple-page-transition-demo.html # Page Transition API demo (NEW!)
-├── page-transition-demo.html       # Page Transition with DOM capture (NEW!)
+├── simple-page-transition-demo.html # Page Transition API demo
+├── page-transition-demo.html       # Page Transition with DOM capture
 ├── triangulation-demo.html         # Triangulation morphing demo
+├── disintegration-demo.html        # Disintegration effect demo
 ├── morph.html                      # Alternative entry point
-├── landing.html                    # Landing page with links to demos
 ├── debug.html                      # Interactive debug interface
 ├── build.sh                        # Build script for deployment
 ├── README.md                       # Main documentation
-└── HYBRID_PAGE_TRANSITION_API.md   # Page Transition API documentation (NEW!)
+├── HYBRID_PAGE_TRANSITION_API.md   # Page Transition API documentation
+└── VIDEO_EXPORT_README.md          # Video Export documentation (NEW!)
 ```
 
 ## 🎨 Architecture
