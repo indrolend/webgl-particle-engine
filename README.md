@@ -44,15 +44,15 @@ php -S localhost:8000
 
 3. Open your browser and navigate to:
 ```
-http://localhost:8000/landing.html                      # 🏠 Landing page - Browse all demos and features
-http://localhost:8000/                                  # 🎨 Main page - Image morphing interface
-http://localhost:8000/index.html                        # 🎨 Main page - Image morphing interface (same as above)
-http://localhost:8000/export-hybrid-video.html          # 🎬 Video Export - Record transitions (NEW!)
-http://localhost:8000/test-hybrid.html                  # 🌟 Hybrid Transition Test
-http://localhost:8000/simple-page-transition-demo.html  # 🌐 Page Transition API Demo
-http://localhost:8000/triangulation-demo.html           # 🔺 Triangulation morphing demo
-http://localhost:8000/debug.html                        # 🐛 Full debug interface
-http://localhost:8000/minimal-example.html              # ⚡ Minimal WebGL example
+http://localhost:8000/                                      # 🏠 Landing page - Browse all demos (START HERE!)
+http://localhost:8000/index.html                            # 🏠 Landing page (same as above)
+http://localhost:8000/image-morph-demo.html                 # 🎨 Image morphing interface
+http://localhost:8000/export-hybrid-video.html              # 🎬 Video Export - Record transitions (NEW!)
+http://localhost:8000/test-hybrid.html                      # 🌟 Hybrid Transition Test
+http://localhost:8000/simple-page-transition-demo.html      # 🌐 Page Transition API Demo
+http://localhost:8000/triangulation-demo.html               # 🔺 Triangulation morphing demo
+http://localhost:8000/debug.html                            # 🐛 Full debug interface
+http://localhost:8000/minimal-example.html                  # ⚡ Minimal WebGL example
 ```
 
 ## 🔺 Triangulation-Based Image Morphing
@@ -79,7 +79,7 @@ Visit the **Triangulation Demo** page (`triangulation-demo.html`) to explore:
 
 ## 🎨 Image Morphing
 
-The **primary focus** of this engine is seamless image-to-image transitions using WebGL particles. The main page (`index.html`) provides a streamlined experience for this core functionality.
+The **primary focus** of this engine is seamless image-to-image transitions using WebGL particles. The landing page (`index.html`) showcases all available demos, while the image morph interface (`image-morph-demo.html`) provides a streamlined experience for this core functionality.
 
 ## 📖 Usage
 
@@ -621,7 +621,7 @@ The debug interface (`debug.html`) includes a dedicated **Image Upload** section
 
 ## 🎨 Image Morph Interface - Primary Feature
 
-The main page (`index.html`) provides a **focused, streamlined interface exclusively for image morphing**. This is the recommended interface for experiencing seamless particle-based image transitions.
+The image morph demo (`image-morph-demo.html`) provides a **focused, streamlined interface exclusively for image morphing**. This is the recommended interface for experiencing seamless particle-based image transitions.
 
 ### Key Features:
 - **🖼️ Dual Image Upload**: Upload two images with live preview and validation
@@ -632,7 +632,7 @@ The main page (`index.html`) provides a **focused, streamlined interface exclusi
 - **🔧 Optimized Parameters**: 2000 particles for high-quality image representation
 
 ### How to Use:
-1. Open the main page in your browser (default: `index.html`)
+1. Open the landing page in your browser (default: `index.html`) or directly visit `image-morph-demo.html`
 2. Click "Choose Image 1" and select your first image
 3. Click "Choose Image 2" and select your second image
 4. Click the "Morph ✨" button to initialize particles from Image 1
@@ -703,8 +703,8 @@ webgl-particle-engine/
 ├── examples/                       # Example implementations
 │   └── school-of-fish-demo.html
 ├── public/                         # Built files for deployment
-├── landing.html                    # Landing page - Browse all demos (START HERE!)
-├── index.html                      # Main page - Image morphing interface
+├── index.html                      # Landing page - Browse all demos (START HERE!)
+├── image-morph-demo.html           # Image morphing interface
 ├── export-hybrid-video.html        # Video Export - Record transitions (NEW!)
 ├── test-hybrid.html                # Hybrid Transition Test
 ├── minimal-example.html            # Minimal WebGL example (no dependencies)
