@@ -19,10 +19,13 @@ The included `hybrid-transition-9x16.webm` video demonstrates a transition from 
 
 ## Features
 
+- **Image Upload**: User-friendly interface to upload custom images for transitions
+- **Image Previews**: See thumbnails of uploaded images before recording
 - **Video Recording**: Uses the Canvas API's `captureStream()` method with `MediaRecorder` to record the canvas animation
 - **9:16 Aspect Ratio**: Portrait video format (720x1280 pixels)
 - **White Background**: Clean white canvas background
 - **High Quality**: 60 FPS recording at 8 Mbps bitrate
+- **Error Handling**: Graceful handling of invalid or corrupted image files
 - **Hybrid Transition**: Full multi-phase transition including:
   - Static display of source image
   - Disintegration effect
@@ -35,7 +38,7 @@ The included `hybrid-transition-9x16.webm` video demonstrates a transition from 
 
 ### Running the Export Tool
 
-1. **Start a local web server** (required for loading local images):
+1. **Start a local web server** (required for ES6 modules):
    ```bash
    python3 -m http.server 8000
    # or
@@ -45,13 +48,19 @@ The included `hybrid-transition-9x16.webm` video demonstrates a transition from 
 2. **Open the export page**:
    Navigate to `http://localhost:8000/export-hybrid-video.html`
 
-3. **Start recording**:
+3. **Upload your images**:
+   - Click "Choose File" for Source Image (Image 1)
+   - Click "Choose File" for Target Image (Image 2)
+   - Preview thumbnails will appear after each upload
+   - The "Start Recording" button will enable once both images are uploaded
+
+4. **Start recording**:
    Click the "Start Recording & Transition" button
 
-4. **Wait for completion**:
+5. **Wait for completion**:
    The transition takes approximately 9 seconds to complete
 
-5. **Download the video**:
+6. **Download the video**:
    Click the "Download Video" button to save the `.webm` file
 
 ### Customizing the Export
@@ -156,10 +165,11 @@ Supported browsers:
 - Close other applications to free up resources
 - Try recording in a different browser
 
-### Images don't load
-- Make sure you're running a local web server (not opening the file directly)
-- Check that image paths are correct
-- Verify images are in the same directory as the HTML file
+### Images don't load or show error
+- Make sure you're uploading valid image files (JPEG, PNG, GIF, WebP, etc.)
+- Check that the file is not corrupted
+- Ensure the image file size is reasonable (very large images may cause performance issues)
+- Make sure you're running a local web server (required for ES6 modules)
 
 ### MediaRecorder not supported
 - Update your browser to the latest version
