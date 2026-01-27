@@ -28,6 +28,78 @@
             background: white;
         }
         
+        .upload-section {
+            background: rgba(52, 152, 219, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 600px;
+            border: 2px solid #3498db;
+        }
+        
+        .upload-group {
+            margin: 15px 0;
+        }
+        
+        .upload-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #3498db;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+        }
+        
+        input[type="file"]::-webkit-file-upload-button {
+            padding: 8px 15px;
+            background: #3498db;
+            border: none;
+            border-radius: 3px;
+            color: white;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        input[type="file"]::-webkit-file-upload-button:hover {
+            background: #2980b9;
+        }
+        
+        .preview {
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .preview img {
+            max-width: 150px;
+            max-height: 150px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            background: white;
+        }
+        
+        .info-box {
+            background: rgba(241, 196, 15, 0.1);
+            border: 2px solid #f1c40f;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
         .controls {
             text-align: center;
             margin: 20px;
@@ -48,7 +120,7 @@
             min-width: 200px;
         }
         
-        button:hover {
+        button:hover:not(:disabled) {
             background: #2980b9;
         }
         
@@ -82,18 +154,37 @@
 <body>
     <h1>Export 9:16 Hybrid Transition Video</h1>
     <p style="text-align: center; color: #bdc3c7;">
-        Transition: indrolend.png → cover art.jpeg<br>
         Aspect Ratio: 9:16 (Portrait) | Background: White
     </p>
+    
+    <div class="upload-section">
+        <h3 style="margin-top: 0; color: #3498db;">📸 Upload Images for Transition</h3>
+        <div class="info-box">
+            <strong>ℹ️ Note:</strong> Upload two images to create a hybrid particle transition video. 
+            For best results, use images with similar dimensions.
+        </div>
+        
+        <div class="upload-group">
+            <label for="image1Input">Source Image (Image 1):</label>
+            <input type="file" id="image1Input" accept="image/*">
+            <div class="preview" id="preview1"></div>
+        </div>
+        
+        <div class="upload-group">
+            <label for="image2Input">Target Image (Image 2):</label>
+            <input type="file" id="image2Input" accept="image/*">
+            <div class="preview" id="preview2"></div>
+        </div>
+    </div>
     
     <canvas id="canvas" width="720" height="1280"></canvas>
     
     <div class="controls">
-        <button id="startBtn">Start Recording & Transition</button>
+        <button id="startBtn" disabled>Start Recording & Transition</button>
         <button id="downloadBtn" disabled>Download Video</button>
     </div>
     
-    <div class="status" id="status">Ready to record</div>
+    <div class="status" id="status">Please upload two images to begin</div>
     
     <script type="module">
         import { HybridEngine } from './src/HybridEngine.js';
@@ -105,11 +196,95 @@
         const status = document.getElementById('status');
         const startBtn = document.getElementById('startBtn');
         const downloadBtn = document.getElementById('downloadBtn');
+        const image1Input = document.getElementById('image1Input');
+        const image2Input = document.getElementById('image2Input');
+        const preview1 = document.getElementById('preview1');
+        const preview2 = document.getElementById('preview2');
         
         let engine = null;
         let mediaRecorder = null;
         let recordedChunks = [];
         let videoBlob = null;
+        let uploadedImage1 = null;
+        let uploadedImage2 = null;
+        let ffmpeg = null;
+        let ffmpegLoaded = false;
+        let FFmpeg = null;
+        let fetchFile = null;
+        let toBlobURL = null;
+        
+        // Initialize FFmpeg
+        async function loadFFmpeg() {
+            if (ffmpegLoaded) return true;
+            
+            try {
+                updateStatus('Loading video converter...', 'info');
+                
+                // Dynamically import FFmpeg modules
+                const ffmpegModule = await import('https://esm.sh/@ffmpeg/ffmpeg@0.12.10');
+                const utilModule = await import('https://esm.sh/@ffmpeg/util@0.12.1');
+                
+                FFmpeg = ffmpegModule.FFmpeg;
+                fetchFile = utilModule.fetchFile;
+                toBlobURL = utilModule.toBlobURL;
+                
+                ffmpeg = new FFmpeg();
+                
+                // Load FFmpeg core
+                const baseURL = 'https://esm.sh/@ffmpeg/core@0.12.6/dist/esm';
+                await ffmpeg.load({
+                    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+                });
+                
+                ffmpegLoaded = true;
+                console.log('FFmpeg loaded successfully');
+                return true;
+            } catch (error) {
+                console.error('Failed to load FFmpeg:', error);
+                console.log('Videos will be saved as WebM format. You can convert them to MP4 using online tools or FFmpeg command line.');
+                return false;
+            }
+        }
+        
+        // Convert WebM to MP4
+        async function convertToMP4(webmBlob) {
+            if (!ffmpegLoaded) {
+                console.warn('FFmpeg not loaded, returning WebM blob');
+                return webmBlob;
+            }
+            
+            try {
+                updateStatus('Converting to MP4 format...', 'recording');
+                
+                // Write WebM file to FFmpeg virtual filesystem
+                await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
+                
+                // Convert to MP4 with H.264 codec
+                await ffmpeg.exec([
+                    '-i', 'input.webm',
+                    '-c:v', 'libx264',
+                    '-preset', 'fast',
+                    '-crf', '22',
+                    '-movflags', '+faststart',
+                    'output.mp4'
+                ]);
+                
+                // Read the output file
+                const data = await ffmpeg.readFile('output.mp4');
+                const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
+                
+                // Clean up
+                await ffmpeg.deleteFile('input.webm');
+                await ffmpeg.deleteFile('output.mp4');
+                
+                return mp4Blob;
+            } catch (error) {
+                console.error('Conversion failed:', error);
+                updateStatus('Conversion failed, using WebM format', 'error');
+                return webmBlob;
+            }
+        }
         
         // Update status message
         function updateStatus(message, type = '') {
@@ -117,30 +292,72 @@
             status.className = 'status ' + type;
         }
         
-        // Load images
+        // Handle file upload for image 1
+        image1Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        uploadedImage1 = img;
+                        preview1.innerHTML = `<img src="${event.target.result}" alt="Image 1 Preview">`;
+                        checkImagesReady();
+                    };
+                    img.onerror = () => {
+                        updateStatus('Error: Invalid image file for Image 1', 'error');
+                        preview1.innerHTML = '';
+                    };
+                    img.src = event.target.result;
+                };
+                reader.onerror = () => {
+                    updateStatus('Error: Failed to read Image 1 file', 'error');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Handle file upload for image 2
+        image2Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        uploadedImage2 = img;
+                        preview2.innerHTML = `<img src="${event.target.result}" alt="Image 2 Preview">`;
+                        checkImagesReady();
+                    };
+                    img.onerror = () => {
+                        updateStatus('Error: Invalid image file for Image 2', 'error');
+                        preview2.innerHTML = '';
+                    };
+                    img.src = event.target.result;
+                };
+                reader.onerror = () => {
+                    updateStatus('Error: Failed to read Image 2 file', 'error');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Check if both images are uploaded
+        function checkImagesReady() {
+            if (uploadedImage1 && uploadedImage2) {
+                startBtn.disabled = false;
+                updateStatus('Images ready! Click "Start Recording" to begin.', 'success');
+            }
+        }
+        
+        // Load images (now uses uploaded images)
         async function loadImages() {
-            updateStatus('Loading images...');
+            if (!uploadedImage1 || !uploadedImage2) {
+                throw new Error('Please upload both images first');
+            }
             
-            const image1 = new Image();
-            const image2 = new Image();
-            
-            const loadPromise1 = new Promise((resolve, reject) => {
-                image1.onload = resolve;
-                image1.onerror = () => reject(new Error('Failed to load indrolend.png'));
-            });
-            
-            const loadPromise2 = new Promise((resolve, reject) => {
-                image2.onload = resolve;
-                image2.onerror = () => reject(new Error('Failed to load cover art.jpeg'));
-            });
-            
-            image1.src = 'indrolend.png';
-            image2.src = 'cover art.jpeg';
-            
-            await Promise.all([loadPromise1, loadPromise2]);
-            
-            updateStatus('Images loaded successfully', 'success');
-            return { image1, image2 };
+            updateStatus('Using uploaded images...', 'success');
+            return { image1: uploadedImage1, image2: uploadedImage2 };
         }
         
         // Initialize HybridEngine
@@ -187,9 +404,20 @@
                 }
             };
             
-            mediaRecorder.onstop = () => {
-                videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
-                updateStatus('Recording complete! Click download to save.', 'success');
+            mediaRecorder.onstop = async () => {
+                const webmBlob = new Blob(recordedChunks, { type: 'video/webm' });
+                
+                if (ffmpegLoaded) {
+                    updateStatus('Recording complete, converting to MP4...', 'recording');
+                    // Convert to MP4
+                    videoBlob = await convertToMP4(webmBlob);
+                    const format = videoBlob.type.includes('mp4') ? 'MP4' : 'WebM';
+                    updateStatus(`Video ready (${format})! Click download to save.`, 'success');
+                } else {
+                    videoBlob = webmBlob;
+                    updateStatus('Video ready (WebM)! Click download to save.', 'success');
+                }
+                
                 downloadBtn.disabled = false;
             };
             
@@ -254,7 +482,9 @@
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = 'hybrid-transition-9x16.webm';
+            // Determine file extension based on blob type
+            const extension = videoBlob.type.includes('mp4') ? 'mp4' : 'webm';
+            a.download = `hybrid-transition-9x16.${extension}`;
             document.body.appendChild(a);
             a.click();
             
@@ -272,6 +502,9 @@
             try {
                 startBtn.disabled = true;
                 downloadBtn.disabled = true;
+                
+                // Load FFmpeg for MP4 conversion
+                await loadFFmpeg();
                 
                 // Load images
                 const { image1, image2 } = await loadImages();

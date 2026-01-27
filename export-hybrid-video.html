@@ -207,6 +207,84 @@
         let videoBlob = null;
         let uploadedImage1 = null;
         let uploadedImage2 = null;
+        let ffmpeg = null;
+        let ffmpegLoaded = false;
+        let FFmpeg = null;
+        let fetchFile = null;
+        let toBlobURL = null;
+        
+        // Initialize FFmpeg
+        async function loadFFmpeg() {
+            if (ffmpegLoaded) return true;
+            
+            try {
+                updateStatus('Loading video converter...', 'info');
+                
+                // Dynamically import FFmpeg modules
+                const ffmpegModule = await import('https://esm.sh/@ffmpeg/ffmpeg@0.12.10');
+                const utilModule = await import('https://esm.sh/@ffmpeg/util@0.12.1');
+                
+                FFmpeg = ffmpegModule.FFmpeg;
+                fetchFile = utilModule.fetchFile;
+                toBlobURL = utilModule.toBlobURL;
+                
+                ffmpeg = new FFmpeg();
+                
+                // Load FFmpeg core
+                const baseURL = 'https://esm.sh/@ffmpeg/core@0.12.6/dist/esm';
+                await ffmpeg.load({
+                    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+                });
+                
+                ffmpegLoaded = true;
+                console.log('FFmpeg loaded successfully');
+                return true;
+            } catch (error) {
+                console.error('Failed to load FFmpeg:', error);
+                console.log('Videos will be saved as WebM format. You can convert them to MP4 using online tools or FFmpeg command line.');
+                return false;
+            }
+        }
+        
+        // Convert WebM to MP4
+        async function convertToMP4(webmBlob) {
+            if (!ffmpegLoaded) {
+                console.warn('FFmpeg not loaded, returning WebM blob');
+                return webmBlob;
+            }
+            
+            try {
+                updateStatus('Converting to MP4 format...', 'recording');
+                
+                // Write WebM file to FFmpeg virtual filesystem
+                await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
+                
+                // Convert to MP4 with H.264 codec
+                await ffmpeg.exec([
+                    '-i', 'input.webm',
+                    '-c:v', 'libx264',
+                    '-preset', 'fast',
+                    '-crf', '22',
+                    '-movflags', '+faststart',
+                    'output.mp4'
+                ]);
+                
+                // Read the output file
+                const data = await ffmpeg.readFile('output.mp4');
+                const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
+                
+                // Clean up
+                await ffmpeg.deleteFile('input.webm');
+                await ffmpeg.deleteFile('output.mp4');
+                
+                return mp4Blob;
+            } catch (error) {
+                console.error('Conversion failed:', error);
+                updateStatus('Conversion failed, using WebM format', 'error');
+                return webmBlob;
+            }
+        }
         
         // Update status message
         function updateStatus(message, type = '') {
@@ -226,7 +304,14 @@
                         preview1.innerHTML = `<img src="${event.target.result}" alt="Image 1 Preview">`;
                         checkImagesReady();
                     };
+                    img.onerror = () => {
+                        updateStatus('Error: Invalid image file for Image 1', 'error');
+                        preview1.innerHTML = '';
+                    };
                     img.src = event.target.result;
+                };
+                reader.onerror = () => {
+                    updateStatus('Error: Failed to read Image 1 file', 'error');
                 };
                 reader.readAsDataURL(file);
             }
@@ -244,7 +329,14 @@
                         preview2.innerHTML = `<img src="${event.target.result}" alt="Image 2 Preview">`;
                         checkImagesReady();
                     };
+                    img.onerror = () => {
+                        updateStatus('Error: Invalid image file for Image 2', 'error');
+                        preview2.innerHTML = '';
+                    };
                     img.src = event.target.result;
+                };
+                reader.onerror = () => {
+                    updateStatus('Error: Failed to read Image 2 file', 'error');
                 };
                 reader.readAsDataURL(file);
             }
@@ -312,9 +404,20 @@
                 }
             };
             
-            mediaRecorder.onstop = () => {
-                videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
-                updateStatus('Recording complete! Click download to save.', 'success');
+            mediaRecorder.onstop = async () => {
+                const webmBlob = new Blob(recordedChunks, { type: 'video/webm' });
+                
+                if (ffmpegLoaded) {
+                    updateStatus('Recording complete, converting to MP4...', 'recording');
+                    // Convert to MP4
+                    videoBlob = await convertToMP4(webmBlob);
+                    const format = videoBlob.type.includes('mp4') ? 'MP4' : 'WebM';
+                    updateStatus(`Video ready (${format})! Click download to save.`, 'success');
+                } else {
+                    videoBlob = webmBlob;
+                    updateStatus('Video ready (WebM)! Click download to save.', 'success');
+                }
+                
                 downloadBtn.disabled = false;
             };
             
@@ -379,7 +482,9 @@
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = 'hybrid-transition-9x16.webm';
+            // Determine file extension based on blob type
+            const extension = videoBlob.type.includes('mp4') ? 'mp4' : 'webm';
+            a.download = `hybrid-transition-9x16.${extension}`;
             document.body.appendChild(a);
             a.click();
             
@@ -397,6 +502,9 @@
             try {
                 startBtn.disabled = true;
                 downloadBtn.disabled = true;
+                
+                // Load FFmpeg for MP4 conversion
+                await loadFFmpeg();
                 
                 // Load images
                 const { image1, image2 } = await loadImages();

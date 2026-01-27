@@ -19,10 +19,15 @@ The included `hybrid-transition-9x16.webm` video demonstrates a transition from 
 
 ## Features
 
+- **Image Upload**: User-friendly interface to upload custom images for transitions
+- **Image Previews**: See thumbnails of uploaded images before recording
+- **MP4 Video Export**: Automatically converts recorded videos to MP4 format with H.264 codec
+- **WebM Fallback**: Gracefully falls back to WebM if conversion is unavailable
 - **Video Recording**: Uses the Canvas API's `captureStream()` method with `MediaRecorder` to record the canvas animation
 - **9:16 Aspect Ratio**: Portrait video format (720x1280 pixels)
 - **White Background**: Clean white canvas background
 - **High Quality**: 60 FPS recording at 8 Mbps bitrate
+- **Error Handling**: Graceful handling of invalid or corrupted image files
 - **Hybrid Transition**: Full multi-phase transition including:
   - Static display of source image
   - Disintegration effect
@@ -35,7 +40,7 @@ The included `hybrid-transition-9x16.webm` video demonstrates a transition from 
 
 ### Running the Export Tool
 
-1. **Start a local web server** (required for loading local images):
+1. **Start a local web server** (required for ES6 modules):
    ```bash
    python3 -m http.server 8000
    # or
@@ -45,14 +50,24 @@ The included `hybrid-transition-9x16.webm` video demonstrates a transition from 
 2. **Open the export page**:
    Navigate to `http://localhost:8000/export-hybrid-video.html`
 
-3. **Start recording**:
+3. **Upload your images**:
+   - Click "Choose File" for Source Image (Image 1)
+   - Click "Choose File" for Target Image (Image 2)
+   - Preview thumbnails will appear after each upload
+   - The "Start Recording" button will enable once both images are uploaded
+
+4. **Start recording**:
    Click the "Start Recording & Transition" button
+   - The page will load the video converter (FFmpeg.wasm)
+   - Recording will begin automatically
 
-4. **Wait for completion**:
+5. **Wait for completion**:
    The transition takes approximately 9 seconds to complete
+   - The video is recorded in WebM format first
+   - Automatic conversion to MP4 happens after recording
 
-5. **Download the video**:
-   Click the "Download Video" button to save the `.webm` file
+6. **Download the video**:
+   Click the "Download Video" button to save the `.mp4` file (or `.webm` if conversion failed)
 
 ### Customizing the Export
 
@@ -108,15 +123,28 @@ const options = {
 
 ## Video Format
 
-The exported video is in WebM format with VP9 codec (or VP8 as fallback). This format is:
-- Widely supported by modern browsers
-- High quality with good compression
-- Open and royalty-free
-- Compatible with most video players and editing software
+### MP4 Output (Default)
 
-### Converting to Other Formats
+The exported video is automatically converted to **MP4 format with H.264 codec** for maximum compatibility:
+- **Codec**: H.264 (libx264) - universally supported across all devices
+- **Container**: MP4 - compatible with all video players and editing software
+- **Quality**: CRF 22 (high quality with reasonable file size)
+- **Optimization**: Fast-start flag enabled for instant web playback
+- **Conversion**: Performed client-side using FFmpeg.wasm (no server upload required)
 
-If you need a different format (e.g., MP4), you can convert using FFmpeg:
+### WebM Fallback
+
+If the MP4 conversion fails (due to network issues or browser restrictions), the video is saved as WebM:
+- **Codec**: VP9 (or VP8 as fallback)
+- **Container**: WebM - widely supported by modern browsers
+- **Quality**: High quality with good compression
+- **Open Source**: Royalty-free format
+
+The page will indicate which format is available in the status message.
+
+### Manual Conversion (if needed)
+
+If you have a WebM file and need to convert it manually, you can use FFmpeg:
 
 ```bash
 # Convert to MP4 (H.264)
@@ -135,15 +163,30 @@ The video export feature requires:
 - Modern browser with WebGL support
 - Canvas API `captureStream()` method
 - MediaRecorder API
-- WebM video codec support
+- WebM video codec support (for recording)
+- WebAssembly support (for MP4 conversion)
 
-Supported browsers:
+**MP4 Conversion Support:**
+- Chrome/Edge 57+ (WebAssembly support)
+- Firefox 52+ (WebAssembly support)
+- Safari 11+ (WebAssembly support)
+- Opera 44+ (WebAssembly support)
+
+**Recording Support:**
 - Chrome/Edge 47+
 - Firefox 43+
 - Opera 36+
 - Safari 14.1+ (with some limitations)
 
+**Note**: If MP4 conversion fails, videos are saved as WebM which works in all supported browsers.
+
 ## Troubleshooting
+
+### MP4 conversion fails or videos save as WebM
+- Check browser console for FFmpeg loading errors
+- Ensure internet connection is stable (FFmpeg.wasm loads from CDN)
+- Try a different browser (Chrome/Edge recommended)
+- If conversion consistently fails, use the WebM file and convert manually using FFmpeg
 
 ### Video file is empty or corrupt
 - Ensure the transition completes fully before stopping
@@ -156,10 +199,11 @@ Supported browsers:
 - Close other applications to free up resources
 - Try recording in a different browser
 
-### Images don't load
-- Make sure you're running a local web server (not opening the file directly)
-- Check that image paths are correct
-- Verify images are in the same directory as the HTML file
+### Images don't load or show error
+- Make sure you're uploading valid image files (JPEG, PNG, GIF, WebP, etc.)
+- Check that the file is not corrupted
+- Ensure the image file size is reasonable (very large images may cause performance issues)
+- Make sure you're running a local web server (required for ES6 modules)
 
 ### MediaRecorder not supported
 - Update your browser to the latest version
@@ -168,19 +212,36 @@ Supported browsers:
 
 ## Technical Details
 
-### Recording Process
+### Recording and Conversion Process
 
-1. **Canvas Stream Creation**: The canvas is captured as a MediaStream at 60 FPS
-2. **MediaRecorder Setup**: A MediaRecorder is initialized with WebM/VP9 settings
-3. **Recording Start**: Recording begins before the transition starts
-4. **Transition Execution**: The hybrid transition runs through all phases
-5. **Recording Stop**: After the transition completes, recording is stopped
-6. **Blob Creation**: Video chunks are combined into a Blob
-7. **Download**: The Blob is converted to a downloadable file
+1. **FFmpeg Initialization**: FFmpeg.wasm is loaded dynamically from CDN on first use
+2. **Canvas Stream Creation**: The canvas is captured as a MediaStream at 60 FPS
+3. **MediaRecorder Setup**: A MediaRecorder is initialized with WebM/VP9 settings
+4. **Recording Start**: Recording begins before the transition starts
+5. **Transition Execution**: The hybrid transition runs through all phases
+6. **Recording Stop**: After the transition completes, recording is stopped
+7. **WebM Blob Creation**: Video chunks are combined into a WebM Blob
+8. **MP4 Conversion**: FFmpeg.wasm converts WebM to MP4 with H.264 codec
+9. **Download**: The MP4 Blob is converted to a downloadable file
+
+### MP4 Conversion Technology
+
+The page uses **FFmpeg.wasm** for client-side video conversion:
+- **Library**: FFmpeg.wasm v0.12.10 (WebAssembly port of FFmpeg)
+- **Loading**: Dynamically imported from esm.sh CDN
+- **Processing**: All conversion happens in your browser (no server upload)
+- **Privacy**: Your videos never leave your computer
+- **Settings**:
+  - Video codec: libx264 (H.264)
+  - Preset: fast (balanced speed/quality)
+  - CRF: 22 (constant quality mode)
+  - Movflags: +faststart (optimized for web streaming)
 
 ### Performance Considerations
 
-- Recording is CPU-intensive and may affect animation smoothness
+- **Recording**: CPU-intensive and may affect animation smoothness
+- **Conversion**: Takes a few seconds depending on video length and device
+- **Memory**: Requires sufficient RAM for video processing
 - Higher particle counts increase memory usage and processing time
 - Canvas size affects video file size and rendering performance
 - Bitrate affects both quality and file size
