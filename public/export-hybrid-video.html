@@ -226,7 +226,14 @@
                         preview1.innerHTML = `<img src="${event.target.result}" alt="Image 1 Preview">`;
                         checkImagesReady();
                     };
+                    img.onerror = () => {
+                        updateStatus('Error: Invalid image file for Image 1', 'error');
+                        preview1.innerHTML = '';
+                    };
                     img.src = event.target.result;
+                };
+                reader.onerror = () => {
+                    updateStatus('Error: Failed to read Image 1 file', 'error');
                 };
                 reader.readAsDataURL(file);
             }
@@ -244,7 +251,14 @@
                         preview2.innerHTML = `<img src="${event.target.result}" alt="Image 2 Preview">`;
                         checkImagesReady();
                     };
+                    img.onerror = () => {
+                        updateStatus('Error: Invalid image file for Image 2', 'error');
+                        preview2.innerHTML = '';
+                    };
                     img.src = event.target.result;
+                };
+                reader.onerror = () => {
+                    updateStatus('Error: Failed to read Image 2 file', 'error');
                 };
                 reader.readAsDataURL(file);
             }
