@@ -18,7 +18,7 @@ export class ParticleSystem {
       particleCount: config.particleCount || 1000,
       speed: config.speed || 1.0,
       minSize: config.minSize || 2,
-      maxSize: config.maxSize || 20  // Increased from 16 to 20 for even denser coverage
+      maxSize: config.maxSize || 20  // Increased from 8 to 20 for gap-free solid coverage
     };
     
     this.width = 800;

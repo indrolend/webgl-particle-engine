@@ -139,7 +139,6 @@
         const canvas = document.getElementById('canvas');
         const resultsDiv = document.getElementById('results');
         let engine = null;
-        let currentMultiplier = 1.2;
         
         // Initialize engine
         function initEngine() {
@@ -150,7 +149,7 @@
                 particleCount: 2000,
                 speed: 1.0,
                 minSize: 2,
-                maxSize: 12,
+                maxSize: 20,  // Match production maxSize
                 enableTriangulation: false
             });
             return engine;
