@@ -216,7 +216,6 @@ engine.startHybridTransition(image1, image2, config);</pre>
 
         let api = null;
         let isTransitioning = false;
-        let currentDirection = 'forward'; // 'forward' or 'reverse'
 
         // Initialize API
         async function initAPI() {
@@ -250,7 +249,6 @@ engine.startHybridTransition(image1, image2, config);</pre>
 
             try {
                 isTransitioning = true;
-                currentDirection = 'forward';
                 
                 document.getElementById('btnTransition').disabled = true;
                 document.getElementById('btnReverse').disabled = true;
@@ -294,7 +292,6 @@ engine.startHybridTransition(image1, image2, config);</pre>
 
             try {
                 isTransitioning = true;
-                currentDirection = 'reverse';
                 
                 document.getElementById('btnTransition').disabled = true;
                 document.getElementById('btnReverse').disabled = true;
@@ -341,7 +338,6 @@ engine.startHybridTransition(image1, image2, config);</pre>
                 api.canvas.style.display = 'none';
             }
             
-            currentDirection = 'forward';
             document.getElementById('btnReverse').disabled = true;
             updateStatus('Demo reset. Ready to start!');
         };
