@@ -234,7 +234,18 @@ export class HybridEngine extends ParticleEngine {
     // If in materialization phase, render with dual rendering (particles + fading in target image)
     if (this.materializationState.isActive) {
       const progress = this.materializationState.progress;
-      const imageOpacity = progress; // Target image fades in
+      
+      // Delay the fade-in to the latter part of recombination (when particles are nearly settled)
+      // This creates the opposite effect of disintegration - particles converge first, then image materializes
+      const fadeInStart = 0.6; // Start fading in at 60% progress
+      let imageOpacity = 0;
+      
+      if (progress >= fadeInStart) {
+        // Fade in during the last 40% of the recombination phase
+        const fadeProgress = (progress - fadeInStart) / (1.0 - fadeInStart);
+        imageOpacity = fadeProgress; // Linear fade from 0 to 1
+      }
+      
       const particleOpacity = 1.0; // Keep particles fully visible
       
       const particles = this.particleSystem.getParticles();
