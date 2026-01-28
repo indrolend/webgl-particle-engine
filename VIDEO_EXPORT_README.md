@@ -21,8 +21,12 @@ The included `hybrid-transition-9x16.webm` video demonstrates a transition from 
 
 - **Image Upload**: User-friendly interface to upload custom images for transitions
 - **Image Previews**: See thumbnails of uploaded images before recording
+- **Test/Preview Mode**: Preview transitions with different settings before recording (NEW!)
+- **Reset Button**: Quick reset to try different settings easily (NEW!)
+- **Adjustable Parameters**: 7 sliders to control transition timing and effects
 - **MP4 Video Export**: Automatically converts recorded videos to MP4 format with H.264 codec
 - **WebM Fallback**: Gracefully falls back to WebM if conversion is unavailable
+- **Safari/Mac Support**: Native MP4 recording on Safari, no conversion needed
 - **Video Recording**: Uses the Canvas API's `captureStream()` method with `MediaRecorder` to record the canvas animation
 - **9:16 Aspect Ratio**: Portrait video format (720x1280 pixels)
 - **White Background**: Clean white canvas background
@@ -54,20 +58,33 @@ The included `hybrid-transition-9x16.webm` video demonstrates a transition from 
    - Click "Choose File" for Source Image (Image 1)
    - Click "Choose File" for Target Image (Image 2)
    - Preview thumbnails will appear after each upload
-   - The "Start Recording" button will enable once both images are uploaded
+   - The "Test Transition" and "Start Recording" buttons will enable once both images are uploaded
 
-4. **Start recording**:
-   Click the "Start Recording & Transition" button
+4. **Test and adjust (NEW!):**
+   - Click "Test Transition (Preview)" to preview the effect without recording
+   - Adjust the sliders to fine-tune the transition
+   - Click "Reset" to clear and try again
+   - Repeat until satisfied with the settings
+
+5. **Start recording**:
+   Click the "Start Recording" button when you're happy with the preview
    - The page will load the video converter (FFmpeg.wasm)
    - Recording will begin automatically
 
-5. **Wait for completion**:
+6. **Wait for completion**:
    The transition takes approximately 9 seconds to complete
-   - The video is recorded in WebM format first
+   - The video is recorded in WebM format first (or MP4 on Safari)
    - Automatic conversion to MP4 happens after recording
 
-6. **Download the video**:
-   Click the "Download Video" button to save the `.mp4` file (or `.webm` if conversion failed)
+7. **Download the video**:
+   Click the "Download Video" button to save the `.mp4` file
+
+### Workflow Tips
+
+- **Test First**: Always use "Test Transition (Preview)" to preview before recording
+- **Iterate**: Use "Reset" to quickly try different slider settings
+- **Record Once**: Only record when you're satisfied with the preview
+- **Save Settings**: Note your favorite slider values for future use
 
 ### Customizing the Export
 
