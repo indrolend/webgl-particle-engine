@@ -429,7 +429,7 @@ export class ParticleSystem {
       }
     }
     
-    console.log(`[ParticleSystem] Target positions, colors, and sizes set for seamless morphing (size: ${targetParticleSize.toFixed(2)})`);
+    console.log(`[ParticleSystem] Target positions, colors, and sizes set for seamless morphing (base size: ${baseTargetSize.toFixed(2)}, range: ${(baseTargetSize * 0.7).toFixed(2)}-${(baseTargetSize * 1.3).toFixed(2)})`);
   }
 
   /**
