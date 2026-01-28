@@ -1,12 +1,21 @@
-# Testing Guide for MP4 Export Fix
+# Testing Guide for MP4 Export Fixes
 
 ## Overview
-This fix enables MP4 video export for the "Export 9:16 Hybrid Transition Video" feature by adding Cross-Origin Isolation headers required by FFmpeg.wasm.
+This fix resolves three critical issues with the "Export 9:16 Hybrid Transition Video" feature.
 
 ## What Was Fixed
-- **Problem**: Videos were exporting as WebM instead of MP4
+
+### Issue 1: Videos exported as WebM instead of MP4 (Windows/Chrome)
 - **Root Cause**: FFmpeg.wasm requires SharedArrayBuffer, which needs Cross-Origin Isolation headers
 - **Solution**: Added `_headers` file with required COOP and COEP headers
+
+### Issue 2: "Error: mimeType is not supported" on Mac/Safari
+- **Root Cause**: Safari doesn't support WebM codecs (VP9/VP8)
+- **Solution**: Added MP4/H.264 codec detection and fallback for Safari
+
+### Issue 3: Final image not captured in exported video
+- **Root Cause**: Recording stopped before the `finalStaticDuration` phase (2000ms) completed
+- **Solution**: Added `finalStaticDuration: 2000` to config and included in total duration calculation
 
 ## How to Test
 
@@ -38,8 +47,8 @@ This fix enables MP4 video export for the "Export 9:16 Hybrid Transition Video" 
 5. **Start recording**:
    - Click "Start Recording & Transition"
    - Watch the console for messages:
-     - ✅ "Using codec: WebM (VP9)" or "Using codec: MP4 (H.264)" depending on browser
-     - ✅ Status shows "Recorder ready (WebM (VP9))" or "Recorder ready (MP4 (H.264))"
+     - ✅ "Using codec: WebM (VP9)" or "Using codec: MP4 (H.264 Baseline)" depending on browser
+     - ✅ Status shows "Recorder ready (WebM (VP9))" or "Recorder ready (MP4 (H.264 Baseline))"
      - ✅ "Recording started..."
      - ✅ (Chrome/Firefox) "Recording complete, converting to MP4..."
      - ✅ (Safari) "Video ready (MP4)!" (no conversion needed)
@@ -47,12 +56,19 @@ This fix enables MP4 video export for the "Export 9:16 Hybrid Transition Video" 
 6. **Download the video**:
    - Click "Download Video" button
    - Verify filename ends with `.mp4`
+   - **Important**: Check the video plays completely and shows the **final solid image 2 for ~2 seconds** at the end
    - Verify the status shows "Video ready (MP4)!"
 
 7. **Verify the downloaded file**:
    - Check the file is named `hybrid-transition-9x16.mp4`
    - Open it in a video player
-   - Verify it plays correctly and shows the transition
+   - Verify it plays correctly and shows the complete transition:
+     - ✅ Source image displayed statically
+     - ✅ Disintegration effect
+     - ✅ Particle explosion
+     - ✅ Recombination to target shape
+     - ✅ Blend to target image
+     - ✅ **Final solid target image displayed for ~2 seconds** (Issue #3 fix)
 
 ### Expected Results
 
