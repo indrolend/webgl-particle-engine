@@ -458,6 +458,10 @@ export class ParticleSystem {
   /**
    * Start the reintegration effect from particles back to solid image
    * This reverses the disintegration process, bringing particles back to their original positions
+   * 
+   * Note: Stores current particle positions as dispersion targets before reintegrating.
+   * This ensures particles smoothly return from wherever they currently are.
+   * 
    * @param {number} duration - Duration of the reintegration in milliseconds
    */
   startReintegration(duration = 2000) {
@@ -470,10 +474,18 @@ export class ParticleSystem {
       this.disintegrationStartTime = Date.now();
       this.disintegrationProgress = 1.0; // Start at fully dispersed (1.0) and go to 0
       
+      // Store current positions as dispersion targets for smooth animation
+      for (let i = 0; i < this.particles.length; i++) {
+        const particle = this.particles[i];
+        particle.disperseX = particle.x;
+        particle.disperseY = particle.y;
+        particle.disperseSize = particle.size;
+      }
+      
       // Mark this as a reverse transition
       this.isReintegrating = true;
       
-      console.log('[ParticleSystem] Reintegration targets set from stored initial positions');
+      console.log('[ParticleSystem] Reintegration: Stored current positions, returning to initial positions');
     } else {
       console.warn('[ParticleSystem] Cannot reintegrate - no initial positions stored. Call startDisintegration first.');
     }

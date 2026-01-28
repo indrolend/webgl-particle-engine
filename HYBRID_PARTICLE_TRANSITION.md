@@ -138,11 +138,20 @@ import { ParticleSystem } from './src/ParticleSystem.js';
 
 const particleSystem = new ParticleSystem({ particleCount: 2000 });
 
-// Start disintegration
+// Initialize from an image first (stores initial positions)
+particleSystem.initializeFromImage(myImage);
+
+// Start disintegration (particles disperse outward)
 particleSystem.startDisintegration(1000);
 
-// Later, reverse it (particles return to original positions)
-particleSystem.startReintegration(1000);
+// Wait for disintegration to complete, then reintegrate
+// Reintegration captures current positions and smoothly animates back to initial positions
+setTimeout(() => {
+    particleSystem.startReintegration(1000);
+}, 1500);
+
+// Note: You can call startReintegration at any time after startDisintegration
+// It will smoothly animate from the current particle positions back to the original image
 ```
 
 ## Configuration Options
