@@ -251,7 +251,6 @@
                 disintegrationDuration: parseInt(disintegrationDurationSlider.value, 10)
             };
             
-            engine.setRenderMode('hybrid');
             engine.startHybridTransition(image1, image2, config);
             status.textContent = 'Transitioning from Image 1 to Image 2...';
         });

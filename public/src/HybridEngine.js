@@ -36,6 +36,15 @@ export class HybridEngine extends ParticleEngine {
       sourceImage: null
     };
     
+    // Materialization state (for smooth particle-to-solid transition - fade in target image)
+    this.materializationState = {
+      isActive: false,
+      progress: 0,
+      startTime: 0,
+      duration: 0,
+      targetImage: null
+    };
+    
     // Track last rendered static image to avoid reloading texture
     this.lastRenderedStaticImage = null;
     
@@ -150,8 +159,45 @@ export class HybridEngine extends ParticleEngine {
       const particles = this.particleSystem.getParticles();
       const dimensions = { width: this.canvas.width, height: this.canvas.height };
       this.presetManager.update(particles, deltaTime, dimensions);
+      
+      // Check if we're in recombination phase to activate materialization
+      const activePreset = this.presetManager.getActivePreset();
+      if (activePreset && typeof activePreset.getCurrentPhase === 'function') {
+        const currentPhase = activePreset.getCurrentPhase();
+        
+        // Start materialization during recombination phase
+        if (currentPhase === 'recombination' && !this.materializationState.isActive) {
+          if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
+            const recombinationDuration = activePreset.config.recombinationDuration || 2000;
+            this.materializationState = {
+              isActive: true,
+              progress: 0,
+              startTime: currentTime,
+              duration: recombinationDuration,
+              targetImage: this.hybridTransitionState.targetImage
+            };
+            
+            // Load target image texture for materialization rendering
+            this.renderer.loadImageTexture(this.hybridTransitionState.targetImage, this.particleSystem.config);
+            console.log('[HybridEngine] Starting materialization effect - target image will fade in');
+          }
+        }
+        
+        // End materialization when recombination ends
+        if (currentPhase !== 'recombination' && this.materializationState.isActive) {
+          this.materializationState.isActive = false;
+          console.log('[HybridEngine] Materialization complete');
+        }
+      }
     } else {
       this.particleSystem.update(deltaTime);
+    }
+    
+    // Update materialization progress
+    if (this.materializationState.isActive && this.materializationState.duration > 0) {
+      const elapsed = currentTime - this.materializationState.startTime;
+      const progress = Math.min(elapsed / this.materializationState.duration, 1.0);
+      this.materializationState.progress = progress;
     }
     
     // Render
@@ -176,6 +222,20 @@ export class HybridEngine extends ParticleEngine {
       const progress = this.disintegrationState.progress;
       const imageOpacity = 1.0 - progress; // Image fades out
       const particleOpacity = progress; // Particles fade in
+      
+      const particles = this.particleSystem.getParticles();
+      this.renderer.render(particles, {
+        imageOpacity: imageOpacity,
+        particleOpacity: particleOpacity
+      });
+      return;
+    }
+    
+    // If in materialization phase, render with dual rendering (particles + fading in target image)
+    if (this.materializationState.isActive) {
+      const progress = this.materializationState.progress;
+      const imageOpacity = progress; // Target image fades in
+      const particleOpacity = 1.0; // Keep particles fully visible
       
       const particles = this.particleSystem.getParticles();
       this.renderer.render(particles, {
