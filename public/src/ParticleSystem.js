@@ -1,6 +1,15 @@
 /**
  * Particle System with Transition Support
  * Manages particles and their transitions between states
+ * 
+ * Key Features:
+ * - Image-to-particle disintegration with turbulence and velocity
+ * - Particle-to-image reintegration (reverse disintegration)
+ * - Smooth transitions between formation patterns (grid, circle, spiral, random)
+ * - Image morphing with color and position interpolation
+ * - Easing functions for natural animation (easeInOutCubic)
+ * - Dynamic particle size and opacity control
+ * - Optimized image extraction and particle mapping
  */
 export class ParticleSystem {
   constructor(config = {}) {

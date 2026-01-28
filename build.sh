@@ -62,6 +62,10 @@ if [ -f create-test-images.html ]; then
   cp create-test-images.html public/
 fi
 
+if [ -f hybrid-transition-example.html ]; then
+  cp hybrid-transition-example.html public/
+fi
+
 # Copy JavaScript files needed by index.html
 echo "Copying JavaScript files..."
 if [ -f morph-ui.js ]; then

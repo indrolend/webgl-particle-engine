@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Particle Transition - Complete Example</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            max-width: 800px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-box h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .info-box ul {
+            list-style-position: inside;
+            line-height: 1.8;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: bold;
+        }
+
+        button:hover:not(:disabled) {
+            background: white;
+            color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .image-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .image-wrapper {
+            text-align: center;
+        }
+
+        .image-wrapper img {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 3px solid white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .image-wrapper label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        #status {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+        }
+
+        .code-example {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            text-align: left;
+            overflow-x: auto;
+        }
+
+        .code-example pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Hybrid Particle Transition Demo</h1>
+    <p class="subtitle">Seamless transitions between solid images and particles</p>
+
+    <div class="info-box">
+        <h2>What is Hybrid Particle Transition?</h2>
+        <ul>
+            <li><strong>Disintegration:</strong> Image dissolves into particles with velocity and turbulence</li>
+            <li><strong>Explosion:</strong> Particles scatter outward in random directions</li>
+            <li><strong>Recombination:</strong> Particles reassemble into target image with vacuum-like attraction</li>
+            <li><strong>Reintegration:</strong> Reverse disintegration - particles return to original positions</li>
+            <li><strong>Color Interpolation:</strong> Smooth color blending during transitions</li>
+            <li><strong>Unified Rendering:</strong> Synchronized image opacity and particle dynamics</li>
+        </ul>
+    </div>
+
+    <div class="image-container">
+        <div class="image-wrapper">
+            <img id="image1" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%234facfe' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='60' fill='white' font-family='Arial'%3EImg 1%3C/text%3E%3C/svg%3E" alt="Image 1">
+            <label>Source Image</label>
+        </div>
+        <div class="image-wrapper">
+            <img id="image2" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23f093fb' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='60' fill='white' font-family='Arial'%3EImg 2%3C/text%3E%3C/svg%3E" alt="Image 2">
+            <label>Target Image</label>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="btnTransition" onclick="startTransition()">
+            🚀 Start Hybrid Transition
+        </button>
+        <button id="btnReverse" onclick="reverseTransition()" disabled>
+            ↩️ Reverse Transition
+        </button>
+        <button id="btnReset" onclick="resetDemo()">
+            🔄 Reset Demo
+        </button>
+    </div>
+
+    <div id="status">Status: Ready</div>
+
+    <div class="info-box">
+        <h2>Code Example</h2>
+        <div class="code-example">
+<pre>// Initialize the HybridPageTransitionAPI
+const api = new HybridPageTransitionAPI({
+    particleCount: 2000,
+    explosionDuration: 800,
+    recombinationDuration: 2000,
+    autoOptimize: true
+});
+await api.initialize();
+
+// Start hybrid transition between two images
+await api.transitionImages(sourceImage, targetImage, {
+    staticDisplayDuration: 500,    // Show solid image
+    disintegrationDuration: 1000,  // Dissolve into particles
+    explosionIntensity: 150,        // Particle scatter strength
+    explosionTime: 800,             // Explosion duration
+    recombinationDuration: 2000,    // Reassembly duration
+    blendDuration: 1500,            // Blend to final image
+    finalStaticDuration: 500        // Show final image
+});
+
+// Or use the engine directly for more control
+engine.startHybridTransition(image1, image2, config);</pre>
+        </div>
+    </div>
+
+    <!-- Canvas will be created by the engine -->
+    
+    <script type="module">
+        import { HybridPageTransitionAPI } from './src/HybridPageTransitionAPI.js';
+
+        let api = null;
+        let isTransitioning = false;
+        let currentDirection = 'forward'; // 'forward' or 'reverse'
+
+        // Initialize API
+        async function initAPI() {
+            try {
+                updateStatus('Initializing API...');
+                
+                api = new HybridPageTransitionAPI({
+                    particleCount: 2000,
+                    explosionDuration: 800,
+                    recombinationDuration: 2000,
+                    explosionIntensity: 150,
+                    autoOptimize: true,
+                    debug: true
+                });
+
+                await api.initialize();
+                updateStatus('API initialized successfully!');
+                
+            } catch (error) {
+                console.error('Failed to initialize API:', error);
+                updateStatus('Error: ' + error.message);
+            }
+        }
+
+        // Start transition
+        window.startTransition = async function() {
+            if (isTransitioning) {
+                updateStatus('Transition already in progress...');
+                return;
+            }
+
+            try {
+                isTransitioning = true;
+                currentDirection = 'forward';
+                
+                document.getElementById('btnTransition').disabled = true;
+                document.getElementById('btnReverse').disabled = true;
+
+                const image1 = document.getElementById('image1');
+                const image2 = document.getElementById('image2');
+
+                updateStatus('Phase 1: Displaying static image...');
+                
+                await api.transitionImages(image1, image2, {
+                    staticDisplayDuration: 500,
+                    disintegrationDuration: 1000,
+                    explosionIntensity: 150,
+                    explosionTime: 800,
+                    recombinationDuration: 2000,
+                    recombinationChaos: 0.3,
+                    vacuumStrength: 0.15,
+                    blendDuration: 1500,
+                    particleFadeRate: 0.7,
+                    finalStaticDuration: 500
+                });
+
+                updateStatus('✅ Transition complete!');
+                document.getElementById('btnReverse').disabled = false;
+
+            } catch (error) {
+                console.error('Transition failed:', error);
+                updateStatus('❌ Error: ' + error.message);
+            } finally {
+                isTransitioning = false;
+                document.getElementById('btnTransition').disabled = false;
+            }
+        };
+
+        // Reverse transition
+        window.reverseTransition = async function() {
+            if (isTransitioning) {
+                updateStatus('Transition already in progress...');
+                return;
+            }
+
+            try {
+                isTransitioning = true;
+                currentDirection = 'reverse';
+                
+                document.getElementById('btnTransition').disabled = true;
+                document.getElementById('btnReverse').disabled = true;
+
+                const image1 = document.getElementById('image1');
+                const image2 = document.getElementById('image2');
+
+                updateStatus('Reversing transition...');
+                
+                // Swap images for reverse
+                await api.transitionImages(image2, image1, {
+                    staticDisplayDuration: 500,
+                    disintegrationDuration: 1000,
+                    explosionIntensity: 150,
+                    explosionTime: 800,
+                    recombinationDuration: 2000,
+                    recombinationChaos: 0.3,
+                    vacuumStrength: 0.15,
+                    blendDuration: 1500,
+                    particleFadeRate: 0.7,
+                    finalStaticDuration: 500
+                });
+
+                updateStatus('✅ Reverse transition complete!');
+
+            } catch (error) {
+                console.error('Reverse transition failed:', error);
+                updateStatus('❌ Error: ' + error.message);
+            } finally {
+                isTransitioning = false;
+                document.getElementById('btnTransition').disabled = false;
+                document.getElementById('btnReverse').disabled = false;
+            }
+        };
+
+        // Reset demo
+        window.resetDemo = function() {
+            if (isTransitioning) {
+                updateStatus('Cannot reset during transition');
+                return;
+            }
+
+            if (api && api.canvas) {
+                api.canvas.style.display = 'none';
+            }
+            
+            currentDirection = 'forward';
+            document.getElementById('btnReverse').disabled = true;
+            updateStatus('Demo reset. Ready to start!');
+        };
+
+        function updateStatus(message) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = 'Status: ' + message;
+            console.log('[Demo]', message);
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            initAPI();
+        });
+    </script>
+</body>
+</html>
