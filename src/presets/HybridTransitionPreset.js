@@ -110,6 +110,15 @@ export class HybridTransitionPreset extends Preset {
           particle.targetB = target.b;
           particle.targetSize = target.size;
         }
+        
+        // Store current position as dispersed position for reintegration
+        particle.disperseX = particle.x;
+        particle.disperseY = particle.y;
+        
+        // Store initial alpha for smooth fade-in (preserve current alpha)
+        if (particle.initialAlpha === undefined) {
+          particle.initialAlpha = particle.alpha || 0.3;
+        }
       });
     }
   }
@@ -220,12 +229,20 @@ export class HybridTransitionPreset extends Preset {
           if (particle.targetSize !== undefined) {
             particle.size += (particle.targetSize - particle.size) * colorBlend;
           }
+          
+          // Gradually increase alpha during recombination (fade in from initial alpha)
+          const initialAlpha = particle.initialAlpha || 0.3;
+          const targetAlpha = initialAlpha + (1.0 - initialAlpha) * easedProgress;
+          particle.alpha = particle.alpha + (targetAlpha - particle.alpha) * 0.15;
         } else {
           // Close enough to target, lock in place
           particle.x = particle.targetX;
           particle.y = particle.targetY;
           particle.vx *= 0.9;
           particle.vy *= 0.9;
+          
+          // Ensure full alpha when locked in place
+          particle.alpha = Math.min(1.0, particle.alpha + 0.05);
         }
       }
     });

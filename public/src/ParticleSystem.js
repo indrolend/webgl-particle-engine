@@ -23,6 +23,12 @@ export class ParticleSystem {
     this.disintegrationDuration = 0;
     this.disintegrationStartTime = 0;
     
+    // Reintegration state (reverse of disintegration)
+    this.isReintegrating = false;
+    this.reintegrationProgress = 0;
+    this.reintegrationDuration = 0;
+    this.reintegrationStartTime = 0;
+    
     // Transition and animation constants for image morphing optimization
     this.INTERPOLATION_FACTOR = 0.15;        // Enhanced from 0.1 for smoother convergence
     this.DRIFT_FACTOR = 0.1;                 // Reduced drift to maintain image structure
@@ -445,6 +451,78 @@ export class ParticleSystem {
   }
 
   /**
+   * Start the reintegration effect from dispersed particles back to target image (Image 2)
+   * This is the reverse of disintegration - particles move from dispersed positions
+   * back to their target positions (forming Image 2) with alpha fade-in.
+   * 
+   * Note: This is primarily used during the recombination phase of hybrid transitions
+   * where particles reform to create the target image. Alpha fade-in is handled by
+   * the HybridTransitionPreset to avoid conflicts.
+   * 
+   * @param {number} duration - Duration of the reintegration in milliseconds
+   */
+  startReintegration(duration = 2000) {
+    console.log(`[ParticleSystem] Starting reintegration effect (${duration}ms)...`);
+    
+    this.isReintegrating = true;
+    this.reintegrationProgress = 0;
+    this.reintegrationDuration = duration;
+    this.reintegrationStartTime = Date.now();
+    
+    // Store current positions as disperse positions for interpolation
+    for (let i = 0; i < this.particles.length; i++) {
+      const particle = this.particles[i];
+      
+      // Store current position as the dispersed position (starting point)
+      if (particle.disperseX === undefined) {
+        particle.disperseX = particle.x;
+        particle.disperseY = particle.y;
+      }
+      
+      // Ensure we have target positions (should be set by transitionToImage)
+      if (particle.targetX === undefined) {
+        particle.targetX = particle.x;
+        particle.targetY = particle.y;
+      }
+      
+      // Note: Alpha is managed by HybridTransitionPreset during recombination
+      // to avoid conflicts and ensure smooth fade-in coordinated with the preset phases
+    }
+    
+    console.log('[ParticleSystem] Reintegration targets set for particle recombination');
+  }
+
+  /**
+   * Stop the reintegration effect
+   */
+  stopReintegration() {
+    this.isReintegrating = false;
+    this.reintegrationProgress = 0;
+    console.log('[ParticleSystem] Reintegration stopped');
+  }
+
+  /**
+   * Get the current reintegration progress (0.0 to 1.0)
+   */
+  getReintegrationProgress() {
+    return this.reintegrationProgress;
+  }
+
+  /**
+   * Set reintegration progress manually (0.0 to 1.0)
+   * Useful for external control
+   */
+  setReintegrationProgress(progress) {
+    this.reintegrationProgress = Math.max(0, Math.min(1, progress));
+    
+    if (progress > 0 && !this.isReintegrating) {
+      this.isReintegrating = true;
+    } else if (progress >= 1) {
+      this.isReintegrating = false;
+    }
+  }
+
+  /**
    * Get the current disintegration progress (0.0 to 1.0)
    */
   getDisintegrationProgress() {
@@ -569,6 +647,17 @@ export class ParticleSystem {
       }
     }
     
+    // Update reintegration progress
+    if (this.isReintegrating && this.reintegrationDuration > 0) {
+      const elapsed = Date.now() - this.reintegrationStartTime;
+      this.reintegrationProgress = Math.min(elapsed / this.reintegrationDuration, 1);
+      
+      if (this.reintegrationProgress >= 1) {
+        this.isReintegrating = false;
+        console.log('[ParticleSystem] Reintegration complete');
+      }
+    }
+    
     // Update transition progress
     if (this.isTransitioning) {
       const elapsed = Date.now() - this.transitionStartTime;
@@ -584,8 +673,35 @@ export class ParticleSystem {
     for (let i = 0; i < this.particles.length; i++) {
       const particle = this.particles[i];
       
-      // Handle disintegration effect
-      if (this.disintegrationProgress > 0) {
+      // Handle reintegration effect (reverse of disintegration)
+      if (this.reintegrationProgress > 0) {
+        const t = this.easeInOutCubic(this.reintegrationProgress);
+        
+        // Interpolate position from dispersed to target (reverse direction)
+        if (particle.disperseX !== undefined && particle.targetX !== undefined) {
+          particle.x = particle.disperseX + (particle.targetX - particle.disperseX) * t;
+          particle.y = particle.disperseY + (particle.targetY - particle.disperseY) * t;
+          
+          // Interpolate colors to target colors with consistent factor
+          // Use a slower factor (0.15) to create smooth color blending that complements position movement
+          if (particle.targetR !== undefined) {
+            const colorFactor = t * 0.15;
+            particle.r = particle.r + (particle.targetR - particle.r) * colorFactor;
+            particle.g = particle.g + (particle.targetG - particle.g) * colorFactor;
+            particle.b = particle.b + (particle.targetB - particle.b) * colorFactor;
+          }
+          
+          // Size transition if target size is defined
+          if (particle.targetSize !== undefined) {
+            const sizeFactor = t * 0.15;
+            particle.size = particle.size + (particle.targetSize - particle.size) * sizeFactor;
+          }
+          
+          // Note: Alpha is managed by HybridTransitionPreset during recombination phase
+          // to coordinate with the preset's phase timing and avoid conflicts
+        }
+      } else if (this.disintegrationProgress > 0) {
+        // Handle disintegration effect
         const t = this.easeInOutCubic(this.disintegrationProgress);
         
         // Interpolate position from initial to dispersed
