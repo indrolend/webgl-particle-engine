@@ -67,24 +67,6 @@ export class HybridEngine extends ParticleEngine {
       sourceImage: null
     };
     
-    // Create overlay canvas for static image display
-    this.staticImageCanvas = document.createElement('canvas');
-    this.staticImageCanvas.style.position = 'absolute';
-    this.staticImageCanvas.style.pointerEvents = 'none';
-    this.staticImageCanvas.style.display = 'none';
-    
-    // Position overlay canvas on top of main canvas
-    if (this.canvas.parentElement) {
-      // Match main canvas dimensions and position
-      this.staticImageCanvas.width = this.canvas.width;
-      this.staticImageCanvas.height = this.canvas.height;
-      this.staticImageCanvas.style.width = this.canvas.clientWidth + 'px';
-      this.staticImageCanvas.style.height = this.canvas.clientHeight + 'px';
-      this.staticImageCanvas.style.left = this.canvas.offsetLeft + 'px';
-      this.staticImageCanvas.style.top = this.canvas.offsetTop + 'px';
-      this.canvas.parentElement.appendChild(this.staticImageCanvas);
-    }
-    
     // Reusable Map for storing original alpha values (optimization)
     this.originalAlphasCache = new Map();
     
@@ -315,9 +297,9 @@ export class HybridEngine extends ParticleEngine {
    * Hybrid rendering combining particles and triangulation
    */
   renderHybrid() {
-    // If displaying static image, render it and return
+    // If displaying static image, render it directly to WebGL canvas
     if (this.staticImageState.isDisplaying && this.staticImageState.image) {
-      this.renderStaticImage(this.staticImageState.image);
+      this.renderStaticImageToWebGL(this.staticImageState.image);
       return;
     }
     
@@ -341,22 +323,8 @@ export class HybridEngine extends ParticleEngine {
       if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
         // Display target image as solid static image
         if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
-          // Render to both overlay (for visual display) and WebGL canvas (for recording)
-          this.renderStaticImage(this.hybridTransitionState.targetImage);
-          
-          // Also render to WebGL canvas for video recording
-          // Load the target image texture if not already loaded
-          if (!this.renderer.imageLoaded || this.lastRenderedStaticImage !== this.hybridTransitionState.targetImage) {
-            this.renderer.loadImageTexture(this.hybridTransitionState.targetImage, this.particleSystem.config);
-            this.lastRenderedStaticImage = this.hybridTransitionState.targetImage;
-          }
-          
-          // Clear the WebGL canvas and render the image at full opacity
-          const gl = this.renderer.gl;
-          gl.clearColor(1.0, 1.0, 1.0, 1.0); // White background
-          gl.clear(gl.COLOR_BUFFER_BIT);
-          this.renderer.renderImage(1.0);
-          
+          // Render directly to WebGL canvas
+          this.renderStaticImageToWebGL(this.hybridTransitionState.targetImage);
           return;
         }
       }
@@ -433,74 +401,30 @@ export class HybridEngine extends ParticleEngine {
   }
 
   /**
-   * Render a static image on an overlay canvas (for pre-explosion display)
-   * Uses a 2D canvas overlay to display the image clearly and reliably
+   * Render a static image directly to the WebGL canvas
    * @param {HTMLImageElement} image - The image to render
    */
-  renderStaticImage(image) {
-    if (!this.staticImageCanvas) {
-      return;
+  renderStaticImageToWebGL(image) {
+    // Load the image texture if not already loaded or if it's a different image
+    if (!this.renderer.imageLoaded || this.lastRenderedStaticImage !== image) {
+      this.renderer.loadImageTexture(image, this.particleSystem.config);
+      this.lastRenderedStaticImage = image;
     }
     
-    // Update overlay canvas dimensions to match main canvas
-    this.staticImageCanvas.width = this.canvas.width;
-    this.staticImageCanvas.height = this.canvas.height;
-    this.staticImageCanvas.style.width = this.canvas.clientWidth + 'px';
-    this.staticImageCanvas.style.height = this.canvas.clientHeight + 'px';
-    
-    // Show the overlay canvas
-    this.staticImageCanvas.style.display = 'block';
-    
-    // Get 2D context from overlay canvas
-    const ctx = this.staticImageCanvas.getContext('2d');
-    
-    // Clear the overlay canvas completely (transparent background, no black fill)
-    ctx.clearRect(0, 0, this.staticImageCanvas.width, this.staticImageCanvas.height);
-    
-    // Calculate grid dimensions matching particle system logic
-    // This ensures the static image is the same size as the particulated image
-    const maxParticles = this.particleSystem.config.particleCount;
-    const aspectRatio = image.width / image.height;
-    let gridWidth, gridHeight;
-    
-    if (aspectRatio >= 1) {
-      gridWidth = Math.floor(Math.sqrt(maxParticles * aspectRatio));
-      gridHeight = Math.floor(gridWidth / aspectRatio);
-    } else {
-      gridHeight = Math.floor(Math.sqrt(maxParticles / aspectRatio));
-      gridWidth = Math.floor(gridHeight * aspectRatio);
-    }
-    
-    // Apply same constraints as ParticleSystem
-    const MIN_GRID_DIMENSION = 10;
-    const MAX_GRID_DIMENSION = 200;
-    gridWidth = Math.max(MIN_GRID_DIMENSION, Math.min(gridWidth, MAX_GRID_DIMENSION));
-    gridHeight = Math.max(MIN_GRID_DIMENSION, Math.min(gridHeight, MAX_GRID_DIMENSION));
-    
-    // Calculate scaling to match particle system (using grid dimensions, not original image dimensions)
-    const scaleX = this.staticImageCanvas.width / gridWidth;
-    const scaleY = this.staticImageCanvas.height / gridHeight;
-    const IMAGE_PADDING_FACTOR = 0.9; // Match ParticleSystem
-    const scale = Math.min(scaleX, scaleY) * IMAGE_PADDING_FACTOR;
-    
-    const scaledWidth = gridWidth * scale;
-    const scaledHeight = gridHeight * scale;
-    
-    // Center the image (matching particle system positioning)
-    const offsetX = (this.staticImageCanvas.width - scaledWidth) / 2;
-    const offsetY = (this.staticImageCanvas.height - scaledHeight) / 2;
-    
-    // Draw the centered image
-    ctx.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight);
+    // Clear the WebGL canvas and render the image at full opacity
+    const gl = this.renderer.gl;
+    gl.clearColor(1.0, 1.0, 1.0, 1.0); // White background
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    this.renderer.renderImage(1.0);
   }
   
   /**
-   * Hide the static image overlay canvas
+   * Hide the static image (no longer needed as we render directly to WebGL)
+   * Keeping this method for backwards compatibility
    */
   hideStaticImage() {
-    if (this.staticImageCanvas) {
-      this.staticImageCanvas.style.display = 'none';
-    }
+    // Method retained for compatibility but no longer does anything
+    // Static images are now rendered directly to WebGL canvas
   }
 
   /**

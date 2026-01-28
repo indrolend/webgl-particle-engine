@@ -745,7 +745,14 @@
                 document.body.removeChild(a);
             }, 100);
             
-            updateStatus('Video downloaded!', 'success');
+            updateStatus('Video downloaded! You can test or record another video.', 'success');
+            
+            // Reset state to allow creating another video
+            // Keep the videoBlob for potential re-download, but enable other actions
+            testBtn.disabled = false;
+            startBtn.disabled = false;
+            resetBtn.disabled = false;
+            // downloadBtn stays enabled in case user wants to download again
         }
         
         // Test transition without recording
@@ -792,23 +799,11 @@
                 // Stop and cleanup engine if exists
                 if (engine) {
                     engine.stop();
-                    
-                    // Hide the static image overlay canvas
-                    if (engine.staticImageCanvas) {
-                        engine.staticImageCanvas.style.display = 'none';
-                        const overlayCtx = engine.staticImageCanvas.getContext('2d');
-                        if (overlayCtx) {
-                            overlayCtx.clearRect(0, 0, engine.staticImageCanvas.width, engine.staticImageCanvas.height);
-                        }
-                    }
-                    
                     engine = null;
                 }
                 
-                // Clear the WebGL canvas by creating a temporary 2D canvas to copy white to it
-                // We can't use getContext('2d') on a WebGL canvas, so we use the renderer
+                // Clear the WebGL canvas
                 if (canvas) {
-                    // Get WebGL context and clear it
                     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
                     if (gl) {
                         gl.clearColor(1.0, 1.0, 1.0, 1.0); // White
