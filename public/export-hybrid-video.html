@@ -792,13 +792,29 @@
                 // Stop and cleanup engine if exists
                 if (engine) {
                     engine.stop();
+                    
+                    // Hide the static image overlay canvas
+                    if (engine.staticImageCanvas) {
+                        engine.staticImageCanvas.style.display = 'none';
+                        const overlayCtx = engine.staticImageCanvas.getContext('2d');
+                        if (overlayCtx) {
+                            overlayCtx.clearRect(0, 0, engine.staticImageCanvas.width, engine.staticImageCanvas.height);
+                        }
+                    }
+                    
                     engine = null;
                 }
                 
-                // Clear canvas
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                // Clear the WebGL canvas by creating a temporary 2D canvas to copy white to it
+                // We can't use getContext('2d') on a WebGL canvas, so we use the renderer
+                if (canvas) {
+                    // Get WebGL context and clear it
+                    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                    if (gl) {
+                        gl.clearColor(1.0, 1.0, 1.0, 1.0); // White
+                        gl.clear(gl.COLOR_BUFFER_BIT);
+                    }
+                }
                 
                 // Clear any video blob
                 videoBlob = null;

@@ -88,6 +88,9 @@ export class HybridEngine extends ParticleEngine {
     // Reusable Map for storing original alpha values (optimization)
     this.originalAlphasCache = new Map();
     
+    // Track last rendered static image to avoid reloading texture
+    this.lastRenderedStaticImage = null;
+    
     if (this.triangulationConfig.enabled) {
       this.initializeTriangulation();
     }
@@ -338,7 +341,22 @@ export class HybridEngine extends ParticleEngine {
       if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
         // Display target image as solid static image
         if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
+          // Render to both overlay (for visual display) and WebGL canvas (for recording)
           this.renderStaticImage(this.hybridTransitionState.targetImage);
+          
+          // Also render to WebGL canvas for video recording
+          // Load the target image texture if not already loaded
+          if (!this.renderer.imageLoaded || this.lastRenderedStaticImage !== this.hybridTransitionState.targetImage) {
+            this.renderer.loadImageTexture(this.hybridTransitionState.targetImage, this.particleSystem.config);
+            this.lastRenderedStaticImage = this.hybridTransitionState.targetImage;
+          }
+          
+          // Clear the WebGL canvas and render the image at full opacity
+          const gl = this.renderer.gl;
+          gl.clearColor(1.0, 1.0, 1.0, 1.0); // White background
+          gl.clear(gl.COLOR_BUFFER_BIT);
+          this.renderer.renderImage(1.0);
+          
           return;
         }
       }
