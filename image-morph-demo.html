@@ -409,7 +409,7 @@
     <div class="container">
         <div class="canvas-section">
             <h1>🎨 WebGL Particle Engine</h1>
-            <p class="subtitle">Advanced particle & triangulation morphing with hybrid rendering</p>
+            <p class="subtitle">Advanced particle morphing with hybrid rendering</p>
             <canvas id="canvas" width="1200" height="800"></canvas>
         </div>
 
@@ -500,13 +500,7 @@
                     </div>
                 </div>
 
-                <div class="control-group">
-                    <h3>🎨 Render Mode</h3>
-                    <div class="mode-buttons">
-                        <button class="mode-btn" id="modeParticles">Particles</button>
-                        <button class="mode-btn" id="modeTriangulation">Triangulation</button>
-                    </div>
-                </div>
+
 
                 <div class="control-group">
                     <button class="mode-btn" id="modeHybrid" disabled style="width: 100%; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
@@ -520,38 +514,7 @@
                     </button>
                 </div>
 
-                <div class="control-group">
-                    <h3>🔺 Triangulation</h3>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>Grid Size:</span>
-                            <span class="slider-value" id="gridSizeValue">8</span>
-                        </div>
-                        <input type="range" id="gridSize" min="4" max="16" value="8">
-                    </div>
 
-                    <div class="slider-label">
-                        <span>Method:</span>
-                        <span class="slider-value" id="methodValue">Grid</span>
-                    </div>
-                    <select id="keyPointMethod">
-                        <option value="grid">Grid (Uniform)</option>
-                        <option value="feature">Feature Detection</option>
-                    </select>
-                </div>
-
-                <div class="control-group">
-                    <h3>🎭 Blend Settings</h3>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>Particle Opacity:</span>
-                            <span class="slider-value" id="particleOpacityValue">50%</span>
-                        </div>
-                        <input type="range" id="particleOpacity" min="0" max="100" value="50">
-                    </div>
-                </div>
             </div>
 
             <!-- Patterns Tab -->
@@ -621,10 +584,7 @@
                             <span class="info-label">Particles:</span>
                             <span class="info-value" id="particleCount">0</span>
                         </div>
-                        <div class="info-row">
-                            <span class="info-label">Triangles:</span>
-                            <span class="info-value" id="triangleCount">0</span>
-                        </div>
+
                         <div class="info-row">
                             <span class="info-label">Mode:</span>
                             <span class="info-value" id="currentMode">Hybrid</span>
@@ -644,10 +604,6 @@
         window.engine = new HybridEngine(canvas, {
             particleCount: 2000,
             speed: 1.0,
-            enableTriangulation: true,
-            triangulationMode: 'hybrid',
-            keyPointMethod: 'grid',
-            gridSize: 8,
             particleOpacity: 0.5,
             triangleOpacity: 0.5
         });
@@ -810,26 +766,7 @@
         });
 
         // Render mode buttons
-        const modeParticles = document.getElementById('modeParticles');
-        const modeTriangulation = document.getElementById('modeTriangulation');
         const modeHybrid = document.getElementById('modeHybrid');
-
-        function setRenderMode(mode) {
-            if (!engine) return;
-            
-            engine.setRenderMode(mode);
-            
-            // Update active button
-            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            if (mode === 'particles') modeParticles.classList.add('active');
-            if (mode === 'triangulation') modeTriangulation.classList.add('active');
-            if (mode === 'hybrid') modeHybrid.classList.add('active');
-            
-            showStatus(`Render mode: ${mode}`, 'info');
-        }
-
-        modeParticles.addEventListener('click', () => setRenderMode('particles'));
-        modeTriangulation.addEventListener('click', () => setRenderMode('triangulation'));
         
         // Hybrid Transition button - triggers multi-phase transition (disintegration → explosion → recombination → blend)
         modeHybrid.addEventListener('click', () => {
@@ -855,7 +792,6 @@
             }
             
             // Start the hybrid transition (will show static image first, then atomize)
-            engine.setRenderMode('hybrid');
             engine.startHybridTransition(image1, image2, config);
             currentImageIndex = 1;
             
@@ -887,51 +823,13 @@
             }
             
             // Reverse the hybrid transition (image 2 → image 1)
-            engine.setRenderMode('hybrid');
             engine.reverseHybridTransition(config);
             currentImageIndex = 0;
             
             showStatus('🔄 Reversing: Static → Disintegration → Explosion → Recombination → Blend → Static', 'success');
         });
 
-        // Triangulation controls
-        const gridSizeInput = document.getElementById('gridSize');
-        const gridSizeValue = document.getElementById('gridSizeValue');
-        const keyPointMethodSelect = document.getElementById('keyPointMethod');
-        const methodValue = document.getElementById('methodValue');
 
-        gridSizeInput.addEventListener('input', () => {
-            const value = parseInt(gridSizeInput.value);
-            gridSizeValue.textContent = value;
-            
-            if (engine) {
-                engine.updateTriangulationConfig({ gridSize: value });
-                showStatus('Grid size updated. Re-morph to see changes.', 'info');
-            }
-        });
-
-        keyPointMethodSelect.addEventListener('change', () => {
-            const method = keyPointMethodSelect.value;
-            methodValue.textContent = method.charAt(0).toUpperCase() + method.slice(1);
-            
-            if (engine) {
-                engine.updateTriangulationConfig({ keyPointMethod: method });
-                showStatus(`Key point method: ${method}`, 'info');
-            }
-        });
-
-        // Blend controls
-        const particleOpacityInput = document.getElementById('particleOpacity');
-        const particleOpacityValue = document.getElementById('particleOpacityValue');
-
-        particleOpacityInput.addEventListener('input', () => {
-            const value = parseInt(particleOpacityInput.value);
-            particleOpacityValue.textContent = value + '%';
-            
-            if (engine) {
-                engine.updateTriangulationConfig({ particleOpacity: value / 100 });
-            }
-        });
 
         // Pattern functions
         window.initPattern = function(pattern) {
@@ -1004,13 +902,7 @@
             document.getElementById('fpsValue').textContent = engine.getFPS();
             document.getElementById('particleCount').textContent = engine.getParticleCount();
             
-            const config = engine.getTriangulationConfig();
-            const morphData = engine.triangulationMorph ? 
-                engine.triangulationMorph.getTriangulationData() : null;
-            document.getElementById('triangleCount').textContent = morphData ? morphData.triangles.length : 0;
-            
-            document.getElementById('currentMode').textContent = 
-                config.mode.charAt(0).toUpperCase() + config.mode.slice(1);
+            document.getElementById('currentMode').textContent = 'Particles';
             
             requestAnimationFrame(updateInfo);
         }
