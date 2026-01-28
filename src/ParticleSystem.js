@@ -1,6 +1,15 @@
 /**
  * Particle System with Transition Support
  * Manages particles and their transitions between states
+ * 
+ * Key Features:
+ * - Image-to-particle disintegration with turbulence and velocity
+ * - Particle-to-image reintegration (reverse disintegration)
+ * - Smooth transitions between formation patterns (grid, circle, spiral, random)
+ * - Image morphing with color and position interpolation
+ * - Easing functions for natural animation (easeInOutCubic)
+ * - Dynamic particle size and opacity control
+ * - Optimized image extraction and particle mapping
  */
 export class ParticleSystem {
   constructor(config = {}) {
@@ -19,6 +28,7 @@ export class ParticleSystem {
     
     // Smooth image-to-particle transition state
     this.isDisintegrating = false;
+    this.isReintegrating = false;  // Track if we're reintegrating (reverse of disintegration)
     this.disintegrationProgress = 0;
     this.disintegrationDuration = 0;
     this.disintegrationStartTime = 0;
@@ -440,8 +450,45 @@ export class ParticleSystem {
    */
   stopDisintegration() {
     this.isDisintegrating = false;
+    this.isReintegrating = false;
     this.disintegrationProgress = 0;
     console.log('[ParticleSystem] Disintegration stopped');
+  }
+
+  /**
+   * Start the reintegration effect from particles back to solid image
+   * This reverses the disintegration process, bringing particles back to their original positions
+   * 
+   * Note: Stores current particle positions as dispersion targets before reintegrating.
+   * This ensures particles smoothly return from wherever they currently are.
+   * 
+   * @param {number} duration - Duration of the reintegration in milliseconds
+   */
+  startReintegration(duration = 2000) {
+    console.log(`[ParticleSystem] Starting reintegration effect (${duration}ms)...`);
+    
+    // If particles have initial positions stored, we can reintegrate
+    if (this.particles.length > 0 && this.particles[0].initialX !== undefined) {
+      this.isDisintegrating = true; // Use same mechanism but in reverse
+      this.disintegrationDuration = duration;
+      this.disintegrationStartTime = Date.now();
+      this.disintegrationProgress = 1.0; // Start at fully dispersed (1.0) and go to 0
+      
+      // Store current positions as dispersion targets for smooth animation
+      for (let i = 0; i < this.particles.length; i++) {
+        const particle = this.particles[i];
+        particle.disperseX = particle.x;
+        particle.disperseY = particle.y;
+        particle.disperseSize = particle.size;
+      }
+      
+      // Mark this as a reverse transition
+      this.isReintegrating = true;
+      
+      console.log('[ParticleSystem] Reintegration: Stored current positions, returning to initial positions');
+    } else {
+      console.warn('[ParticleSystem] Cannot reintegrate - no initial positions stored. Call startDisintegration first.');
+    }
   }
 
   /**
@@ -558,14 +605,27 @@ export class ParticleSystem {
   }
 
   update(deltaTime) {
-    // Update disintegration progress
+    // Update disintegration/reintegration progress
     if (this.isDisintegrating && this.disintegrationDuration > 0) {
       const elapsed = Date.now() - this.disintegrationStartTime;
-      this.disintegrationProgress = Math.min(elapsed / this.disintegrationDuration, 1);
       
-      if (this.disintegrationProgress >= 1) {
-        this.isDisintegrating = false;
-        console.log('[ParticleSystem] Disintegration complete');
+      if (this.isReintegrating) {
+        // For reintegration, progress goes from 1.0 down to 0.0
+        this.disintegrationProgress = Math.max(1.0 - (elapsed / this.disintegrationDuration), 0);
+        
+        if (this.disintegrationProgress <= 0) {
+          this.isDisintegrating = false;
+          this.isReintegrating = false;
+          console.log('[ParticleSystem] Reintegration complete');
+        }
+      } else {
+        // For disintegration, progress goes from 0.0 up to 1.0
+        this.disintegrationProgress = Math.min(elapsed / this.disintegrationDuration, 1);
+        
+        if (this.disintegrationProgress >= 1) {
+          this.isDisintegrating = false;
+          console.log('[ParticleSystem] Disintegration complete');
+        }
       }
     }
     

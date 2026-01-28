@@ -463,11 +463,43 @@ export class HybridEngine extends ParticleEngine {
   }
 
   /**
-   * Start hybrid transition with all phases:
-   * 1. Static display → 2. Disintegration → 3. Explosion → 4. Recombination → 5. Blend
+   * Start hybrid transition with all phases - implements seamless transitions between solid images and particles
+   * 
+   * This method orchestrates the complete hybrid particle transition pipeline:
+   * 1. **Static Display**: Shows source image as solid for brief period
+   * 2. **Disintegration**: Image dissolves into particles with velocity and turbulence
+   * 3. **Explosion**: Particles scatter outward in random directions
+   * 4. **Recombination**: Particles reassemble into target image with vacuum-like attraction
+   * 5. **Blend**: Particles fade while triangulation rendering increases for seamless final image
+   * 6. **Final Static**: Target image displayed as solid
+   * 
    * @param {HTMLImageElement} sourceImage - Source image (displayed as static first)
-   * @param {HTMLImageElement} targetImage - Target image  
-   * @param {Object} config - Transition configuration
+   * @param {HTMLImageElement} targetImage - Target image to transition to
+   * @param {Object} config - Transition configuration with following options:
+   * @param {number} [config.staticDisplayDuration=500] - Duration to display source image (ms)
+   * @param {number} [config.disintegrationDuration=1000] - Duration of image-to-particle disintegration (ms)
+   * @param {number} [config.explosionIntensity=150] - Strength of particle explosion (50-300)
+   * @param {number} [config.explosionTime=800] - Duration of explosion phase (ms)
+   * @param {number} [config.recombinationDuration=2000] - Duration of particle recombination (ms)
+   * @param {number} [config.recombinationChaos=0.3] - Amount of chaotic motion during recombination (0-1)
+   * @param {number} [config.vacuumStrength=0.15] - Strength of vacuum attraction to target positions
+   * @param {number} [config.blendDuration=1500] - Duration of particle-to-triangulation blend (ms)
+   * @param {number} [config.particleFadeRate=0.7] - Rate at which particles fade during blend (0-1)
+   * @param {number} [config.finalStaticDuration=500] - Duration to display final static image (ms)
+   * 
+   * @example
+   * // Basic usage with defaults
+   * engine.startHybridTransition(image1, image2);
+   * 
+   * @example
+   * // Custom configuration
+   * engine.startHybridTransition(image1, image2, {
+   *   staticDisplayDuration: 700,
+   *   disintegrationDuration: 1200,
+   *   explosionIntensity: 200,
+   *   recombinationDuration: 2500,
+   *   blendDuration: 1800
+   * });
    */
   startHybridTransition(sourceImage, targetImage, config = {}) {
     console.log('[HybridEngine] Starting hybrid transition with disintegration effect...');

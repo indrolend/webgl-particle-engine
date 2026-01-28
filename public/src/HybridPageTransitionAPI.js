@@ -1,12 +1,40 @@
 /**
  * HybridPageTransitionAPI - High-level API for page transitions using WebGL particles
  * 
+ * This API provides a complete hybrid particle transition system that seamlessly blends
+ * solid images with particle effects for dynamic page transitions.
+ * 
  * Features:
+ * - **Image-to-Particle Disintegration**: Converts images into dense particle representations
+ *   with gradual dispersion using velocity and turbulence effects
+ * - **Particle Dynamics**: Applies velocities, randomness, and turbulence for natural motion
+ *   with runtime easing functions (easeInOutCubic) for smooth animations
+ * - **Particle-to-Image Reconstruction**: Reverses disintegration with gradual fade-in and
+ *   position reassignment matching the target image
+ * - **Color Interpolation**: Seamlessly blends particle colors to match target image colors
+ * - **Unified Transition Logic**: Synchronizes image fades and particle opacity during transitions
+ * - **Hybrid Rendering**: Renders image and particle layers cohesively with dynamic opacity blending
  * - Captures DOM states using html2canvas
  * - Manages particle count dynamically based on device performance
- * - Handles transition phases: disintegrate → explode → recombine
+ * - Handles transition phases: static display → disintegrate → explode → recombine → blend
  * - Provides debug controls and performance optimization
  * - Includes WebGL fallback support (CSS transitions)
+ * 
+ * @example
+ * // Initialize the API
+ * const api = new HybridPageTransitionAPI({
+ *   particleCount: 2000,
+ *   explosionDuration: 800,
+ *   recombinationDuration: 2000
+ * });
+ * await api.initialize();
+ * 
+ * // Transition between images
+ * await api.transitionImages(currentImage, nextImage, {
+ *   staticDisplayDuration: 500,
+ *   disintegrationDuration: 1000,
+ *   explosionIntensity: 150
+ * });
  */
 
 import { HybridEngine } from './HybridEngine.js';
