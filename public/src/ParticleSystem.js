@@ -184,26 +184,27 @@ export class ParticleSystem {
   }
 
   /**
-   * Extract pixel data from an image with optimized sampling for particle representation
+   * Extract pixel data from an image with fixed grid sampling for particle representation
    * 
-   * This method intelligently samples images to create high-quality particle formations:
+   * This method uses a fixed grid resolution for consistent particle count and performance:
+   * - Uses fixed grid resolution instead of variable sampling
    * - Maintains aspect ratio for accurate image representation
-   * - Optimizes grid size based on particle count for efficiency
-   * - Filters low-opacity pixels to focus on visible content
+   * - Filters low-opacity pixels to reduce unnecessary particles
+   * - Dynamically calculates particle size to fill gaps in sparse grids
    * - Preserves color fidelity for seamless transitions
    * 
    * @param {HTMLImageElement} image - The source image element
-   * @param {number} maxParticles - Maximum number of particles to create
-   * @returns {Object} Contains pixels array and image dimensions
+   * @param {number} maxParticles - Maximum number of particles (used to determine grid resolution)
+   * @returns {Object} Contains pixels array, image dimensions, and calculated particle size
    */
   extractImageData(image, maxParticles = 5000) {
-    console.log('[ParticleSystem] Extracting image data for particle mapping...');
+    console.log('[ParticleSystem] Extracting image data with fixed grid sampling...');
     
     // Create offscreen canvas for image processing
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // Calculate optimal grid dimensions to match particle count while maintaining aspect ratio
+    // Calculate fixed grid dimensions based on target particle count while maintaining aspect ratio
     const aspectRatio = image.width / image.height;
     let gridWidth, gridHeight;
     
@@ -235,7 +236,7 @@ export class ParticleSystem {
     
     const pixels = [];
     
-    // Sample pixels from the grid, preserving color and position data
+    // Sample pixels from the fixed grid, filtering by opacity
     for (let y = 0; y < gridHeight; y++) {
       for (let x = 0; x < gridWidth; x++) {
         const idx = (y * gridWidth + x) * 4;
@@ -244,7 +245,7 @@ export class ParticleSystem {
         const b = data[idx + 2] / 255;
         const a = data[idx + 3] / 255;
         
-        // Only include pixels with sufficient opacity for visible representation
+        // Filter out low-opacity pixels to reduce unnecessary particles
         if (a > this.MIN_OPACITY_THRESHOLD) {
           pixels.push({
             x: x,
@@ -258,15 +259,32 @@ export class ParticleSystem {
       }
     }
     
-    console.log(`[ParticleSystem] Extracted ${pixels.length} visible pixels from ${gridWidth}x${gridHeight} grid`);
+    // Calculate particle size based on grid resolution and canvas dimensions
+    // Larger particles fill gaps when grid is sparse
+    const scaleX = this.width / gridWidth;
+    const scaleY = this.height / gridHeight;
+    const scale = Math.min(scaleX, scaleY) * this.IMAGE_PADDING_FACTOR;
+    
+    // Dynamic particle size calculation:
+    // - Base size is proportional to grid cell size (scale)
+    // - Increased multiplier (1.2) ensures dense coverage with overlap
+    // - Clamp between min/max for consistency
+    const calculatedParticleSize = Math.max(
+      this.config.minSize, 
+      Math.min(this.config.maxSize, scale * 1.2)
+    );
+    
+    console.log(`[ParticleSystem] Fixed grid: ${gridWidth}x${gridHeight}, Extracted ${pixels.length} visible pixels`);
     console.log(`[ParticleSystem] Original image: ${image.width}x${image.height}, Aspect ratio: ${aspectRatio.toFixed(2)}`);
+    console.log(`[ParticleSystem] Calculated particle size: ${calculatedParticleSize.toFixed(2)} (scale: ${scale.toFixed(2)})`);
     
     return {
       pixels: pixels,
       gridWidth: gridWidth,
       gridHeight: gridHeight,
       originalWidth: image.width,
-      originalHeight: image.height
+      originalHeight: image.height,
+      particleSize: calculatedParticleSize  // Add calculated size to return value
     };
   }
 
@@ -275,6 +293,7 @@ export class ParticleSystem {
    * 
    * This creates the initial particle formation that represents the source image.
    * Particles are positioned and colored to accurately represent the image pixels.
+   * Uses dynamically calculated particle size from extractImageData for dense coverage.
    * 
    * @param {HTMLImageElement} image - The source image element
    */
@@ -295,9 +314,9 @@ export class ParticleSystem {
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
     
-    // Calculate particle size proportional to the image scale
-    // Smaller images get smaller particles, larger images get larger particles
-    const particleSize = Math.max(this.config.minSize, Math.min(this.config.maxSize, scale * 0.8));
+    // Use dynamically calculated particle size from extractImageData
+    // This ensures dense coverage with minimal sparsity
+    const particleSize = imageData.particleSize;
     
     // Create particles with minimal initial velocity for stable image display
     for (let i = 0; i < pixels.length; i++) {
@@ -330,7 +349,7 @@ export class ParticleSystem {
    * - Interpolating both position and color
    * - Handling particle count mismatches gracefully
    * - Maintaining aspect ratio and centering
-   * - Adjusting particle sizes proportionally to image scale
+   * - Adjusting particle sizes proportionally to image scale using calculated size
    * 
    * @param {HTMLImageElement} image - The target image to morph into
    * @param {number} duration - Transition duration in milliseconds (default: 2000ms)
@@ -352,8 +371,8 @@ export class ParticleSystem {
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
     
-    // Calculate particle size proportional to the target image scale
-    const targetParticleSize = Math.max(this.config.minSize, Math.min(this.config.maxSize, scale * 0.8));
+    // Use dynamically calculated particle size from extractImageData
+    const targetParticleSize = imageData.particleSize;
     
     // Handle particle-to-pixel mapping for seamless transitions
     if (this.particles.length > pixels.length) {
@@ -398,6 +417,14 @@ export class ParticleSystem {
         particle.targetX = x;
         particle.targetY = y;
         particle.targetR = pixel.r;
+        particle.targetG = pixel.g;
+        particle.targetB = pixel.b;
+        particle.targetSize = targetParticleSize;
+      }
+    }
+    
+    console.log(`[ParticleSystem] Target positions, colors, and sizes set for seamless morphing (size: ${targetParticleSize.toFixed(2)})`);
+  }
         particle.targetG = pixel.g;
         particle.targetB = pixel.b;
         particle.targetSize = targetParticleSize;
@@ -805,9 +832,10 @@ export class ParticleSystem {
    * This helper method transforms extracted image pixel data into a format
    * suitable for the preset system's transition mechanisms. It maintains
    * aspect ratio and proper centering.
+   * Uses dynamically calculated particle size for dense coverage.
    * 
    * @param {Object} imageData - Image data object from extractImageData()
-   * @returns {Array} Array of target objects with {x, y, r, g, b} properties
+   * @returns {Array} Array of target objects with {x, y, r, g, b, size} properties
    */
   imageDataToTargets(imageData) {
     const targets = [];
@@ -822,8 +850,8 @@ export class ParticleSystem {
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
     
-    // Calculate particle size proportional to the image scale
-    const targetParticleSize = Math.max(this.config.minSize, Math.min(this.config.maxSize, scale * 0.8));
+    // Use dynamically calculated particle size from extractImageData
+    const targetParticleSize = imageData.particleSize;
     
     // Transform each pixel into a target position with color and size
     for (let pixel of pixels) {
