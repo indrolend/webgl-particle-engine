@@ -603,9 +603,7 @@
         const canvas = document.getElementById('canvas');
         window.engine = new HybridEngine(canvas, {
             particleCount: 2000,
-            speed: 1.0,
-            particleOpacity: 0.5,
-            triangleOpacity: 0.5
+            speed: 1.0
         });
 
         // State
@@ -768,7 +766,7 @@
         // Render mode buttons
         const modeHybrid = document.getElementById('modeHybrid');
         
-        // Hybrid Transition button - triggers multi-phase transition (disintegration → explosion → recombination → blend)
+        // Hybrid Transition button - triggers multi-phase transition (disintegration → explosion → recombination → static display)
         modeHybrid.addEventListener('click', () => {
             if (!engine || !image1 || !image2) return;
             
@@ -826,7 +824,7 @@
             engine.reverseHybridTransition(config);
             currentImageIndex = 0;
             
-            showStatus('🔄 Reversing: Static → Disintegration → Explosion → Recombination → Blend → Static', 'success');
+            showStatus('🔄 Reversing: Static → Disintegration → Explosion → Recombination → Static', 'success');
         });
 
 
