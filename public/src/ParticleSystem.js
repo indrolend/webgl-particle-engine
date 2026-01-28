@@ -18,7 +18,7 @@ export class ParticleSystem {
       particleCount: config.particleCount || 1000,
       speed: config.speed || 1.0,
       minSize: config.minSize || 2,
-      maxSize: config.maxSize || 8
+      maxSize: config.maxSize || 20  // Increased from 16 to 20 for even denser coverage
     };
     
     this.width = 800;
@@ -267,11 +267,12 @@ export class ParticleSystem {
     
     // Dynamic particle size calculation:
     // - Base size is proportional to grid cell size (scale)
-    // - Increased multiplier (1.2) ensures dense coverage with overlap
+    // - Increased multiplier (2.5) ensures solid coverage with no visible gaps
+    // - Particles overlap significantly to eliminate all spaces
     // - Clamp between min/max for consistency
     const calculatedParticleSize = Math.max(
       this.config.minSize, 
-      Math.min(this.config.maxSize, scale * 1.2)
+      Math.min(this.config.maxSize, scale * 2.5)
     );
     
     console.log(`[ParticleSystem] Fixed grid: ${gridWidth}x${gridHeight}, Extracted ${pixels.length} visible pixels`);
