@@ -428,10 +428,16 @@
         }
         
         // Convert WebM to MP4
-        async function convertToMP4(webmBlob) {
+        async function convertToMP4(inputBlob) {
             if (!ffmpegLoaded) {
-                console.warn('FFmpeg not loaded, returning WebM blob');
-                return webmBlob;
+                console.warn('FFmpeg not loaded, returning original blob');
+                return inputBlob;
+            }
+            
+            // If input is already MP4, no conversion needed
+            if (inputBlob.type.includes('mp4')) {
+                console.log('Input is already MP4, skipping conversion');
+                return inputBlob;
             }
             
             try {
@@ -439,8 +445,8 @@
                 console.log('Starting MP4 conversion...');
                 
                 // Write WebM file to FFmpeg virtual filesystem
-                await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
-                console.log('WebM file written to FFmpeg filesystem');
+                await ffmpeg.writeFile('input.webm', await fetchFile(inputBlob));
+                console.log('Input file written to FFmpeg filesystem');
                 
                 // Convert to MP4 with H.264 codec
                 await ffmpeg.exec([
@@ -466,8 +472,8 @@
                 return mp4Blob;
             } catch (error) {
                 console.error('Conversion failed:', error);
-                updateStatus('Conversion failed, using WebM format', 'error');
-                return webmBlob;
+                updateStatus('Conversion failed, using original format', 'error');
+                return inputBlob;
             }
         }
         
@@ -567,20 +573,34 @@
             updateStatus('Setting up video recorder...');
             
             const stream = canvas.captureStream(60); // 60 FPS
+            
+            // Try different codec options in order of preference
+            const codecOptions = [
+                { mimeType: 'video/webm;codecs=vp9', container: 'webm', name: 'WebM (VP9)' },
+                { mimeType: 'video/webm;codecs=vp8', container: 'webm', name: 'WebM (VP8)' },
+                { mimeType: 'video/webm', container: 'webm', name: 'WebM' },
+                // Safari/Mac fallback options
+                { mimeType: 'video/mp4;codecs=avc1', container: 'mp4', name: 'MP4 (H.264)' },
+                { mimeType: 'video/mp4', container: 'mp4', name: 'MP4' }
+            ];
+            
+            let selectedCodec = null;
+            for (const codec of codecOptions) {
+                if (MediaRecorder.isTypeSupported(codec.mimeType)) {
+                    selectedCodec = codec;
+                    console.log(`Using codec: ${codec.name} (${codec.mimeType})`);
+                    break;
+                }
+            }
+            
+            if (!selectedCodec) {
+                throw new Error('No supported video codec found. Please try a different browser.');
+            }
+            
             const options = {
-                mimeType: 'video/webm;codecs=vp9',
+                mimeType: selectedCodec.mimeType,
                 videoBitsPerSecond: 8000000 // 8 Mbps for high quality
             };
-            
-            // Fallback to vp8 if vp9 is not supported
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                options.mimeType = 'video/webm;codecs=vp8';
-            }
-            
-            // Fallback to default if webm is not supported
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                options.mimeType = 'video/webm';
-            }
             
             mediaRecorder = new MediaRecorder(stream, options);
             recordedChunks = [];
@@ -592,23 +612,29 @@
             };
             
             mediaRecorder.onstop = async () => {
-                const webmBlob = new Blob(recordedChunks, { type: 'video/webm' });
+                const recordedBlob = new Blob(recordedChunks, { type: selectedCodec.mimeType });
                 
-                if (ffmpegLoaded) {
+                // If recording is already MP4, no conversion needed (unless FFmpeg loaded for consistency)
+                if (selectedCodec.container === 'mp4' && !ffmpegLoaded) {
+                    videoBlob = recordedBlob;
+                    updateStatus('Video ready (MP4)! Click download to save.', 'success');
+                } else if (selectedCodec.container === 'webm' && ffmpegLoaded) {
                     updateStatus('Recording complete, converting to MP4...', 'recording');
-                    // Convert to MP4
-                    videoBlob = await convertToMP4(webmBlob);
+                    // Convert WebM to MP4
+                    videoBlob = await convertToMP4(recordedBlob);
                     const format = videoBlob.type.includes('mp4') ? 'MP4' : 'WebM';
                     updateStatus(`Video ready (${format})! Click download to save.`, 'success');
                 } else {
-                    videoBlob = webmBlob;
-                    updateStatus('Video ready (WebM)! Click download to save.', 'success');
+                    // Fallback: use recorded format as-is
+                    videoBlob = recordedBlob;
+                    const format = selectedCodec.container.toUpperCase();
+                    updateStatus(`Video ready (${format})! Click download to save.`, 'success');
                 }
                 
                 downloadBtn.disabled = false;
             };
             
-            updateStatus('Recorder ready', 'success');
+            updateStatus(`Recorder ready (${selectedCodec.name})`, 'success');
         }
         
         // Start hybrid transition
