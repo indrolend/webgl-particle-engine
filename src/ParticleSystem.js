@@ -267,12 +267,12 @@ export class ParticleSystem {
     
     // Dynamic particle size calculation:
     // - Base size is proportional to grid cell size (scale)
-    // - Increased multiplier (2.5) ensures solid coverage with no visible gaps
-    // - Particles overlap significantly to eliminate all spaces
+    // - Increased multiplier (3.5) ensures complete gap-free coverage
+    // - Particles will have variable sizes for organic gap filling
     // - Clamp between min/max for consistency
     const calculatedParticleSize = Math.max(
       this.config.minSize, 
-      Math.min(this.config.maxSize, scale * 2.5)
+      Math.min(this.config.maxSize, scale * 3.5)
     );
     
     console.log(`[ParticleSystem] Fixed grid: ${gridWidth}x${gridHeight}, Extracted ${pixels.length} visible pixels`);
@@ -315,15 +315,19 @@ export class ParticleSystem {
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
     
-    // Use dynamically calculated particle size from extractImageData
-    // This ensures dense coverage with minimal sparsity
-    const particleSize = imageData.particleSize;
+    // Use dynamically calculated particle size as base
+    const baseParticleSize = imageData.particleSize;
     
-    // Create particles with minimal initial velocity for stable image display
+    // Create particles with VARIABLE SIZES for complete gap coverage
+    // Random size variation (70% to 130% of base) fills gaps organically
     for (let i = 0; i < pixels.length; i++) {
       const pixel = pixels[i];
       const x = offsetX + pixel.x * scale;
       const y = offsetY + pixel.y * scale;
+      
+      // Variable particle size: ±30% variation for gap-free coverage
+      const sizeVariation = 0.7 + Math.random() * 0.6; // 0.7 to 1.3
+      const variableSize = baseParticleSize * sizeVariation;
       
       this.particles.push(this.createParticle(
         x, y, 
@@ -334,12 +338,12 @@ export class ParticleSystem {
           g: pixel.g,
           b: pixel.b,
           alpha: pixel.alpha,
-          size: particleSize
+          size: variableSize
         }
       ));
     }
     
-    console.log(`[ParticleSystem] Created ${this.particles.length} particles representing the image with size ${particleSize.toFixed(2)}`);
+    console.log(`[ParticleSystem] Created ${this.particles.length} particles with variable sizes (base: ${baseParticleSize.toFixed(2)}, range: ${(baseParticleSize * 0.7).toFixed(2)}-${(baseParticleSize * 1.3).toFixed(2)})`);
   }
 
   /**
@@ -372,8 +376,8 @@ export class ParticleSystem {
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
     
-    // Use dynamically calculated particle size from extractImageData
-    const targetParticleSize = imageData.particleSize;
+    // Use dynamically calculated particle size as base
+    const baseTargetSize = imageData.particleSize;
     
     // Handle particle-to-pixel mapping for seamless transitions
     if (this.particles.length > pixels.length) {
@@ -389,12 +393,7 @@ export class ParticleSystem {
         const y = offsetY + pixel.y * scale;
         
         // Distribute particles with increasing offsets to avoid stacking
-        // Logic: When we have more particles than pixels, we cycle through pixels
-        // For each "round" through the pixel array, increase the random offset
-        // Example: particles 0-999 use pixels 0-499 with offset 0
-        //          particles 1000-1999 use pixels 0-499 with offset 2
-        //          particles 2000-2999 use pixels 0-499 with offset 4, etc.
-        const distributionFactor = Math.floor(i / pixels.length);  // Which "round" through pixels
+        const distributionFactor = Math.floor(i / pixels.length);
         const randomOffset = distributionFactor * this.PARTICLE_DISTRIBUTION_OFFSET;
         
         particle.targetX = x + (Math.random() - 0.5) * randomOffset;
@@ -402,7 +401,10 @@ export class ParticleSystem {
         particle.targetR = pixel.r;
         particle.targetG = pixel.g;
         particle.targetB = pixel.b;
-        particle.targetSize = targetParticleSize;
+        
+        // Variable target size: ±30% variation for gap-free coverage
+        const sizeVariation = 0.7 + Math.random() * 0.6; // 0.7 to 1.3
+        particle.targetSize = baseTargetSize * sizeVariation;
       }
     } else {
       // Equal or fewer particles than pixels: direct 1-to-1 mapping
@@ -420,7 +422,10 @@ export class ParticleSystem {
         particle.targetR = pixel.r;
         particle.targetG = pixel.g;
         particle.targetB = pixel.b;
-        particle.targetSize = targetParticleSize;
+        
+        // Variable target size: ±30% variation for gap-free coverage
+        const sizeVariation = 0.7 + Math.random() * 0.6; // 0.7 to 1.3
+        particle.targetSize = baseTargetSize * sizeVariation;
       }
     }
     
@@ -843,18 +848,22 @@ export class ParticleSystem {
     const offsetX = (this.width - imageData.gridWidth * scale) / 2;
     const offsetY = (this.height - imageData.gridHeight * scale) / 2;
     
-    // Use dynamically calculated particle size from extractImageData
-    const targetParticleSize = imageData.particleSize;
+    // Use dynamically calculated particle size as base
+    const baseTargetSize = imageData.particleSize;
     
-    // Transform each pixel into a target position with color and size
+    // Transform each pixel into a target position with color and VARIABLE size
     for (let pixel of pixels) {
+      // Variable size: ±30% variation for gap-free coverage
+      const sizeVariation = 0.7 + Math.random() * 0.6; // 0.7 to 1.3
+      const variableSize = baseTargetSize * sizeVariation;
+      
       targets.push({
         x: offsetX + pixel.x * scale,
         y: offsetY + pixel.y * scale,
         r: pixel.r,
         g: pixel.g,
         b: pixel.b,
-        size: targetParticleSize
+        size: variableSize
       });
     }
     
