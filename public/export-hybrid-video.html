@@ -658,20 +658,21 @@
                 vacuumStrength: 0.15,
                 particleFadeRate: 0.7,
                 staticDisplayDuration: parseInt(staticDisplayDuration.value, 10),
-                disintegrationDuration: parseInt(disintegrationDuration.value, 10)
+                disintegrationDuration: parseInt(disintegrationDuration.value, 10),
+                finalStaticDuration: 2000 // Display final image for 2 seconds
             };
             
             // Set render mode and start transition
             engine.setRenderMode('hybrid');
             engine.startHybridTransition(image1, image2, config);
             
-            // Calculate total duration
+            // Calculate total duration - include all phases
             const totalDuration = config.staticDisplayDuration + 
                                   config.disintegrationDuration +
                                   config.explosionTime + 
                                   config.recombinationDuration + 
                                   config.blendDuration + 
-                                  1000; // Extra time for final state
+                                  config.finalStaticDuration; // Final static image display
             
             updateStatus(`Recording (${Math.round(totalDuration / 1000)}s)...`, 'recording');
             
