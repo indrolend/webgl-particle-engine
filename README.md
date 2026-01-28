@@ -1,22 +1,19 @@
 # WebGL Particle Transition Engine
 
-A high-performance WebGL-based particle system with smooth animated transitions, specializing in seamless image morphing effects. Features a modular architecture with detailed logging, both focused and comprehensive interfaces, and **advanced triangulation-based morphing**.
+A high-performance WebGL-based particle system with smooth animated transitions, specializing in seamless image morphing effects. Features a modular architecture with detailed logging and focused interfaces for creating stunning visual effects.
 
 ## ✨ Features
 
 - **🎨 Image Morphing**: Seamless particle-based transitions between images with high visual quality
-- **🔺 Triangulation Morphing**: Advanced Delaunay triangulation-based image morphing with smooth mesh interpolation
-- **🎭 Hybrid Rendering**: Combine particle and triangulation effects for stunning visual transitions
-- **💥 Hybrid Transition Preset**: Multi-phase transitions with explosion, recombination, and blend effects
+- **💥 Hybrid Transition Preset**: Multi-phase transitions with explosion and recombination effects
 - **🎬 Video Export**: Record and export hybrid transitions as MP4 videos (9:16 portrait format)
 - **🌐 Page Transition API**: High-level API for particle-based page transitions with DOM capture
 - **⚡ WebGL Rendering**: Hardware-accelerated rendering for smooth 60 FPS performance
 - **🖼️ Image-Based Particles**: Upload images and create particle formations from pixel data
 - **✨ Smooth Transitions**: Animated transitions with optimized easing for natural morphing effects
-- **🎯 Customizable Key Points**: Grid-based or feature detection-based triangulation
 - **Multiple Patterns**: Grid, Circle, Spiral, and Random formations (for advanced use)
-- **⚙️ Configurable**: Adjustable particle count, speed, size, and triangulation parameters
-- **🎯 Focused Interface**: Dedicated image morphing UI (main page) for streamlined workflow
+- **⚙️ Configurable**: Adjustable particle count, speed, size, and transition parameters
+- **🎯 Focused Interface**: Dedicated image morphing UI for streamlined workflow
 - **🐛 Debug Interface**: Interactive HTML panel with real-time controls and logging
 - **📦 Modular Design**: Clean, maintainable code structure in `src/` directory
 - **🚀 Deployment Ready**: Optimized for GitHub Pages and Cloudflare Pages
@@ -48,58 +45,17 @@ php -S localhost:8000
 http://localhost:8000/                                      # 🏠 Landing page - Browse all demos (START HERE!)
 http://localhost:8000/index.html                            # 🏠 Landing page (same as above)
 http://localhost:8000/image-morph-demo.html                 # 🎨 Image morphing interface
-http://localhost:8000/export-hybrid-video.html              # 🎬 Video Export - Record transitions (NEW!)
+http://localhost:8000/export-hybrid-video.html              # 🎬 Video Export - Record transitions
 http://localhost:8000/test-hybrid.html                      # 🌟 Hybrid Transition Test
 http://localhost:8000/simple-page-transition-demo.html      # 🌐 Page Transition API Demo
-http://localhost:8000/triangulation-demo.html               # 🔺 Triangulation morphing demo
 http://localhost:8000/debug.html                            # 🐛 Full debug interface
-http://localhost:8000/minimal-example.html                  # ⚡ Minimal WebGL example
 ```
-
-## 🔺 Triangulation-Based Image Morphing
-
-The engine now includes an advanced **triangulation-based morphing system** that complements the existing particle effects. This feature uses Delaunay triangulation to create smooth, mesh-based image transitions.
-
-### Key Features
-
-- **Delaunay Triangulation**: Automatic mesh generation using the Bowyer-Watson algorithm
-- **Customizable Key Points**: Choose between grid-based or feature detection methods
-- **Affine Interpolation**: Smooth triangle-to-triangle morphing with texture mapping
-- **Hybrid Rendering**: Combine particle and triangulation effects for unique visuals
-- **WebGL Accelerated**: High-performance rendering with custom shaders
-- **Real-time Control**: Switch between particles, triangulation, or hybrid modes on the fly
-
-### Demo
-
-Visit the **Triangulation Demo** page (`triangulation-demo.html`) to explore:
-- Interactive controls for switching render modes (Particles / Triangulation / Hybrid)
-- Adjustable grid size for triangulation density
-- Choice between grid-based or feature detection key point methods
-- Real-time FPS and performance metrics
-- Blend opacity controls for hybrid rendering
 
 ## 🎨 Image Morphing
 
 The **primary focus** of this engine is seamless image-to-image transitions using WebGL particles. The landing page (`index.html`) showcases all available demos, while the image morph interface (`image-morph-demo.html`) provides a streamlined experience for this core functionality.
 
 ## 📖 Usage
-
-### Minimal Example (No Dependencies)
-
-For testing WebGL animation without modular dependencies or UI configurations, see [`minimal-example.html`](minimal-example.html).
-
-This standalone example demonstrates:
-- ✅ Pure WebGL particle animation in a single HTML file
-- ✅ No external module dependencies (everything inline)
-- ✅ No complex UI controls or configurations
-- ✅ Self-contained shader code and particle physics
-- ✅ Automatic animation on load
-
-Perfect for:
-- 🧪 Testing WebGL functionality
-- 📚 Learning WebGL particle basics
-- 🔧 Debugging rendering issues
-- 🚀 Quick prototyping
 
 ### Basic Usage with Modules
 

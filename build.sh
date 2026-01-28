@@ -38,10 +38,6 @@ if [ -f morph.html ]; then
   cp morph.html public/
 fi
 
-if [ -f triangulation-demo.html ]; then
-  cp triangulation-demo.html public/
-fi
-
 if [ -f disintegration-demo.html ]; then
   cp disintegration-demo.html public/
 fi
@@ -52,10 +48,6 @@ fi
 
 if [ -f simple-page-transition-demo.html ]; then
   cp simple-page-transition-demo.html public/
-fi
-
-if [ -f minimal-example.html ]; then
-  cp minimal-example.html public/
 fi
 
 if [ -f create-test-images.html ]; then
@@ -72,11 +64,7 @@ if [ -f webgl-engine.js ]; then
   cp webgl-engine.js public/
 fi
 
-if [ -f triangulation-demo.js ]; then
-  cp triangulation-demo.js public/
-fi
-
-# Copy src directory (excluding Worker entry point)
+# Copy src directory
 echo "Copying src directory..."
 mkdir -p public/src
 
@@ -115,12 +103,6 @@ fi
 if [ -d src/presets ]; then
   mkdir -p public/src/presets
   cp -r src/presets/* public/src/presets/
-fi
-
-# Copy triangulation directory if exists
-if [ -d src/triangulation ]; then
-  mkdir -p public/src/triangulation
-  cp -r src/triangulation/* public/src/triangulation/
 fi
 
 # Copy utils directory if exists
