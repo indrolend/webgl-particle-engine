@@ -1,12 +1,12 @@
 /**
  * Hybrid Transition Preset
- * Implements multi-phase particle transitions with explosion, recombination, and triangulation blend
+ * Implements multi-phase particle transitions with explosion and recombination
  * 
  * Phases:
  * 1. Image to Particles: Particles originate from static image with adjustable density
  * 2. Explosion: Particles explode in random directions (controlled burst)
  * 3. Recombination: Particles recombine into second image shape (space vacuum behavior)
- * 4. Triangulation Blend: Gradual transition from particles to triangulation mode
+ * 4. Final Static: Display target image as solid
  */
 import { Preset } from './Preset.js';
 
@@ -28,24 +28,21 @@ export class HybridTransitionPreset extends Preset {
         recombinationChaos: config.recombinationChaos || 0.3, // 0 to 1, adds chaotic movement
         vacuumStrength: config.vacuumStrength || 0.15, // Gravitational pull strength
         
-        // Phase 4: Triangulation Blend
-        blendDuration: config.blendDuration || 1500, // Duration in ms
-        particleFadeRate: config.particleFadeRate || 0.7, // How fast particles fade
+        // Phase 4: Final Static Display
+        finalStaticDuration: config.finalStaticDuration || 1000, // Duration to show final image
         
         ...config
       }
     );
 
-    this.phase = 'idle'; // idle, explosion, recombination, blend
+    this.phase = 'idle'; // idle, explosion, recombination, finalStatic
     this.phaseStartTime = 0;
     this.targets = null;
     this.sourceImage = null;
     this.targetImage = null;
-    this.blendProgress = 0;
     
     // Physics constants
     this.VACUUM_FORCE_MULTIPLIER = 0.1; // Controls the strength of vacuum force based on distance
-    this.ALPHA_BLEND_RATE = 0.05; // Controls smoothness of particle fade during blend phase
   }
 
   initialize(particles, dimensions, options = {}) {
@@ -134,9 +131,6 @@ export class HybridTransitionPreset extends Preset {
         break;
       case 'recombination':
         this.updateRecombination(particles, deltaTime, dimensions, elapsedTime);
-        break;
-      case 'blend':
-        this.updateBlend(particles, deltaTime, dimensions, elapsedTime);
         break;
       case 'finalStatic':
         this.updateFinalStatic(particles, deltaTime, dimensions, elapsedTime);
@@ -232,52 +226,12 @@ export class HybridTransitionPreset extends Preset {
 
     // Check if recombination is complete
     if (progress >= 1) {
-      this.startBlend(particles);
-    }
-  }
-
-  updateBlend(particles, deltaTime, dimensions, elapsedTime) {
-    const progress = Math.min(elapsedTime / this.config.blendDuration, 1);
-    this.blendProgress = progress;
-
-    // Fade particles out during blend
-    const targetAlpha = 1.0 - (progress * this.config.particleFadeRate);
-    
-    particles.forEach(particle => {
-      // Smoothly adjust alpha
-      particle.alpha = particle.alpha + (targetAlpha - particle.alpha) * this.ALPHA_BLEND_RATE;
-      
-      // Keep particles in final position with minimal drift
-      if (particle.targetX !== undefined && particle.targetY !== undefined) {
-        const dx = particle.targetX - particle.x;
-        const dy = particle.targetY - particle.y;
-        
-        particle.x += dx * 0.1;
-        particle.y += dy * 0.1;
-      }
-      
-      // Continue color convergence
-      if (particle.targetR !== undefined) {
-        particle.r += (particle.targetR - particle.r) * 0.05;
-        particle.g += (particle.targetG - particle.g) * 0.05;
-        particle.b += (particle.targetB - particle.b) * 0.05;
-      }
-      
-      // Continue size convergence
-      if (particle.targetSize !== undefined) {
-        particle.size += (particle.targetSize - particle.size) * 0.05;
-      }
-    });
-
-    // Check if blend is complete
-    if (progress >= 1) {
-      console.log('[HybridTransition] Blend complete - showing final static image');
       this.startFinalStatic();
     }
   }
 
   /**
-   * Phase 5: Final Static - display target image as solid static image
+   * Phase 4: Final Static - display target image as solid static image
    */
   startFinalStatic() {
     console.log('[HybridTransition] Starting final static image display');
@@ -326,18 +280,10 @@ export class HybridTransitionPreset extends Preset {
     } else if (this.phase === 'explosion') {
       // Let explosion finish naturally
       return;
-    } else if (this.phase === 'recombination' || this.phase === 'blend') {
+    } else if (this.phase === 'recombination' || this.phase === 'finalStatic') {
       // Already in later phases, adjust targets
       this.startRecombination(particles, targets);
     }
-  }
-
-  /**
-   * Get current blend progress (0 to 1)
-   * Used by HybridEngine to coordinate triangulation opacity
-   */
-  getBlendProgress() {
-    return this.phase === 'blend' ? this.blendProgress : 0;
   }
 
   /**
@@ -365,6 +311,5 @@ export class HybridTransitionPreset extends Preset {
     super.deactivate();
     this.phase = 'idle';
     this.targets = null;
-    this.blendProgress = 0;
   }
 }

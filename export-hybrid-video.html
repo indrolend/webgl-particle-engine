@@ -592,10 +592,7 @@
             
             engine = new HybridEngine(canvas, {
                 particleCount: particleCount,
-                speed: 1.0,
-                enableTriangulation: true,
-                triangulationMode: 'hybrid',
-                gridSize: 8
+                speed: 1.0
             });
             
             updateStatus('Engine initialized', 'success');
@@ -697,8 +694,7 @@
                 finalStaticDuration: 2000 // Display final image for 2 seconds
             };
             
-            // Set render mode and start transition
-            engine.setRenderMode('hybrid');
+            // Start transition
             engine.startHybridTransition(image1, image2, config);
             
             // Calculate total duration - include all phases

@@ -33,3 +33,4 @@ temp/
 test-import.js
 *.old
 *.backup
+public/

@@ -1,7 +1,7 @@
 {
   "name": "webgl-particle-engine",
   "version": "1.0.0",
-  "description": "WebGL Particle Transition Engine with Triangulation Morphing",
+  "description": "WebGL Particle Transition Engine with Hybrid Multi-Phase Transitions",
   "type": "module",
   "scripts": {
     "build": "bash build.sh",
