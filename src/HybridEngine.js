@@ -440,11 +440,6 @@ export class HybridEngine extends ParticleEngine {
       }
     }
   }
-          p.alpha = this.originalAlphasCache.get(i);
-        });
-      }
-    }
-  }
 
   /**
    * Render a static image directly to the WebGL canvas

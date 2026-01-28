@@ -67,6 +67,15 @@ export class HybridEngine extends ParticleEngine {
       sourceImage: null
     };
     
+    // Reintegration state (for smooth particle-to-solid transition)
+    this.reintegrationState = {
+      isActive: false,
+      progress: 0,
+      startTime: 0,
+      duration: 0,
+      targetImage: null
+    };
+    
     // Reusable Map for storing original alpha values (optimization)
     this.originalAlphasCache = new Map();
     
@@ -315,6 +324,38 @@ export class HybridEngine extends ParticleEngine {
         particleOpacity: particleOpacity
       });
       return;
+    }
+    
+    // Check if in recombination phase (particles forming Image 2)
+    // During recombination, blend Image 2 opacity inversely to particles
+    if (this.presetManager.hasActivePreset()) {
+      const activePreset = this.presetManager.getActivePreset();
+      if (activePreset && typeof activePreset.getCurrentPhase === 'function') {
+        const currentPhase = activePreset.getCurrentPhase();
+        
+        if (currentPhase === 'recombination' && this.hybridTransitionState && this.hybridTransitionState.targetImage) {
+          // Calculate recombination progress from active preset
+          const elapsed = Date.now() - activePreset.phaseStartTime;
+          const recombinationProgress = Math.min(elapsed / activePreset.config.recombinationDuration, 1.0);
+          
+          // Image 2 fades in as particles recombine (inverse of particle alpha)
+          const image2Opacity = recombinationProgress * 0.5; // Subtle fade-in, max 50%
+          const particleOpacity = 1.0; // Particles remain visible
+          
+          // Load and render Image 2 with blending
+          if (!this.renderer.imageLoaded || this.lastRenderedStaticImage !== this.hybridTransitionState.targetImage) {
+            this.renderer.loadImageTexture(this.hybridTransitionState.targetImage, this.particleSystem.config);
+            this.lastRenderedStaticImage = this.hybridTransitionState.targetImage;
+          }
+          
+          const particles = this.particleSystem.getParticles();
+          this.renderer.render(particles, {
+            imageOpacity: image2Opacity,
+            particleOpacity: particleOpacity
+          });
+          return;
+        }
+      }
     }
     
     // Check if in final static phase (show target image as static)
