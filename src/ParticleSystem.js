@@ -425,14 +425,6 @@ export class ParticleSystem {
     
     console.log(`[ParticleSystem] Target positions, colors, and sizes set for seamless morphing (size: ${targetParticleSize.toFixed(2)})`);
   }
-        particle.targetG = pixel.g;
-        particle.targetB = pixel.b;
-        particle.targetSize = targetParticleSize;
-      }
-    }
-    
-    console.log(`[ParticleSystem] Target positions, colors, and sizes set for seamless morphing (size: ${targetParticleSize.toFixed(2)})`);
-  }
 
   /**
    * Start the disintegration effect from solid image to particles
