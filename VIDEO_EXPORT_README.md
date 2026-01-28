@@ -163,24 +163,35 @@ The video export feature requires:
 - Modern browser with WebGL support
 - Canvas API `captureStream()` method
 - MediaRecorder API
-- WebM video codec support (for recording)
-- WebAssembly support (for MP4 conversion)
+- WebAssembly support (for WebM to MP4 conversion, optional)
 
-**MP4 Conversion Support:**
-- Chrome/Edge 57+ (WebAssembly support)
-- Firefox 52+ (WebAssembly support)
-- Safari 11+ (WebAssembly support)
-- Opera 44+ (WebAssembly support)
+**Recording Support by Browser:**
+- **Chrome/Edge 47+**: Records WebM (VP9/VP8), converts to MP4 with FFmpeg
+- **Firefox 43+**: Records WebM (VP9/VP8), converts to MP4 with FFmpeg
+- **Safari 14.1+ (Mac)**: Records MP4 (H.264) directly, no conversion needed
+- **Opera 36+**: Records WebM, converts to MP4 with FFmpeg
 
-**Recording Support:**
-- Chrome/Edge 47+
-- Firefox 43+
-- Opera 36+
-- Safari 14.1+ (with some limitations)
+**Codec Fallback Order:**
+1. WebM with VP9 codec (highest quality, Chrome/Firefox)
+2. WebM with VP8 codec (fallback for older browsers)
+3. WebM default codec
+4. MP4 with H.264 codec (Safari/Mac)
+5. MP4 default codec (final fallback)
 
-**Note**: If MP4 conversion fails, videos are saved as WebM which works in all supported browsers.
+**Safari/Mac Notes:**
+- Safari doesn't support WebM recording but records MP4 (H.264) natively
+- Cross-Origin Isolation headers still required for consistency
+- MP4 files from Safari work without FFmpeg conversion
+- All exported videos are MP4 format regardless of recording format
 
 ## Troubleshooting
+
+### "Error: mimeType is not supported" (Mac/Safari)
+**Fixed in latest version!** If you still see this error:
+- Ensure you're using the latest version of the code
+- Update Safari to version 14.1 or later
+- The code now automatically detects Safari and uses MP4 (H.264) codec instead of WebM
+- Check browser console to see which codec was selected
 
 ### MP4 conversion fails or videos save as WebM
 - **Cross-Origin Isolation**: MP4 conversion requires Cross-Origin Isolation headers. The `_headers` file in the deployment directory configures these for Cloudflare Pages:
@@ -188,6 +199,7 @@ The video export feature requires:
   - `Cross-Origin-Opener-Policy: same-origin`
 - Check browser console for FFmpeg loading errors
 - Ensure internet connection is stable (FFmpeg.wasm loads from CDN)
+- **Safari/Mac users**: Your videos record as MP4 natively, no conversion needed
 - Try a different browser (Chrome/Edge recommended)
 - If conversion consistently fails, use the WebM file and convert manually using FFmpeg
 - **For other hosting providers**: Ensure these headers are set for the export page (see DEPLOYMENT.md for details)
@@ -211,8 +223,8 @@ The video export feature requires:
 
 ### MediaRecorder not supported
 - Update your browser to the latest version
-- Try a different browser (Chrome recommended)
-- Check if WebM codec is available in your browser
+- Try a different browser (Chrome/Edge recommended for WebM, Safari for Mac users)
+- The code now supports both WebM and MP4 codecs for maximum compatibility
 
 ## Technical Details
 

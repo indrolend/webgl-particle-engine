@@ -38,14 +38,15 @@ This fix enables MP4 video export for the "Export 9:16 Hybrid Transition Video" 
 5. **Start recording**:
    - Click "Start Recording & Transition"
    - Watch the console for messages:
-     - ✅ "FFmpeg loaded successfully - MP4 export available"
+     - ✅ "Using codec: WebM (VP9)" or "Using codec: MP4 (H.264)" depending on browser
+     - ✅ Status shows "Recorder ready (WebM (VP9))" or "Recorder ready (MP4 (H.264))"
      - ✅ "Recording started..."
-     - ✅ "Recording complete, converting to MP4..."
-     - ✅ "MP4 blob created, size: XXX bytes, type: video/mp4"
+     - ✅ (Chrome/Firefox) "Recording complete, converting to MP4..."
+     - ✅ (Safari) "Video ready (MP4)!" (no conversion needed)
 
 6. **Download the video**:
    - Click "Download Video" button
-   - Verify filename ends with `.mp4` (not `.webm`)
+   - Verify filename ends with `.mp4`
    - Verify the status shows "Video ready (MP4)!"
 
 7. **Verify the downloaded file**:
@@ -55,26 +56,36 @@ This fix enables MP4 video export for the "Export 9:16 Hybrid Transition Video" 
 
 ### Expected Results
 
-#### Success Indicators
+#### Success Indicators (Chrome/Firefox with WebM)
+- ✅ Console shows: "Using codec: WebM (VP9)" or "WebM (VP8)"
 - ✅ Console shows: "FFmpeg loaded successfully - MP4 export available"
+- ✅ Status message: "Recording complete, converting to MP4..."
 - ✅ Status message: "Video ready (MP4)! Click download to save."
 - ✅ Downloaded file has `.mp4` extension
 - ✅ File type is `video/mp4`
 - ✅ Video plays in all major browsers and video players
 
-#### Failure Indicators (if headers are missing)
-- ❌ Console shows: "Failed to load FFmpeg"
-- ❌ Status message: "Video ready (WebM)! Click download to save."
-- ❌ Downloaded file has `.webm` extension
-- ❌ Warning: "MP4 converter failed to load. Videos will be saved as WebM."
+#### Success Indicators (Safari/Mac with MP4)
+- ✅ Console shows: "Using codec: MP4 (H.264)" or "MP4"
+- ✅ Status message: "Recorder ready (MP4 (H.264))"
+- ✅ Status message: "Video ready (MP4)! Click download to save." (no conversion message)
+- ✅ Downloaded file has `.mp4` extension
+- ✅ File type is `video/mp4`
+- ✅ Video plays in all major browsers and video players
+
+#### Failure Indicators (old version or missing codecs)
+- ❌ Error: "mimeType is not supported" → Update to latest version
+- ❌ Error: "No supported video codec found" → Browser is too old
+- ❌ Console shows: "Failed to load FFmpeg" (not critical on Safari)
+- ❌ Status message: "Video ready (WebM)!" → Headers missing or FFmpeg failed
 
 ## Browser Compatibility
 
 ### Supported Browsers
-- Chrome/Edge 57+ ✅
-- Firefox 52+ ✅
-- Safari 11+ ✅
-- Opera 44+ ✅
+- Chrome/Edge 47+ ✅ (Records WebM, converts to MP4)
+- Firefox 43+ ✅ (Records WebM, converts to MP4)
+- Safari 14.1+ ✅ (Records MP4 natively, no conversion needed)
+- Opera 36+ ✅ (Records WebM, converts to MP4)
 
 ### Notes
 - Safari may have stricter requirements for Cross-Origin Isolation
