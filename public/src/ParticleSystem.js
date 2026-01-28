@@ -451,9 +451,14 @@ export class ParticleSystem {
   }
 
   /**
-   * Start the reintegration effect from dispersed particles to target image
+   * Start the reintegration effect from dispersed particles back to target image (Image 2)
    * This is the reverse of disintegration - particles move from dispersed positions
-   * back to their target positions with alpha fade-in
+   * back to their target positions (forming Image 2) with alpha fade-in.
+   * 
+   * Note: This is primarily used during the recombination phase of hybrid transitions
+   * where particles reform to create the target image. Alpha fade-in is handled by
+   * the HybridTransitionPreset to avoid conflicts.
+   * 
    * @param {number} duration - Duration of the reintegration in milliseconds
    */
   startReintegration(duration = 2000) {
@@ -480,8 +485,8 @@ export class ParticleSystem {
         particle.targetY = particle.y;
       }
       
-      // Set initial alpha low for fade-in effect
-      particle.alpha = 0.3;
+      // Note: Alpha is managed by HybridTransitionPreset during recombination
+      // to avoid conflicts and ensure smooth fade-in coordinated with the preset phases
     }
     
     console.log('[ParticleSystem] Reintegration targets set for particle recombination');
@@ -677,20 +682,23 @@ export class ParticleSystem {
           particle.x = particle.disperseX + (particle.targetX - particle.disperseX) * t;
           particle.y = particle.disperseY + (particle.targetY - particle.disperseY) * t;
           
-          // Interpolate colors to target colors
+          // Interpolate colors to target colors with consistent factor
+          // Use a slower factor (0.15) to create smooth color blending that complements position movement
           if (particle.targetR !== undefined) {
-            particle.r = particle.r + (particle.targetR - particle.r) * t * 0.1;
-            particle.g = particle.g + (particle.targetG - particle.g) * t * 0.1;
-            particle.b = particle.b + (particle.targetB - particle.b) * t * 0.1;
+            const colorFactor = t * 0.15;
+            particle.r = particle.r + (particle.targetR - particle.r) * colorFactor;
+            particle.g = particle.g + (particle.targetG - particle.g) * colorFactor;
+            particle.b = particle.b + (particle.targetB - particle.b) * colorFactor;
           }
           
           // Size transition if target size is defined
           if (particle.targetSize !== undefined) {
-            particle.size = particle.size + (particle.targetSize - particle.size) * t * 0.1;
+            const sizeFactor = t * 0.15;
+            particle.size = particle.size + (particle.targetSize - particle.size) * sizeFactor;
           }
           
-          // Particle opacity increases during reintegration (fade in)
-          particle.alpha = 0.3 + 0.7 * t; // Start at 30%, grow to 100%
+          // Note: Alpha is managed by HybridTransitionPreset during recombination phase
+          // to coordinate with the preset's phase timing and avoid conflicts
         }
       } else if (this.disintegrationProgress > 0) {
         // Handle disintegration effect

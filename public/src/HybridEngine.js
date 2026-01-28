@@ -67,15 +67,6 @@ export class HybridEngine extends ParticleEngine {
       sourceImage: null
     };
     
-    // Reintegration state (for smooth particle-to-solid transition)
-    this.reintegrationState = {
-      isActive: false,
-      progress: 0,
-      startTime: 0,
-      duration: 0,
-      targetImage: null
-    };
-    
     // Reusable Map for storing original alpha values (optimization)
     this.originalAlphasCache = new Map();
     

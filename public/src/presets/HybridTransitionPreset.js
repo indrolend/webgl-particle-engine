@@ -115,8 +115,10 @@ export class HybridTransitionPreset extends Preset {
         particle.disperseX = particle.x;
         particle.disperseY = particle.y;
         
-        // Start with low alpha for fade-in effect
-        particle.alpha = 0.3;
+        // Store initial alpha for smooth fade-in (preserve current alpha)
+        if (particle.initialAlpha === undefined) {
+          particle.initialAlpha = particle.alpha || 0.3;
+        }
       });
     }
   }
@@ -228,9 +230,10 @@ export class HybridTransitionPreset extends Preset {
             particle.size += (particle.targetSize - particle.size) * colorBlend;
           }
           
-          // Gradually increase alpha during recombination (fade in)
-          const targetAlpha = 0.3 + 0.7 * easedProgress;
-          particle.alpha = particle.alpha + (targetAlpha - particle.alpha) * 0.1;
+          // Gradually increase alpha during recombination (fade in from initial alpha)
+          const initialAlpha = particle.initialAlpha || 0.3;
+          const targetAlpha = initialAlpha + (1.0 - initialAlpha) * easedProgress;
+          particle.alpha = particle.alpha + (targetAlpha - particle.alpha) * 0.15;
         } else {
           // Close enough to target, lock in place
           particle.x = particle.targetX;
