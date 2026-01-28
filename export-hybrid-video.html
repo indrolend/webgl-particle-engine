@@ -446,7 +446,7 @@
                 
                 // Write WebM file to FFmpeg virtual filesystem
                 await ffmpeg.writeFile('input.webm', await fetchFile(inputBlob));
-                console.log('Input file written to FFmpeg filesystem');
+                console.log('WebM file written to FFmpeg filesystem');
                 
                 // Convert to MP4 with H.264 codec
                 await ffmpeg.exec([
@@ -579,7 +579,8 @@
                 { mimeType: 'video/webm;codecs=vp9', container: 'webm', name: 'WebM (VP9)' },
                 { mimeType: 'video/webm;codecs=vp8', container: 'webm', name: 'WebM (VP8)' },
                 { mimeType: 'video/webm', container: 'webm', name: 'WebM' },
-                // Safari/Mac fallback options
+                // Safari/Mac fallback options - use complete codec strings for better compatibility
+                { mimeType: 'video/mp4;codecs=avc1.42E01E', container: 'mp4', name: 'MP4 (H.264 Baseline)' },
                 { mimeType: 'video/mp4;codecs=avc1', container: 'mp4', name: 'MP4 (H.264)' },
                 { mimeType: 'video/mp4', container: 'mp4', name: 'MP4' }
             ];
@@ -614,8 +615,8 @@
             mediaRecorder.onstop = async () => {
                 const recordedBlob = new Blob(recordedChunks, { type: selectedCodec.mimeType });
                 
-                // If recording is already MP4, no conversion needed (unless FFmpeg loaded for consistency)
-                if (selectedCodec.container === 'mp4' && !ffmpegLoaded) {
+                // If recording is already MP4, use it directly (no conversion needed)
+                if (selectedCodec.container === 'mp4') {
                     videoBlob = recordedBlob;
                     updateStatus('Video ready (MP4)! Click download to save.', 'success');
                 } else if (selectedCodec.container === 'webm' && ffmpegLoaded) {
@@ -625,7 +626,7 @@
                     const format = videoBlob.type.includes('mp4') ? 'MP4' : 'WebM';
                     updateStatus(`Video ready (${format})! Click download to save.`, 'success');
                 } else {
-                    // Fallback: use recorded format as-is
+                    // Fallback: use recorded format as-is (WebM without FFmpeg)
                     videoBlob = recordedBlob;
                     const format = selectedCodec.container.toUpperCase();
                     updateStatus(`Video ready (${format})! Click download to save.`, 'success');
