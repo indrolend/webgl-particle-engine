@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gap Detection Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+        }
+        
+        .canvas-container {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        
+        canvas {
+            border: 2px solid #667eea;
+            background: white;
+        }
+        
+        .info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .info h2 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .metric {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .metric-label {
+            color: #aaa;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 5px;
+        }
+        
+        button {
+            margin: 5px;
+            padding: 12px 24px;
+            font-size: 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #764ba2;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .warning {
+            background: rgba(255, 152, 0, 0.2);
+            border: 2px solid #ff9800;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4caf50;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Particle Gap Detection Test</h1>
+        
+        <div class="info">
+            <h2>Test Objective</h2>
+            <p>This test verifies that particles reconfigure into images with <strong>no visible gaps or spaces</strong>, creating a solid appearance.</p>
+        </div>
+        
+        <div class="controls">
+            <button onclick="testCurrentMultiplier()">Test Current (1.2x)</button>
+            <button onclick="testMultiplier(1.5)">Test 1.5x</button>
+            <button onclick="testMultiplier(1.8)">Test 1.8x</button>
+            <button onclick="testMultiplier(2.0)">Test 2.0x</button>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="canvas" width="600" height="400"></canvas>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+    
+    <script type="module">
+        import { HybridEngine } from './src/HybridEngine.js';
+        
+        const canvas = document.getElementById('canvas');
+        const resultsDiv = document.getElementById('results');
+        let engine = null;
+        let currentMultiplier = 1.2;
+        
+        // Initialize engine
+        function initEngine() {
+            if (engine) {
+                engine.stop();
+            }
+            engine = new HybridEngine(canvas, {
+                particleCount: 2000,
+                speed: 1.0,
+                minSize: 2,
+                maxSize: 12,
+                enableTriangulation: false
+            });
+            return engine;
+        }
+        
+        // Analyze particle coverage
+        function analyzeGaps(particles, imageData) {
+            const { gridWidth, gridHeight } = imageData;
+            const scaleX = canvas.width / gridWidth;
+            const scaleY = canvas.height / gridHeight;
+            const scale = Math.min(scaleX, scaleY) * 0.9;
+            
+            // Calculate expected coverage per particle
+            const particleSize = particles[0]?.size || 4;
+            const particleArea = Math.PI * Math.pow(particleSize / 2, 2);
+            
+            // Calculate total expected covered area
+            const totalParticleArea = particles.length * particleArea;
+            
+            // Calculate image area
+            const imageWidth = gridWidth * scale;
+            const imageHeight = gridHeight * scale;
+            const imageArea = imageWidth * imageHeight;
+            
+            // Coverage ratio
+            const coverageRatio = totalParticleArea / imageArea;
+            
+            // Check for gaps by analyzing particle distribution
+            const cellSize = particleSize;
+            const cols = Math.ceil(canvas.width / cellSize);
+            const rows = Math.ceil(canvas.height / cellSize);
+            const grid = new Array(cols * rows).fill(0);
+            
+            // Mark cells covered by particles
+            particles.forEach(p => {
+                const cellX = Math.floor(p.x / cellSize);
+                const cellY = Math.floor(p.y / cellSize);
+                if (cellX >= 0 && cellX < cols && cellY >= 0 && cellY < rows) {
+                    grid[cellY * cols + cellX]++;
+                }
+            });
+            
+            // Count empty cells in the image area
+            const offsetX = (canvas.width - imageWidth) / 2;
+            const offsetY = (canvas.height - imageHeight) / 2;
+            
+            let emptyCells = 0;
+            let totalImageCells = 0;
+            
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const cellCenterX = x * cellSize + cellSize / 2;
+                    const cellCenterY = y * cellSize + cellSize / 2;
+                    
+                    // Check if cell is within image bounds
+                    if (cellCenterX >= offsetX && cellCenterX <= offsetX + imageWidth &&
+                        cellCenterY >= offsetY && cellCenterY <= offsetY + imageHeight) {
+                        totalImageCells++;
+                        if (grid[y * cols + x] === 0) {
+                            emptyCells++;
+                        }
+                    }
+                }
+            }
+            
+            const gapPercentage = (emptyCells / totalImageCells) * 100;
+            
+            return {
+                coverageRatio: coverageRatio.toFixed(2),
+                emptyCells,
+                totalImageCells,
+                gapPercentage: gapPercentage.toFixed(2),
+                particleSize: particleSize.toFixed(2),
+                totalParticles: particles.length,
+                hasGaps: gapPercentage > 5 // Threshold: more than 5% empty
+            };
+        }
+        
+        // Display results
+        function displayResults(metrics, multiplier) {
+            const statusClass = metrics.hasGaps ? 'warning' : 'success';
+            const statusIcon = metrics.hasGaps ? '⚠️' : '✅';
+            const statusText = metrics.hasGaps ? 'GAPS DETECTED' : 'NO GAPS - SOLID COVERAGE';
+            
+            resultsDiv.innerHTML = `
+                <div class="${statusClass}">
+                    <h2>${statusIcon} ${statusText}</h2>
+                    <p><strong>Multiplier:</strong> ${multiplier}x</p>
+                </div>
+                
+                <div class="info">
+                    <h2>Coverage Analysis</h2>
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-label">Coverage Ratio</div>
+                            <div class="metric-value">${metrics.coverageRatio}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Gap Percentage</div>
+                            <div class="metric-value">${metrics.gapPercentage}%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Particle Size</div>
+                            <div class="metric-value">${metrics.particleSize}px</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Total Particles</div>
+                            <div class="metric-value">${metrics.totalParticles}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Empty Cells</div>
+                            <div class="metric-value">${metrics.emptyCells} / ${metrics.totalImageCells}</div>
+                        </div>
+                    </div>
+                    
+                    <h3>Recommendation</h3>
+                    ${metrics.hasGaps ? 
+                        `<p style="color: #ff9800;">⚠️ Increase particle size multiplier to eliminate gaps. Current coverage is insufficient.</p>` :
+                        `<p style="color: #4caf50;">✅ Current multiplier provides solid coverage with no visible gaps.</p>`
+                    }
+                </div>
+            `;
+        }
+        
+        // Test with specific multiplier
+        window.testMultiplier = async function(multiplier) {
+            console.log(`[Test] Testing with ${multiplier}x multiplier...`);
+            currentMultiplier = multiplier;
+            
+            const eng = initEngine();
+            
+            // Load test image
+            const img = new Image();
+            img.src = '/indrolend.png';
+            
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+            });
+            
+            // Temporarily modify the multiplier in ParticleSystem
+            const originalExtract = eng.particleSystem.extractImageData.bind(eng.particleSystem);
+            eng.particleSystem.extractImageData = function(image, maxParticles) {
+                const result = originalExtract(image, maxParticles);
+                // Override particle size with new multiplier
+                const scaleX = this.width / result.gridWidth;
+                const scaleY = this.height / result.gridHeight;
+                const scale = Math.min(scaleX, scaleY) * this.IMAGE_PADDING_FACTOR;
+                result.particleSize = Math.max(
+                    this.config.minSize,
+                    Math.min(this.config.maxSize, scale * multiplier)
+                );
+                return result;
+            };
+            
+            // Initialize and render
+            eng.initializeFromImage(img);
+            eng.start();
+            
+            // Wait for render
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Analyze coverage
+            const particles = eng.particleSystem.getParticles();
+            const imageData = originalExtract(img, particles.length);
+            const metrics = analyzeGaps(particles, imageData);
+            
+            displayResults(metrics, multiplier);
+            
+            console.log('[Test] Metrics:', metrics);
+        };
+        
+        // Test current multiplier
+        window.testCurrentMultiplier = function() {
+            testMultiplier(1.2);
+        };
+        
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testCurrentMultiplier();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
