@@ -21,8 +21,12 @@ The included `hybrid-transition-9x16.webm` video demonstrates a transition from 
 
 - **Image Upload**: User-friendly interface to upload custom images for transitions
 - **Image Previews**: See thumbnails of uploaded images before recording
+- **Test/Preview Mode**: Preview transitions with different settings before recording (NEW!)
+- **Reset Button**: Quick reset to try different settings easily (NEW!)
+- **Adjustable Parameters**: 7 sliders to control transition timing and effects
 - **MP4 Video Export**: Automatically converts recorded videos to MP4 format with H.264 codec
 - **WebM Fallback**: Gracefully falls back to WebM if conversion is unavailable
+- **Safari/Mac Support**: Native MP4 recording on Safari, no conversion needed
 - **Video Recording**: Uses the Canvas API's `captureStream()` method with `MediaRecorder` to record the canvas animation
 - **9:16 Aspect Ratio**: Portrait video format (720x1280 pixels)
 - **White Background**: Clean white canvas background
@@ -54,20 +58,33 @@ The included `hybrid-transition-9x16.webm` video demonstrates a transition from 
    - Click "Choose File" for Source Image (Image 1)
    - Click "Choose File" for Target Image (Image 2)
    - Preview thumbnails will appear after each upload
-   - The "Start Recording" button will enable once both images are uploaded
+   - The "Test Transition" and "Start Recording" buttons will enable once both images are uploaded
 
-4. **Start recording**:
-   Click the "Start Recording & Transition" button
+4. **Test and adjust (NEW!):**
+   - Click "Test Transition (Preview)" to preview the effect without recording
+   - Adjust the sliders to fine-tune the transition
+   - Click "Reset" to clear and try again
+   - Repeat until satisfied with the settings
+
+5. **Start recording**:
+   Click the "Start Recording" button when you're happy with the preview
    - The page will load the video converter (FFmpeg.wasm)
    - Recording will begin automatically
 
-5. **Wait for completion**:
+6. **Wait for completion**:
    The transition takes approximately 9 seconds to complete
-   - The video is recorded in WebM format first
+   - The video is recorded in WebM format first (or MP4 on Safari)
    - Automatic conversion to MP4 happens after recording
 
-6. **Download the video**:
-   Click the "Download Video" button to save the `.mp4` file (or `.webm` if conversion failed)
+7. **Download the video**:
+   Click the "Download Video" button to save the `.mp4` file
+
+### Workflow Tips
+
+- **Test First**: Always use "Test Transition (Preview)" to preview before recording
+- **Iterate**: Use "Reset" to quickly try different slider settings
+- **Record Once**: Only record when you're satisfied with the preview
+- **Save Settings**: Note your favorite slider values for future use
 
 ### Customizing the Export
 
@@ -163,30 +180,46 @@ The video export feature requires:
 - Modern browser with WebGL support
 - Canvas API `captureStream()` method
 - MediaRecorder API
-- WebM video codec support (for recording)
-- WebAssembly support (for MP4 conversion)
+- WebAssembly support (for WebM to MP4 conversion, optional)
 
-**MP4 Conversion Support:**
-- Chrome/Edge 57+ (WebAssembly support)
-- Firefox 52+ (WebAssembly support)
-- Safari 11+ (WebAssembly support)
-- Opera 44+ (WebAssembly support)
+**Recording Support by Browser:**
+- **Chrome/Edge 47+**: Records WebM (VP9/VP8), converts to MP4 with FFmpeg
+- **Firefox 43+**: Records WebM (VP9/VP8), converts to MP4 with FFmpeg
+- **Safari 14.1+ (Mac)**: Records MP4 (H.264) directly, no conversion needed
+- **Opera 36+**: Records WebM, converts to MP4 with FFmpeg
 
-**Recording Support:**
-- Chrome/Edge 47+
-- Firefox 43+
-- Opera 36+
-- Safari 14.1+ (with some limitations)
+**Codec Fallback Order:**
+1. WebM with VP9 codec (highest quality, Chrome/Firefox)
+2. WebM with VP8 codec (fallback for older browsers)
+3. WebM default codec
+4. MP4 with H.264 codec (Safari/Mac)
+5. MP4 default codec (final fallback)
 
-**Note**: If MP4 conversion fails, videos are saved as WebM which works in all supported browsers.
+**Safari/Mac Notes:**
+- Safari doesn't support WebM recording but records MP4 (H.264) natively
+- Cross-Origin Isolation headers still required for consistency
+- MP4 files from Safari work without FFmpeg conversion
+- All exported videos are MP4 format regardless of recording format
 
 ## Troubleshooting
 
+### "Error: mimeType is not supported" (Mac/Safari)
+**Fixed in latest version!** If you still see this error:
+- Ensure you're using the latest version of the code
+- Update Safari to version 14.1 or later
+- The code now automatically detects Safari and uses MP4 (H.264) codec instead of WebM
+- Check browser console to see which codec was selected
+
 ### MP4 conversion fails or videos save as WebM
+- **Cross-Origin Isolation**: MP4 conversion requires Cross-Origin Isolation headers. The `_headers` file in the deployment directory configures these for Cloudflare Pages:
+  - `Cross-Origin-Embedder-Policy: require-corp`
+  - `Cross-Origin-Opener-Policy: same-origin`
 - Check browser console for FFmpeg loading errors
 - Ensure internet connection is stable (FFmpeg.wasm loads from CDN)
+- **Safari/Mac users**: Your videos record as MP4 natively, no conversion needed
 - Try a different browser (Chrome/Edge recommended)
 - If conversion consistently fails, use the WebM file and convert manually using FFmpeg
+- **For other hosting providers**: Ensure these headers are set for the export page (see DEPLOYMENT.md for details)
 
 ### Video file is empty or corrupt
 - Ensure the transition completes fully before stopping
@@ -207,8 +240,8 @@ The video export feature requires:
 
 ### MediaRecorder not supported
 - Update your browser to the latest version
-- Try a different browser (Chrome recommended)
-- Check if WebM codec is available in your browser
+- Try a different browser (Chrome/Edge recommended for WebM, Safari for Mac users)
+- The code now supports both WebM and MP4 codecs for maximum compatibility
 
 ## Technical Details
 

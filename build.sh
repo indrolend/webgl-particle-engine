@@ -135,6 +135,13 @@ if [ -f indrolend.png ]; then
   cp indrolend.png public/
 fi
 
+# Copy configuration files
+echo "Copying configuration files..."
+if [ -f _headers ]; then
+  cp _headers public/
+  echo "  - Copied _headers file"
+fi
+
 # Large demo files (cover art.jpeg, hybrid-transition-9x16.webm) are NOT copied
 # to public/ directory by default to ensure Cloudflare deployment succeeds.
 # These files remain in the root directory for local development use.

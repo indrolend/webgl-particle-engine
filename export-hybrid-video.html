@@ -129,6 +129,30 @@
             cursor: not-allowed;
         }
         
+        button.secondary {
+            background: #95a5a6;
+        }
+        
+        button.secondary:hover:not(:disabled) {
+            background: #7f8c8d;
+        }
+        
+        button.success {
+            background: #27ae60;
+        }
+        
+        button.success:hover:not(:disabled) {
+            background: #229954;
+        }
+        
+        button.warning {
+            background: #e67e22;
+        }
+        
+        button.warning:hover:not(:disabled) {
+            background: #d35400;
+        }
+        
         .status {
             text-align: center;
             margin: 10px;
@@ -148,6 +172,10 @@
         .status.recording {
             color: #f39c12;
             font-weight: bold;
+        }
+        
+        .status.info {
+            color: #3498db;
         }
         
         .slider-group {
@@ -312,7 +340,9 @@
     <canvas id="canvas" width="720" height="1280"></canvas>
     
     <div class="controls">
-        <button id="startBtn" disabled>Start Recording & Transition</button>
+        <button id="testBtn" class="secondary" disabled>Test Transition (Preview)</button>
+        <button id="resetBtn" class="warning" disabled>Reset</button>
+        <button id="startBtn" class="success" disabled>Start Recording</button>
         <button id="downloadBtn" disabled>Download Video</button>
     </div>
     
@@ -326,6 +356,8 @@
         
         const canvas = document.getElementById('canvas');
         const status = document.getElementById('status');
+        const testBtn = document.getElementById('testBtn');
+        const resetBtn = document.getElementById('resetBtn');
         const startBtn = document.getElementById('startBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const image1Input = document.getElementById('image1Input');
@@ -428,10 +460,16 @@
         }
         
         // Convert WebM to MP4
-        async function convertToMP4(webmBlob) {
+        async function convertToMP4(inputBlob) {
             if (!ffmpegLoaded) {
-                console.warn('FFmpeg not loaded, returning WebM blob');
-                return webmBlob;
+                console.warn('FFmpeg not loaded, returning original blob');
+                return inputBlob;
+            }
+            
+            // If input is already MP4, no conversion needed
+            if (inputBlob.type.includes('mp4')) {
+                console.log('Input is already MP4, skipping conversion');
+                return inputBlob;
             }
             
             try {
@@ -439,7 +477,7 @@
                 console.log('Starting MP4 conversion...');
                 
                 // Write WebM file to FFmpeg virtual filesystem
-                await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
+                await ffmpeg.writeFile('input.webm', await fetchFile(inputBlob));
                 console.log('WebM file written to FFmpeg filesystem');
                 
                 // Convert to MP4 with H.264 codec
@@ -466,8 +504,8 @@
                 return mp4Blob;
             } catch (error) {
                 console.error('Conversion failed:', error);
-                updateStatus('Conversion failed, using WebM format', 'error');
-                return webmBlob;
+                updateStatus('Conversion failed, using original format', 'error');
+                return inputBlob;
             }
         }
         
@@ -530,8 +568,9 @@
         // Check if both images are uploaded
         function checkImagesReady() {
             if (uploadedImage1 && uploadedImage2) {
+                testBtn.disabled = false;
                 startBtn.disabled = false;
-                updateStatus('Images ready! Click "Start Recording" to begin.', 'success');
+                updateStatus('Images ready! Test the transition or start recording.', 'success');
             }
         }
         
@@ -567,20 +606,35 @@
             updateStatus('Setting up video recorder...');
             
             const stream = canvas.captureStream(60); // 60 FPS
+            
+            // Try different codec options in order of preference
+            const codecOptions = [
+                { mimeType: 'video/webm;codecs=vp9', container: 'webm', name: 'WebM (VP9)' },
+                { mimeType: 'video/webm;codecs=vp8', container: 'webm', name: 'WebM (VP8)' },
+                { mimeType: 'video/webm', container: 'webm', name: 'WebM' },
+                // Safari/Mac fallback options - use complete codec strings for better compatibility
+                { mimeType: 'video/mp4;codecs=avc1.42E01E', container: 'mp4', name: 'MP4 (H.264 Baseline)' },
+                { mimeType: 'video/mp4;codecs=avc1', container: 'mp4', name: 'MP4 (H.264)' },
+                { mimeType: 'video/mp4', container: 'mp4', name: 'MP4' }
+            ];
+            
+            let selectedCodec = null;
+            for (const codec of codecOptions) {
+                if (MediaRecorder.isTypeSupported(codec.mimeType)) {
+                    selectedCodec = codec;
+                    console.log(`Using codec: ${codec.name} (${codec.mimeType})`);
+                    break;
+                }
+            }
+            
+            if (!selectedCodec) {
+                throw new Error('No supported video codec found. Please try a different browser.');
+            }
+            
             const options = {
-                mimeType: 'video/webm;codecs=vp9',
+                mimeType: selectedCodec.mimeType,
                 videoBitsPerSecond: 8000000 // 8 Mbps for high quality
             };
-            
-            // Fallback to vp8 if vp9 is not supported
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                options.mimeType = 'video/webm;codecs=vp8';
-            }
-            
-            // Fallback to default if webm is not supported
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                options.mimeType = 'video/webm';
-            }
             
             mediaRecorder = new MediaRecorder(stream, options);
             recordedChunks = [];
@@ -592,28 +646,35 @@
             };
             
             mediaRecorder.onstop = async () => {
-                const webmBlob = new Blob(recordedChunks, { type: 'video/webm' });
+                const recordedBlob = new Blob(recordedChunks, { type: selectedCodec.mimeType });
                 
-                if (ffmpegLoaded) {
+                // If recording is already MP4, use it directly (no conversion needed)
+                if (selectedCodec.container === 'mp4') {
+                    videoBlob = recordedBlob;
+                    updateStatus('Video ready (MP4)! Click download to save.', 'success');
+                } else if (selectedCodec.container === 'webm' && ffmpegLoaded) {
                     updateStatus('Recording complete, converting to MP4...', 'recording');
-                    // Convert to MP4
-                    videoBlob = await convertToMP4(webmBlob);
+                    // Convert WebM to MP4
+                    videoBlob = await convertToMP4(recordedBlob);
                     const format = videoBlob.type.includes('mp4') ? 'MP4' : 'WebM';
                     updateStatus(`Video ready (${format})! Click download to save.`, 'success');
                 } else {
-                    videoBlob = webmBlob;
-                    updateStatus('Video ready (WebM)! Click download to save.', 'success');
+                    // Fallback: use recorded format as-is (WebM without FFmpeg)
+                    videoBlob = recordedBlob;
+                    const format = selectedCodec.container.toUpperCase();
+                    updateStatus(`Video ready (${format})! Click download to save.`, 'success');
                 }
                 
                 downloadBtn.disabled = false;
             };
             
-            updateStatus('Recorder ready', 'success');
+            updateStatus(`Recorder ready (${selectedCodec.name})`, 'success');
         }
         
         // Start hybrid transition
-        async function startTransition(image1, image2) {
-            updateStatus('Starting transition...', 'recording');
+        async function startTransition(image1, image2, isRecording = false) {
+            const statusPrefix = isRecording ? 'Recording' : 'Testing';
+            updateStatus(`${statusPrefix}: Starting transition...`, isRecording ? 'recording' : 'info');
             
             // Initialize engine with first image
             engine.initializeFromImage(image1);
@@ -632,30 +693,33 @@
                 vacuumStrength: 0.15,
                 particleFadeRate: 0.7,
                 staticDisplayDuration: parseInt(staticDisplayDuration.value, 10),
-                disintegrationDuration: parseInt(disintegrationDuration.value, 10)
+                disintegrationDuration: parseInt(disintegrationDuration.value, 10),
+                finalStaticDuration: 2000 // Display final image for 2 seconds
             };
             
             // Set render mode and start transition
             engine.setRenderMode('hybrid');
             engine.startHybridTransition(image1, image2, config);
             
-            // Calculate total duration
+            // Calculate total duration - include all phases
             const totalDuration = config.staticDisplayDuration + 
                                   config.disintegrationDuration +
                                   config.explosionTime + 
                                   config.recombinationDuration + 
                                   config.blendDuration + 
-                                  1000; // Extra time for final state
+                                  config.finalStaticDuration; // Final static image display
             
-            updateStatus(`Recording (${Math.round(totalDuration / 1000)}s)...`, 'recording');
+            updateStatus(`${statusPrefix} (${Math.round(totalDuration / 1000)}s)...`, isRecording ? 'recording' : 'info');
             
             // Wait for transition to complete
             await new Promise(resolve => setTimeout(resolve, totalDuration));
             
-            updateStatus('Transition complete, finalizing video...', 'recording');
-            
-            // Give a bit more time to ensure everything is captured
-            await new Promise(resolve => setTimeout(resolve, FINAL_BUFFER_TIME));
+            if (isRecording) {
+                updateStatus('Transition complete, finalizing video...', 'recording');
+                
+                // Give a bit more time to ensure everything is captured
+                await new Promise(resolve => setTimeout(resolve, FINAL_BUFFER_TIME));
+            }
         }
         
         // Download video
@@ -681,13 +745,99 @@
                 document.body.removeChild(a);
             }, 100);
             
-            updateStatus('Video downloaded!', 'success');
+            updateStatus('Video downloaded! You can test or record another video.', 'success');
+            
+            // Reset state to allow creating another video
+            // Keep the videoBlob for potential re-download, but enable other actions
+            testBtn.disabled = false;
+            startBtn.disabled = false;
+            resetBtn.disabled = false;
+            // downloadBtn stays enabled in case user wants to download again
+        }
+        
+        // Test transition without recording
+        async function testTransition() {
+            try {
+                testBtn.disabled = true;
+                startBtn.disabled = true;
+                resetBtn.disabled = true;
+                
+                updateStatus('Loading test mode...', 'info');
+                
+                // Load images
+                const { image1, image2 } = await loadImages();
+                
+                // Initialize engine
+                initializeEngine();
+                
+                updateStatus('Testing transition (not recording)...', 'info');
+                
+                // Run transition
+                await startTransition(image1, image2, false);
+                
+                updateStatus('Test complete! Adjust settings and test again, or start recording.', 'success');
+                
+                // Re-enable buttons after test
+                testBtn.disabled = false;
+                startBtn.disabled = false;
+                resetBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Error during test:', error);
+                updateStatus(`Error: ${error.message}`, 'error');
+                testBtn.disabled = false;
+                startBtn.disabled = false;
+                resetBtn.disabled = false;
+            }
+        }
+        
+        // Reset the canvas and engine
+        function resetTransition() {
+            try {
+                updateStatus('Resetting...', 'info');
+                
+                // Stop and cleanup engine if exists
+                if (engine) {
+                    engine.stop();
+                    engine = null;
+                }
+                
+                // Clear the WebGL canvas
+                if (canvas) {
+                    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                    if (gl) {
+                        gl.clearColor(1.0, 1.0, 1.0, 1.0); // White
+                        gl.clear(gl.COLOR_BUFFER_BIT);
+                    }
+                }
+                
+                // Clear any video blob
+                videoBlob = null;
+                
+                // Reset recorder
+                mediaRecorder = null;
+                recordedChunks = [];
+                
+                // Reset button states
+                downloadBtn.disabled = true;
+                testBtn.disabled = false;
+                startBtn.disabled = false;
+                resetBtn.disabled = false;
+                
+                updateStatus('Reset complete. Ready to test or record.', 'success');
+                
+            } catch (error) {
+                console.error('Error during reset:', error);
+                updateStatus(`Reset error: ${error.message}`, 'error');
+            }
         }
         
         // Main recording workflow
         async function startRecordingAndTransition() {
             try {
                 startBtn.disabled = true;
+                testBtn.disabled = true;
+                resetBtn.disabled = true;
                 downloadBtn.disabled = true;
                 
                 // Load FFmpeg for MP4 conversion
@@ -707,7 +857,7 @@
                 updateStatus('Recording started...', 'recording');
                 
                 // Run transition
-                await startTransition(image1, image2);
+                await startTransition(image1, image2, true);
                 
                 // Stop recording
                 mediaRecorder.stop();
@@ -716,15 +866,19 @@
                 console.error('Error during recording:', error);
                 updateStatus(`Error: ${error.message}`, 'error');
                 startBtn.disabled = false;
+                testBtn.disabled = false;
+                resetBtn.disabled = false;
             }
         }
         
         // Event listeners
+        testBtn.addEventListener('click', testTransition);
+        resetBtn.addEventListener('click', resetTransition);
         startBtn.addEventListener('click', startRecordingAndTransition);
         downloadBtn.addEventListener('click', downloadVideo);
         
         // Initial status
-        updateStatus('Ready to record. Click "Start Recording & Transition" to begin.');
+        updateStatus('Please upload two images to begin.');
     </script>
 </body>
 </html>
