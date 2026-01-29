@@ -7,8 +7,14 @@
  * 2. Explosion: Particles explode in random directions (controlled burst)
  * 3. Recombination: Particles recombine into second image shape (space vacuum behavior)
  * 4. Triangulation Blend: Gradual transition from particles to triangulation mode
+ * 
+ * Enhanced with:
+ * - Ferrofluid-inspired particle dynamics for cohesion and blob-like clustering
+ * - Image container physics for particle containment during transitions
  */
 import { Preset } from './Preset.js';
+import { FerrofluidPhysics } from '../physics/FerrofluidPhysics.js';
+import { ImageContainer } from '../physics/ImageContainer.js';
 
 export class HybridTransitionPreset extends Preset {
   constructor(config = {}) {
@@ -32,6 +38,15 @@ export class HybridTransitionPreset extends Preset {
         blendDuration: config.blendDuration || 1500, // Duration in ms
         particleFadeRate: config.particleFadeRate || 0.7, // How fast particles fade
         
+        // Ferrofluid physics settings
+        enableFerrofluid: config.enableFerrofluid !== false, // Enable ferrofluid physics
+        cohesionStrength: config.cohesionStrength || 0.05, // Particle cohesion strength
+        surfaceTension: config.surfaceTension || 0.1, // Surface tension for blob formation
+        
+        // Container physics settings
+        enableContainer: config.enableContainer !== false, // Enable container physics
+        containerPadding: config.containerPadding || 10, // Container padding in pixels
+        
         ...config
       }
     );
@@ -46,6 +61,26 @@ export class HybridTransitionPreset extends Preset {
     // Physics constants
     this.VACUUM_FORCE_MULTIPLIER = 0.1; // Controls the strength of vacuum force based on distance
     this.ALPHA_BLEND_RATE = 0.05; // Controls smoothness of particle fade during blend phase
+    
+    // Initialize ferrofluid physics
+    if (this.config.enableFerrofluid) {
+      this.ferrofluidPhysics = new FerrofluidPhysics({
+        cohesionRadius: 30,
+        cohesionStrength: this.config.cohesionStrength,
+        surfaceTension: this.config.surfaceTension,
+        attractionStrength: 0.15,
+        repulsionDistance: 5,
+        repulsionStrength: 0.25,
+        enableDuringExplosion: true,
+        enableDuringRecombination: true
+      });
+    } else {
+      this.ferrofluidPhysics = null;
+    }
+    
+    // Initialize image containers
+    this.sourceContainer = null;
+    this.targetContainer = null;
   }
 
   initialize(particles, dimensions, options = {}) {
@@ -54,6 +89,38 @@ export class HybridTransitionPreset extends Preset {
     // Store source and target images if provided
     this.sourceImage = options.sourceImage || null;
     this.targetImage = options.targetImage || null;
+    
+    // Create image containers if enabled
+    if (this.config.enableContainer && this.sourceImage) {
+      this.sourceContainer = new ImageContainer({
+        padding: this.config.containerPadding,
+        bounceStrength: 0.3,
+        edgeSoftness: 8
+      });
+      
+      // Calculate image position and scale on canvas
+      const imageAspect = this.sourceImage.width / this.sourceImage.height;
+      const canvasAspect = dimensions.width / dimensions.height;
+      let scale, offsetX, offsetY;
+      
+      if (imageAspect > canvasAspect) {
+        scale = (dimensions.width * 0.9) / this.sourceImage.width;
+      } else {
+        scale = (dimensions.height * 0.9) / this.sourceImage.height;
+      }
+      
+      offsetX = (dimensions.width - this.sourceImage.width * scale) / 2;
+      offsetY = (dimensions.height - this.sourceImage.height * scale) / 2;
+      
+      this.sourceContainer.generateFromImage(
+        this.sourceImage,
+        dimensions,
+        scale,
+        { x: offsetX, y: offsetY }
+      );
+      
+      console.log('[HybridTransition] Source container created');
+    }
     
     // Start with explosion phase
     this.startExplosion(particles, dimensions);
@@ -81,6 +148,7 @@ export class HybridTransitionPreset extends Preset {
   /**
    * Phase 3: Recombination - particles pulled toward target positions
    * Simulates space vacuum behavior with chaotic attraction
+   * Enhanced with target image container and ferrofluid physics
    */
   startRecombination(particles, targets) {
     console.log(`[HybridTransition] Starting recombination phase (${this.config.recombinationDuration}ms)`);
@@ -89,6 +157,38 @@ export class HybridTransitionPreset extends Preset {
 
     if (targets && targets.length > 0) {
       this.targets = targets;
+      
+      // Create target container if available
+      if (this.config.enableContainer && this.targetImage && this.dimensions) {
+        this.targetContainer = new ImageContainer({
+          padding: this.config.containerPadding,
+          bounceStrength: 0.3,
+          edgeSoftness: 8
+        });
+        
+        // Calculate target image position and scale on canvas
+        const imageAspect = this.targetImage.width / this.targetImage.height;
+        const canvasAspect = this.dimensions.width / this.dimensions.height;
+        let scale, offsetX, offsetY;
+        
+        if (imageAspect > canvasAspect) {
+          scale = (this.dimensions.width * 0.9) / this.targetImage.width;
+        } else {
+          scale = (this.dimensions.height * 0.9) / this.targetImage.height;
+        }
+        
+        offsetX = (this.dimensions.width - this.targetImage.width * scale) / 2;
+        offsetY = (this.dimensions.height - this.targetImage.height * scale) / 2;
+        
+        this.targetContainer.generateFromImage(
+          this.targetImage,
+          this.dimensions,
+          scale,
+          { x: offsetX, y: offsetY }
+        );
+        
+        console.log('[HybridTransition] Target container created');
+      }
       
       // Assign target positions to particles
       particles.forEach((particle, i) => {
@@ -168,6 +268,16 @@ export class HybridTransitionPreset extends Preset {
         particle.y = Math.max(0, Math.min(dimensions.height, particle.y));
       }
     });
+    
+    // Apply ferrofluid physics during explosion for blob-like behavior
+    if (this.ferrofluidPhysics) {
+      this.ferrofluidPhysics.update(particles, deltaTime, dimensions, 'explosion');
+    }
+    
+    // Apply container constraints during explosion
+    if (this.sourceContainer && this.config.enableContainer) {
+      this.sourceContainer.constrainParticles(particles);
+    }
 
     // Check if explosion phase is complete
     if (progress >= 1 && this.targets) {
@@ -229,6 +339,16 @@ export class HybridTransitionPreset extends Preset {
         }
       }
     });
+    
+    // Apply ferrofluid physics during recombination for cohesive blob formation
+    if (this.ferrofluidPhysics) {
+      this.ferrofluidPhysics.update(particles, deltaTime, dimensions, 'recombination');
+    }
+    
+    // Apply target container constraints during recombination
+    if (this.targetContainer && this.config.enableContainer) {
+      this.targetContainer.constrainParticles(particles);
+    }
 
     // Check if recombination is complete
     if (progress >= 1) {
