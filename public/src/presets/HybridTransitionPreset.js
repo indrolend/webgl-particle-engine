@@ -47,6 +47,13 @@ export class HybridTransitionPreset extends Preset {
         enableContainer: config.enableContainer !== false, // Enable container physics
         containerPadding: config.containerPadding || 10, // Container padding in pixels
         
+        // Elastic blob physics settings
+        enableElastic: config.enableElastic !== false, // Enable elastic blob physics
+        springStiffness: config.springStiffness || 0.5, // Spring force strength (0-2)
+        damping: config.damping || 0.92, // Velocity damping (0.5-0.99)
+        elasticSurfaceTension: config.elasticSurfaceTension || 0.3, // Elastic surface tension (0-1)
+        pressureStrength: config.pressureStrength || 0.2, // Volume preservation (0-1)
+        
         ...config
       }
     );
@@ -72,7 +79,13 @@ export class HybridTransitionPreset extends Preset {
         repulsionDistance: 3,  // Decreased for tighter packing
         repulsionStrength: 0.2,  // Decreased to allow closer particles
         enableDuringExplosion: true,
-        enableDuringRecombination: true
+        enableDuringRecombination: true,
+        // Elastic physics parameters
+        enableElastic: this.config.enableElastic,
+        springStiffness: this.config.springStiffness,
+        damping: this.config.damping,
+        elasticSurfaceTension: this.config.elasticSurfaceTension,
+        pressureStrength: this.config.pressureStrength
       });
     } else {
       this.ferrofluidPhysics = null;

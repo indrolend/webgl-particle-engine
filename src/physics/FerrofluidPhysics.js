@@ -22,6 +22,13 @@ export class FerrofluidPhysics {
       repulsionDistance: config.repulsionDistance || 3,   // Decreased from 5 so particles pack closer
       repulsionStrength: config.repulsionStrength || 0.2,  // Decreased from 0.3 to allow tighter packing
       
+      // Elastic physics parameters (water-in-space behavior)
+      enableElastic: config.enableElastic !== false,    // Enable elastic blob physics
+      springStiffness: config.springStiffness || 0.5,   // Spring force strength (0-2)
+      damping: config.damping || 0.92,                  // Velocity damping (0.5-0.99)
+      elasticSurfaceTension: config.elasticSurfaceTension || 0.3, // Elastic surface tension (0-1)
+      pressureStrength: config.pressureStrength || 0.2,  // Volume preservation (0-1)
+      
       // Performance optimization
       enableSpatialHashing: config.enableSpatialHashing !== false,
       cellSize: config.cellSize || 60,                   // Increased from 50 to match larger cohesion radius
@@ -206,6 +213,115 @@ export class FerrofluidPhysics {
   }
   
   /**
+   * Apply elastic spring forces between nearby particles
+   * Creates water-in-space elastic behavior
+   * @param {Array} particles - Array of particles
+   * @param {number} deltaTime - Time delta for physics calculation
+   */
+  applyElasticForces(particles, deltaTime) {
+    if (!this.config.enableElastic) return;
+    
+    const springStiffness = this.config.springStiffness * deltaTime;
+    const damping = this.config.damping;
+    const elasticTension = this.config.elasticSurfaceTension * deltaTime;
+    
+    particles.forEach((particle, i) => {
+      const neighbors = this.getNeighbors(particle, particles);
+      
+      if (neighbors.length === 0) return;
+      
+      // Calculate center of local cluster
+      let centerX = 0;
+      let centerY = 0;
+      neighbors.forEach(idx => {
+        const neighbor = particles[idx];
+        centerX += neighbor.x;
+        centerY += neighbor.y;
+      });
+      centerX /= neighbors.length;
+      centerY /= neighbors.length;
+      
+      // Apply spring forces to maintain relative positions
+      neighbors.forEach(idx => {
+        const neighbor = particles[idx];
+        const dx = neighbor.x - particle.x;
+        const dy = neighbor.y - particle.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < 0.1 || distance > this.config.cohesionRadius) return;
+        
+        // Spring force (Hooke's law approximation)
+        // Tries to maintain ideal distance between particles
+        const idealDistance = this.config.cohesionRadius * 0.4; // Target spacing
+        const displacement = distance - idealDistance;
+        const force = springStiffness * displacement * 0.5;
+        
+        particle.vx += (dx / distance) * force;
+        particle.vy += (dy / distance) * force;
+      });
+      
+      // Elastic surface tension - pull toward local center
+      const dx = centerX - particle.x;
+      const dy = centerY - particle.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance > 0.1) {
+        const force = elasticTension * (distance / this.config.cohesionRadius);
+        particle.vx += (dx / distance) * force;
+        particle.vy += (dy / distance) * force;
+      }
+      
+      // Apply velocity damping for realistic motion
+      particle.vx *= damping;
+      particle.vy *= damping;
+    });
+  }
+  
+  /**
+   * Apply volume preservation forces
+   * Simulates incompressible fluid behavior
+   * @param {Array} particles - Array of particles
+   * @param {number} deltaTime - Time delta for physics calculation
+   */
+  applyVolumePressure(particles, deltaTime) {
+    if (!this.config.enableElastic || !this.config.pressureStrength) return;
+    
+    const pressureStr = this.config.pressureStrength * deltaTime;
+    
+    particles.forEach((particle, i) => {
+      const neighbors = this.getNeighbors(particle, particles);
+      
+      if (neighbors.length === 0) return;
+      
+      // Calculate local density (number of neighbors)
+      const density = neighbors.length;
+      const idealDensity = 8; // Target number of neighbors for proper spacing
+      
+      // Pressure based on density difference
+      const densityDiff = density - idealDensity;
+      
+      if (Math.abs(densityDiff) < 0.1) return;
+      
+      // Apply pressure forces
+      // If too dense (densityDiff > 0), push outward
+      // If too sparse (densityDiff < 0), pull inward
+      neighbors.forEach(idx => {
+        const neighbor = particles[idx];
+        const dx = neighbor.x - particle.x;
+        const dy = neighbor.y - particle.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < 0.1) return;
+        
+        // Push away if too dense, pull together if too sparse
+        const force = -pressureStr * densityDiff * 0.1;
+        particle.vx += (dx / distance) * force;
+        particle.vy += (dy / distance) * force;
+      });
+    });
+  }
+  
+  /**
    * Apply all ferrofluid physics forces
    * @param {Array} particles - Array of particles
    * @param {number} deltaTime - Time delta for physics calculation
@@ -229,6 +345,12 @@ export class FerrofluidPhysics {
     // Apply ferrofluid forces
     this.applyCohesion(particles, deltaTime);
     this.applyAttractionRepulsion(particles, deltaTime);
+    
+    // Apply elastic forces if enabled
+    if (this.config.enableElastic) {
+      this.applyElasticForces(particles, deltaTime);
+      this.applyVolumePressure(particles, deltaTime);
+    }
   }
   
   /**

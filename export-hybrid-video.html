@@ -383,6 +383,53 @@
         </div>
     </div>
     
+    <div class="controls-section">
+        <h3>💧 Elastic Blob Physics Controls</h3>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Enable Elastic Physics:</span>
+                <input type="checkbox" id="enableElastic" checked style="width: auto; height: 20px; margin-left: 10px; cursor: pointer;">
+            </div>
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Spring Stiffness:</span>
+                <span class="slider-value" id="springStiffnessValue">0.5</span>
+            </div>
+            <input type="range" id="springStiffness" min="0" max="2" step="0.1" value="0.5">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Damping:</span>
+                <span class="slider-value" id="dampingValue">0.92</span>
+            </div>
+            <input type="range" id="damping" min="0.5" max="0.99" step="0.01" value="0.92">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Elastic Surface Tension:</span>
+                <span class="slider-value" id="elasticSurfaceTensionValue">0.3</span>
+            </div>
+            <input type="range" id="elasticSurfaceTension" min="0" max="1" step="0.05" value="0.3">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Pressure Strength:</span>
+                <span class="slider-value" id="pressureStrengthValue">0.2</span>
+            </div>
+            <input type="range" id="pressureStrength" min="0" max="1" step="0.05" value="0.2">
+        </div>
+        
+        <div class="info-box">
+            <strong>💧 Elastic Physics:</strong> Makes blobs behave like water in space with elastic deformation, spring forces, and volume preservation. Creates cohesive liquid-like behavior.
+        </div>
+    </div>
+    
     <canvas id="canvas" width="720" height="1280"></canvas>
     
     <div class="controls">
@@ -449,6 +496,17 @@
         const containerPadding = document.getElementById('containerPadding');
         const containerPaddingValue = document.getElementById('containerPaddingValue');
         
+        // Get elastic blob control elements
+        const enableElastic = document.getElementById('enableElastic');
+        const springStiffness = document.getElementById('springStiffness');
+        const springStiffnessValue = document.getElementById('springStiffnessValue');
+        const damping = document.getElementById('damping');
+        const dampingValue = document.getElementById('dampingValue');
+        const elasticSurfaceTension = document.getElementById('elasticSurfaceTension');
+        const elasticSurfaceTensionValue = document.getElementById('elasticSurfaceTensionValue');
+        const pressureStrength = document.getElementById('pressureStrength');
+        const pressureStrengthValue = document.getElementById('pressureStrengthValue');
+        
         // Add slider event listeners
         particleCountSlider.addEventListener('input', () => {
             particleCountValue.textContent = particleCountSlider.value;
@@ -489,6 +547,23 @@
         
         containerPadding.addEventListener('input', () => {
             containerPaddingValue.textContent = containerPadding.value;
+        });
+        
+        // Add elastic blob slider event listeners
+        springStiffness.addEventListener('input', () => {
+            springStiffnessValue.textContent = springStiffness.value;
+        });
+        
+        damping.addEventListener('input', () => {
+            dampingValue.textContent = damping.value;
+        });
+        
+        elasticSurfaceTension.addEventListener('input', () => {
+            elasticSurfaceTensionValue.textContent = elasticSurfaceTension.value;
+        });
+        
+        pressureStrength.addEventListener('input', () => {
+            pressureStrengthValue.textContent = pressureStrength.value;
         });
         
         // Initialize FFmpeg
@@ -772,7 +847,14 @@
                 
                 // Container physics parameters
                 enableContainer: enableContainer.checked,
-                containerPadding: parseInt(containerPadding.value, 10)
+                containerPadding: parseInt(containerPadding.value, 10),
+                
+                // Elastic blob physics parameters
+                enableElastic: enableElastic.checked,
+                springStiffness: parseFloat(springStiffness.value),
+                damping: parseFloat(damping.value),
+                elasticSurfaceTension: parseFloat(elasticSurfaceTension.value),
+                pressureStrength: parseFloat(pressureStrength.value)
             };
             
             // Set render mode and start transition
