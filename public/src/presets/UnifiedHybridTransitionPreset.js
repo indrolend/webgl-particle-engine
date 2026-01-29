@@ -228,10 +228,16 @@ export class UnifiedHybridTransitionPreset extends Preset {
   updateProgressValues(overallProgress) {
     const { explosionWeight, recombinationWeight, blendWeight } = this.config;
     
+    // Normalize weights to ensure they sum to 1.0
+    const totalWeight = explosionWeight + recombinationWeight + blendWeight;
+    const normExplosionWeight = explosionWeight / totalWeight;
+    const normRecombinationWeight = recombinationWeight / totalWeight;
+    const normBlendWeight = blendWeight / totalWeight;
+    
     // Calculate stage boundaries
-    const explosionEnd = explosionWeight;
-    const recombinationEnd = explosionEnd + recombinationWeight;
-    const blendEnd = recombinationEnd + blendWeight;
+    const explosionEnd = normExplosionWeight;
+    const recombinationEnd = explosionEnd + normRecombinationWeight;
+    const blendEnd = recombinationEnd + normBlendWeight; // Now used for validation
     
     // Explosion progress (0→1 during first stage, then stays at 1)
     if (overallProgress < explosionEnd) {
@@ -244,7 +250,7 @@ export class UnifiedHybridTransitionPreset extends Preset {
     if (overallProgress < explosionEnd) {
       this.recombinationProgress = 0;
     } else if (overallProgress < recombinationEnd) {
-      const localProgress = (overallProgress - explosionEnd) / recombinationWeight;
+      const localProgress = (overallProgress - explosionEnd) / normRecombinationWeight;
       this.recombinationProgress = this.easeInOutCubic(localProgress);
     } else {
       this.recombinationProgress = 1.0;
@@ -254,7 +260,7 @@ export class UnifiedHybridTransitionPreset extends Preset {
     if (overallProgress < recombinationEnd) {
       this.blendProgress = 0;
     } else {
-      const localProgress = (overallProgress - recombinationEnd) / blendWeight;
+      const localProgress = (overallProgress - recombinationEnd) / normBlendWeight;
       this.blendProgress = this.easeInOutCubic(localProgress);
     }
   }
@@ -385,7 +391,10 @@ export class UnifiedHybridTransitionPreset extends Preset {
   updateParticleAlpha(particle) {
     // Particles fade during blend phase
     const targetAlpha = 1.0 - (this.blendProgress * 0.7);
-    particle.alpha = particle.alpha + (targetAlpha - particle.alpha) * 0.05;
+    // Use frame-rate independent interpolation
+    const alphaBlendSpeed = 3.0; // Adjusts alpha 3x per second
+    const blendRate = 1.0 - Math.exp(-alphaBlendSpeed * (1.0 / 60.0)); // Assuming ~60fps
+    particle.alpha = particle.alpha + (targetAlpha - particle.alpha) * blendRate;
   }
   
   /**

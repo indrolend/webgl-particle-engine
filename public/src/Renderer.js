@@ -472,16 +472,16 @@ export class Renderer {
       positions[i * 2] = particle.x;
       positions[i * 2 + 1] = particle.y;
       
-      // Primary color
-      colors[i * 4] = particle.r;
-      colors[i * 4 + 1] = particle.g;
-      colors[i * 4 + 2] = particle.b;
+      // Primary color - normalize to 0-1 range for shaders
+      colors[i * 4] = particle.r / 255.0;
+      colors[i * 4 + 1] = particle.g / 255.0;
+      colors[i * 4 + 2] = particle.b / 255.0;
       colors[i * 4 + 3] = particle.alpha * globalOpacity;
       
-      // Secondary color (for gradients)
-      colorsSecondary[i * 4] = particle.rSecondary !== undefined ? particle.rSecondary : particle.r;
-      colorsSecondary[i * 4 + 1] = particle.gSecondary !== undefined ? particle.gSecondary : particle.g;
-      colorsSecondary[i * 4 + 2] = particle.bSecondary !== undefined ? particle.bSecondary : particle.b;
+      // Secondary color (for gradients) - normalize to 0-1 range
+      colorsSecondary[i * 4] = (particle.rSecondary !== undefined ? particle.rSecondary : particle.r) / 255.0;
+      colorsSecondary[i * 4 + 1] = (particle.gSecondary !== undefined ? particle.gSecondary : particle.g) / 255.0;
+      colorsSecondary[i * 4 + 2] = (particle.bSecondary !== undefined ? particle.bSecondary : particle.b) / 255.0;
       colorsSecondary[i * 4 + 3] = particle.alpha * globalOpacity;
       
       sizes[i] = particle.size;
@@ -509,11 +509,13 @@ export class Renderer {
     gl.enableVertexAttribArray(attrLocs.color);
     gl.vertexAttribPointer(attrLocs.color, 4, gl.FLOAT, false, 0, 0);
     
-    // Update secondary color buffer
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.gradientColorSecondary);
-    gl.bufferData(gl.ARRAY_BUFFER, colorsSecondary, gl.DYNAMIC_DRAW);
-    gl.enableVertexAttribArray(attrLocs.colorSecondary);
-    gl.vertexAttribPointer(attrLocs.colorSecondary, 4, gl.FLOAT, false, 0, 0);
+    // Update secondary color buffer (check if attribute exists)
+    if (attrLocs.colorSecondary >= 0) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.gradientColorSecondary);
+      gl.bufferData(gl.ARRAY_BUFFER, colorsSecondary, gl.DYNAMIC_DRAW);
+      gl.enableVertexAttribArray(attrLocs.colorSecondary);
+      gl.vertexAttribPointer(attrLocs.colorSecondary, 4, gl.FLOAT, false, 0, 0);
+    }
     
     // Update size buffer
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.gradientSize);
