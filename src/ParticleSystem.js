@@ -17,8 +17,8 @@ export class ParticleSystem {
     this.config = {
       particleCount: config.particleCount || 1000,
       speed: config.speed || 1.0,
-      minSize: config.minSize || 2,
-      maxSize: config.maxSize || 20  // Increased from 8 to 20 for gap-free solid coverage
+      minSize: config.minSize || 15,  // Increased from 2 for thicker liquid appearance
+      maxSize: config.maxSize || 40   // Increased from 20 for blob-like coverage
     };
     
     this.width = 800;

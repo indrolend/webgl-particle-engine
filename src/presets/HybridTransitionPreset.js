@@ -65,12 +65,12 @@ export class HybridTransitionPreset extends Preset {
     // Initialize ferrofluid physics
     if (this.config.enableFerrofluid) {
       this.ferrofluidPhysics = new FerrofluidPhysics({
-        cohesionRadius: 30,
+        cohesionRadius: 50,  // Increased for longer-range attraction
         cohesionStrength: this.config.cohesionStrength,
         surfaceTension: this.config.surfaceTension,
-        attractionStrength: 0.15,
-        repulsionDistance: 5,
-        repulsionStrength: 0.25,
+        attractionStrength: 0.3,  // Increased for stronger clustering
+        repulsionDistance: 3,  // Decreased for tighter packing
+        repulsionStrength: 0.2,  // Decreased to allow closer particles
         enableDuringExplosion: true,
         enableDuringRecombination: true
       });
