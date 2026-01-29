@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Blob Particles</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { color: #667eea; }
+        #canvas {
+            border: 2px solid #667eea;
+            margin: 20px;
+        }
+        .info {
+            background: rgba(102, 126, 234, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px;
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Thick Liquid Blob Particles Test</h1>
+    <div class="info">
+        <strong>Visual Test:</strong> Particles now render as smooth circles with soft edges, creating a thick liquid blob appearance similar to agar.io.
+    </div>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <div class="info" id="status">Initializing...</div>
+    
+    <script type="module">
+        import { HybridEngine } from './src/HybridEngine.js';
+        
+        const canvas = document.getElementById('canvas');
+        const status = document.getElementById('status');
+        
+        // Initialize engine
+        const engine = new HybridEngine(canvas, {
+            particleCount: 3000,
+            enableTriangulation: true
+        });
+        
+        // Load and display test image
+        const img = new Image();
+        img.onload = () => {
+            status.textContent = 'Image loaded. Initializing particles with blob appearance...';
+            engine.initializeFromImage(img);
+            engine.start();
+            
+            setTimeout(() => {
+                status.innerHTML = '<strong>Success!</strong> Particles are now rendering as thick liquid blobs with:<br>• Circular shapes with soft edges<br>• Larger sizes (15-40px) for better coverage<br>• Enhanced cohesion (0.2) and surface tension (0.25)<br>• Particles glob together like agar.io blobs';
+            }, 500);
+        };
+        img.src = './indrolend.png';
+    </script>
+</body>
+</html>

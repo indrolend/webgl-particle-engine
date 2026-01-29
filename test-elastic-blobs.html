@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elastic Blob Physics Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            background: rgba(102, 126, 234, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            max-width: 800px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        
+        .highlight {
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        #canvas {
+            border: 2px solid #667eea;
+            margin: 20px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            background: white;
+            cursor: crosshair;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            max-width: 900px;
+            margin: 20px;
+        }
+        
+        .control-group {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+        
+        .control-group h3 {
+            margin-top: 0;
+            color: #667eea;
+            font-size: 14px;
+        }
+        
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-size: 12px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+        }
+        
+        .value-display {
+            color: #667eea;
+            font-weight: bold;
+            float: right;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .info {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px 25px;
+            border-radius: 6px;
+            margin: 10px;
+            font-size: 14px;
+            max-width: 800px;
+            text-align: center;
+        }
+        
+        .feature-list {
+            text-align: left;
+            max-width: 800px;
+            margin: 20px auto;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .feature-list li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>💧 Elastic Blob Physics - Water in Space</h1>
+    
+    <div class="description">
+        <p><strong>Elastic Liquid Physics:</strong> Blobs now behave like <span class="highlight">water in space</span> with elastic deformation and recovery.</p>
+        <p>Features: <span class="highlight">Spring forces</span>, <span class="highlight">surface tension</span>, <span class="highlight">volume preservation</span>, and <span class="highlight">damping</span>.</p>
+        <p><em>Click and drag on canvas to push blobs and see elastic behavior!</em></p>
+    </div>
+    
+    <canvas id="canvas" width="800" height="600"></canvas>
+    
+    <div style="text-align: center; margin: 10px;">
+        <button id="loadImageBtn">Load Test Image</button>
+        <button id="perturbBtn">Apply Random Force</button>
+        <button id="resetBtn">Reset Physics</button>
+    </div>
+    
+    <div class="controls">
+        <div class="control-group">
+            <h3>Spring Forces</h3>
+            <label>
+                Spring Stiffness: <span class="value-display" id="springValue">0.5</span>
+                <input type="range" id="springStiffness" min="0" max="2" step="0.1" value="0.5">
+            </label>
+            <label>
+                Damping: <span class="value-display" id="dampingValue">0.92</span>
+                <input type="range" id="damping" min="0.5" max="0.99" step="0.01" value="0.92">
+            </label>
+        </div>
+        
+        <div class="control-group">
+            <h3>Surface Tension</h3>
+            <label>
+                Tension Strength: <span class="value-display" id="tensionValue">0.3</span>
+                <input type="range" id="surfaceTension" min="0" max="1" step="0.05" value="0.3">
+            </label>
+        </div>
+        
+        <div class="control-group">
+            <h3>Volume Preservation</h3>
+            <label>
+                Pressure Strength: <span class="value-display" id="pressureValue">0.2</span>
+                <input type="range" id="pressureStrength" min="0" max="1" step="0.05" value="0.2">
+            </label>
+        </div>
+    </div>
+    
+    <div class="info" id="status">Click "Load Test Image" to start elastic blob physics demo</div>
+    
+    <div class="feature-list">
+        <strong>🌊 Elastic Physics Features:</strong>
+        <ul>
+            <li>✅ <strong>Spring Forces:</strong> Outline particles connected by springs maintain blob shape</li>
+            <li>✅ <strong>Surface Tension:</strong> Particles pulled toward center for cohesive behavior</li>
+            <li>✅ <strong>Volume Preservation:</strong> Pressure forces maintain constant blob area</li>
+            <li>✅ <strong>Damping:</strong> Velocity damping creates realistic motion decay</li>
+            <li>✅ <strong>Interactive:</strong> Click and drag to push blobs and watch them bounce back</li>
+            <li>✅ <strong>Water-like behavior:</strong> Deforms elastically and recovers shape</li>
+        </ul>
+    </div>
+    
+    <script type="module">
+        import { ParticleSystem } from './src/ParticleSystem.js';
+        import { BlobSystem } from './src/BlobSystem.js';
+        import { BlobRenderer } from './src/BlobRenderer.js';
+        
+        const canvas = document.getElementById('canvas');
+        const status = document.getElementById('status');
+        const loadImageBtn = document.getElementById('loadImageBtn');
+        const perturbBtn = document.getElementById('perturbBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        // Control elements
+        const springStiffness = document.getElementById('springStiffness');
+        const damping = document.getElementById('damping');
+        const surfaceTension = document.getElementById('surfaceTension');
+        const pressureStrength = document.getElementById('pressureStrength');
+        
+        let particleSystem = null;
+        let blobSystem = null;
+        let blobRenderer = null;
+        let animationRunning = false;
+        let mouseDown = false;
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        // Initialize systems
+        function initializeSystems() {
+            particleSystem = new ParticleSystem({
+                particleCount: 400,
+                minSize: 8,
+                maxSize: 12
+            });
+            particleSystem.setDimensions(canvas.width, canvas.height);
+            
+            blobSystem = new BlobSystem({
+                minBlobSize: 8,
+                maxBlobSize: 15,
+                colorThreshold: 0.15,
+                enableElastic: true,
+                springStiffness: parseFloat(springStiffness.value),
+                damping: parseFloat(damping.value),
+                surfaceTension: parseFloat(surfaceTension.value),
+                pressureStrength: parseFloat(pressureStrength.value)
+            });
+            
+            blobRenderer = new BlobRenderer(canvas);
+        }
+        
+        initializeSystems();
+        
+        // Update control displays
+        springStiffness.addEventListener('input', (e) => {
+            document.getElementById('springValue').textContent = e.target.value;
+            updateBlobPhysics();
+        });
+        
+        damping.addEventListener('input', (e) => {
+            document.getElementById('dampingValue').textContent = e.target.value;
+            updateBlobPhysics();
+        });
+        
+        surfaceTension.addEventListener('input', (e) => {
+            document.getElementById('tensionValue').textContent = e.target.value;
+            updateBlobPhysics();
+        });
+        
+        pressureStrength.addEventListener('input', (e) => {
+            document.getElementById('pressureValue').textContent = e.target.value;
+            updateBlobPhysics();
+        });
+        
+        function updateBlobPhysics() {
+            if (blobSystem && blobSystem.blobs) {
+                for (const blob of blobSystem.blobs) {
+                    blob.springStiffness = parseFloat(springStiffness.value);
+                    blob.damping = parseFloat(damping.value);
+                    blob.surfaceTension = parseFloat(surfaceTension.value);
+                    blob.pressureStrength = parseFloat(pressureStrength.value);
+                }
+            }
+        }
+        
+        // Mouse interaction
+        canvas.addEventListener('mousedown', (e) => {
+            mouseDown = true;
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (mouseDown) {
+                const rect = canvas.getBoundingClientRect();
+                const newMouseX = e.clientX - rect.left;
+                const newMouseY = e.clientY - rect.top;
+                
+                // Apply force to nearby particles
+                if (blobSystem && blobSystem.blobs) {
+                    const forceRadius = 80;
+                    const forceMagnitude = 5;
+                    
+                    for (const blob of blobSystem.blobs) {
+                        for (const particle of blob.outlineParticles) {
+                            const dx = particle.x - mouseX;
+                            const dy = particle.y - mouseY;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (distance < forceRadius) {
+                                const force = forceMagnitude * (1 - distance / forceRadius);
+                                particle.vx += (dx / distance) * force;
+                                particle.vy += (dy / distance) * force;
+                            }
+                        }
+                    }
+                }
+                
+                mouseX = newMouseX;
+                mouseY = newMouseY;
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            mouseDown = false;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            mouseDown = false;
+        });
+        
+        // Load test image
+        loadImageBtn.addEventListener('click', () => {
+            status.textContent = 'Loading test image and creating elastic blobs...';
+            
+            const img = new Image();
+            img.onload = () => {
+                particleSystem.initializeFromImage(img);
+                blobSystem.createBlobsFromParticles(particleSystem.particles);
+                
+                animationRunning = true;
+                animate();
+                
+                const blobCount = blobSystem.getBlobCount();
+                status.textContent = `✅ Created ${blobCount} elastic blobs! Click and drag on canvas to interact. Watch them bounce back!`;
+            };
+            img.onerror = () => {
+                status.textContent = 'Error loading image. Using random particles instead.';
+                particleSystem.initializeRandom();
+                blobSystem.createBlobsFromParticles(particleSystem.particles);
+                animationRunning = true;
+                animate();
+            };
+            img.src = './indrolend.png';
+        });
+        
+        // Apply random perturbation
+        perturbBtn.addEventListener('click', () => {
+            if (blobSystem && blobSystem.blobs) {
+                for (const blob of blobSystem.blobs) {
+                    for (const particle of blob.outlineParticles) {
+                        particle.vx += (Math.random() - 0.5) * 10;
+                        particle.vy += (Math.random() - 0.5) * 10;
+                    }
+                }
+                status.textContent = '💥 Applied random force! Watch the elastic recovery!';
+            }
+        });
+        
+        // Reset physics
+        resetBtn.addEventListener('click', () => {
+            if (blobSystem && blobSystem.blobs) {
+                for (const blob of blobSystem.blobs) {
+                    for (const particle of blob.outlineParticles) {
+                        particle.vx = 0;
+                        particle.vy = 0;
+                    }
+                    blob.initializeElasticProperties();
+                }
+                status.textContent = '🔄 Physics reset! Blobs returned to rest state.';
+            }
+        });
+        
+        // Animation loop
+        function animate() {
+            if (!animationRunning) return;
+            
+            const deltaTime = 0.016; // ~60 FPS
+            
+            if (blobSystem) {
+                blobSystem.update(deltaTime);
+                blobRenderer.renderBlobs(blobSystem);
+            }
+            
+            requestAnimationFrame(animate);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blob-Based Image Transition Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            background: rgba(102, 126, 234, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            max-width: 800px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        
+        .highlight {
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        #canvas {
+            border: 2px solid #667eea;
+            margin: 20px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .upload-section {
+            display: flex;
+            gap: 20px;
+            margin: 20px;
+        }
+        
+        .upload-box {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px dashed #667eea;
+            text-align: center;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .file-label:hover {
+            transform: translateY(-2px);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-weight: 600;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .info {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px 25px;
+            border-radius: 6px;
+            margin: 10px;
+            font-size: 14px;
+            max-width: 800px;
+            text-align: center;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            max-width: 900px;
+            margin: 20px auto;
+        }
+        
+        .feature-card {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+        
+        .feature-card h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧬 Blob-Based Image Transitions</h1>
+    
+    <div class="description">
+        <p><strong>Revolutionary Rendering System:</strong> Particles form <span class="highlight">blob outlines</span> (10-15 particles each) with <span class="highlight">filled solid-color interiors</span>.</p>
+        <p>During transitions, <span class="highlight">each blob maintains a single color</span> - Image 1 colors during explosion, transitioning to Image 2 colors during recombination.</p>
+    </div>
+    
+    <div class="upload-section">
+        <div class="upload-box">
+            <p>📷 Image 1</p>
+            <label for="image1Input" class="file-label">Choose Image 1</label>
+            <input type="file" id="image1Input" accept="image/*">
+            <div id="image1Status">No image loaded</div>
+        </div>
+        <div class="upload-box">
+            <p>📷 Image 2</p>
+            <label for="image2Input" class="file-label">Choose Image 2</label>
+            <input type="file" id="image2Input" accept="image/*">
+            <div id="image2Status">No image loaded</div>
+        </div>
+    </div>
+    
+    <canvas id="canvas" width="800" height="600"></canvas>
+    
+    <div class="controls">
+        <button id="initBtn" disabled>Initialize with Image 1</button>
+        <button id="transitionBtn" disabled>Start Blob Transition</button>
+        <button id="reverseBtn" disabled>Reverse Transition</button>
+    </div>
+    
+    <div class="info" id="status">Upload two images to begin</div>
+    
+    <div class="feature-grid">
+        <div class="feature-card">
+            <h3>🎨 Color-Based Blobs</h3>
+            <p>Particles clustered by color similarity. Each blob has one solid color - no mixing within blobs.</p>
+        </div>
+        <div class="feature-card">
+            <h3>💥 Explosion Phase</h3>
+            <p>Blobs explode while maintaining Image 1 colors. Each colored blob moves independently.</p>
+        </div>
+        <div class="feature-card">
+            <h3>🔄 Recombination</h3>
+            <p>Blobs recombine into Image 2 shape while transitioning to Image 2 colors. Smooth color morphing.</p>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { ParticleSystem } from './src/ParticleSystem.js';
+        import { BlobSystem } from './src/BlobSystem.js';
+        import { BlobRenderer } from './src/BlobRenderer.js';
+        import { BlobTransitionPreset } from './src/presets/BlobTransitionPreset.js';
+        
+        const canvas = document.getElementById('canvas');
+        const status = document.getElementById('status');
+        const image1Input = document.getElementById('image1Input');
+        const image2Input = document.getElementById('image2Input');
+        const image1Status = document.getElementById('image1Status');
+        const image2Status = document.getElementById('image2Status');
+        const initBtn = document.getElementById('initBtn');
+        const transitionBtn = document.getElementById('transitionBtn');
+        const reverseBtn = document.getElementById('reverseBtn');
+        
+        let particleSystem = null;
+        let blobRenderer = null;
+        let blobPreset = null;
+        let image1 = null;
+        let image2 = null;
+        let image1Particles = null;
+        let image2Particles = null;
+        let animationRunning = false;
+        
+        // Initialize systems
+        particleSystem = new ParticleSystem({
+            particleCount: 500,
+            minSize: 8,
+            maxSize: 12
+        });
+        particleSystem.setDimensions(canvas.width, canvas.height);
+        
+        blobRenderer = new BlobRenderer(canvas);
+        
+        // Image 1 upload
+        image1Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image1 = new Image();
+                    image1.onload = () => {
+                        image1Status.textContent = `✅ ${file.name}`;
+                        image1Status.style.color = '#4ade80';
+                        checkImagesLoaded();
+                    };
+                    image1.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Image 2 upload
+        image2Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image2 = new Image();
+                    image2.onload = () => {
+                        image2Status.textContent = `✅ ${file.name}`;
+                        image2Status.style.color = '#4ade80';
+                        checkImagesLoaded();
+                    };
+                    image2.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        function checkImagesLoaded() {
+            if (image1 && image2) {
+                initBtn.disabled = false;
+                status.textContent = '✅ Both images loaded! Click "Initialize with Image 1" to start.';
+            }
+        }
+        
+        // Initialize
+        initBtn.addEventListener('click', () => {
+            status.textContent = 'Initializing blob system from Image 1...';
+            
+            // Create particles from image 1
+            particleSystem.initializeFromImage(image1);
+            image1Particles = [...particleSystem.particles];
+            
+            // Create blobs
+            blobPreset = new BlobTransitionPreset({
+                minBlobSize: 8,
+                maxBlobSize: 15,
+                colorThreshold: 0.15
+            });
+            
+            blobPreset.initialize(particleSystem.particles, {
+                width: canvas.width,
+                height: canvas.height
+            }, {
+                sourceImage: image1,
+                targetImage: image2
+            });
+            
+            // Extract particles from image 2
+            particleSystem.initializeFromImage(image2);
+            image2Particles = particleSystem.extractImageData(image2, image1Particles.length);
+            
+            // Start animation
+            animationRunning = true;
+            animate();
+            
+            const blobCount = blobPreset.getBlobSystem().getBlobCount();
+            status.textContent = `✅ Initialized with ${blobCount} colored blobs from Image 1. Ready to transition!`;
+            transitionBtn.disabled = false;
+        });
+        
+        // Start transition
+        transitionBtn.addEventListener('click', () => {
+            status.textContent = '🚀 Starting blob transition: Explosion → Color Transition → Recombination';
+            
+            const blobSystem = blobPreset.getBlobSystem();
+            const allParticles = blobSystem.getAllOutlineParticles();
+            
+            // Start explosion
+            blobPreset.startExplosion(allParticles, {
+                width: canvas.width,
+                height: canvas.height
+            });
+            
+            // Schedule recombination
+            setTimeout(() => {
+                status.textContent = '🔄 Recombining into Image 2 with new colors...';
+                blobPreset.startRecombination(allParticles, image2Particles.pixels);
+                reverseBtn.disabled = false;
+            }, 1500);
+        });
+        
+        // Reverse transition
+        reverseBtn.addEventListener('click', () => {
+            status.textContent = '🔄 Reversing back to Image 1...';
+            
+            const blobSystem = blobPreset.getBlobSystem();
+            const allParticles = blobSystem.getAllOutlineParticles();
+            
+            blobPreset.startRecombination(allParticles, image1Particles);
+        });
+        
+        // Animation loop
+        function animate() {
+            if (!animationRunning) return;
+            
+            const deltaTime = 0.016; // ~60 FPS
+            
+            if (blobPreset) {
+                const blobSystem = blobPreset.getBlobSystem();
+                const allParticles = blobSystem.getAllOutlineParticles();
+                
+                blobPreset.update(allParticles, deltaTime, {
+                    width: canvas.width,
+                    height: canvas.height
+                });
+                
+                blobRenderer.renderBlobs(blobSystem);
+            }
+            
+            requestAnimationFrame(animate);
+        }
+    </script>
+</body>
+</html>

@@ -78,17 +78,16 @@ export class Renderer {
       varying vec4 v_color;
       
       void main() {
-        // Create circular particles
+        // Render as CIRCLES for liquid blob appearance
+        // Calculate distance from center of point sprite
         vec2 coord = gl_PointCoord - vec2(0.5);
         float dist = length(coord);
         
-        if (dist > 0.5) {
-          discard;
-        }
+        // Create smooth circular edges with soft falloff
+        float alpha = smoothstep(0.5, 0.3, dist);
         
-        // Soft edges
-        float alpha = v_color.a * (1.0 - smoothstep(0.3, 0.5, dist));
-        gl_FragColor = vec4(v_color.rgb, alpha);
+        // Apply alpha to create soft circular particles
+        gl_FragColor = vec4(v_color.rgb, v_color.a * alpha);
       }
     `;
     

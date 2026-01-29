@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blob-Based Rendering Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            background: rgba(102, 126, 234, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            max-width: 800px;
+            text-align: center;
+        }
+        
+        #canvas {
+            border: 2px solid #667eea;
+            margin: 20px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .info {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 10px 20px;
+            border-radius: 6px;
+            margin: 10px;
+            font-size: 14px;
+        }
+        
+        .feature-list {
+            text-align: left;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        
+        .feature-list li {
+            margin: 8px 0;
+            padding-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧬 Blob-Based Particle Rendering</h1>
+    
+    <div class="description">
+        <strong>New Rendering System:</strong> Particles form blob outlines (10-15 particles each), 
+        with filled solid-color interiors. Each blob is a single color.
+    </div>
+    
+    <canvas id="canvas" width="800" height="600"></canvas>
+    
+    <div class="controls">
+        <button id="loadImageBtn">Load Test Image</button>
+        <button id="createBlobsBtn">Create Blobs</button>
+        <button id="animateBtn">Animate</button>
+    </div>
+    
+    <div class="info" id="status">Ready to test blob rendering</div>
+    
+    <div class="feature-list">
+        <strong>Features:</strong>
+        <ul>
+            <li>✅ Particles form blob outlines (10-15 per blob)</li>
+            <li>✅ Blob interiors filled with solid color</li>
+            <li>✅ Color-based clustering (one color per blob)</li>
+            <li>✅ Smooth outline particles + filled polygons</li>
+            <li>✅ Ready for image transitions</li>
+        </ul>
+    </div>
+    
+    <script type="module">
+        import { ParticleSystem } from './src/ParticleSystem.js';
+        import { BlobSystem } from './src/BlobSystem.js';
+        import { BlobRenderer } from './src/BlobRenderer.js';
+        
+        const canvas = document.getElementById('canvas');
+        const status = document.getElementById('status');
+        const loadImageBtn = document.getElementById('loadImageBtn');
+        const createBlobsBtn = document.getElementById('createBlobsBtn');
+        const animateBtn = document.getElementById('animateBtn');
+        
+        let particleSystem = null;
+        let blobSystem = null;
+        let blobRenderer = null;
+        let animationRunning = false;
+        let animationId = null;
+        
+        // Initialize systems
+        particleSystem = new ParticleSystem({
+            particleCount: 500,
+            minSize: 8,
+            maxSize: 12
+        });
+        particleSystem.setDimensions(canvas.width, canvas.height);
+        
+        blobSystem = new BlobSystem({
+            minBlobSize: 8,
+            maxBlobSize: 15,
+            colorThreshold: 0.15
+        });
+        
+        blobRenderer = new BlobRenderer(canvas);
+        
+        // Load test image
+        loadImageBtn.addEventListener('click', () => {
+            status.textContent = 'Loading test image...';
+            
+            const img = new Image();
+            img.onload = () => {
+                particleSystem.initializeFromImage(img);
+                status.textContent = `Image loaded! ${particleSystem.particles.length} particles created. Click "Create Blobs" to group them.`;
+                createBlobsBtn.disabled = false;
+            };
+            img.onerror = () => {
+                status.textContent = 'Error loading image. Using random particles instead.';
+                particleSystem.initializeRandom();
+                createBlobsBtn.disabled = false;
+            };
+            img.src = './indrolend.png';
+        });
+        
+        // Create blobs from particles
+        createBlobsBtn.addEventListener('click', () => {
+            status.textContent = 'Creating blobs from particles...';
+            
+            blobSystem.createBlobsFromParticles(particleSystem.particles);
+            
+            // Render initial state
+            blobRenderer.renderBlobs(blobSystem);
+            
+            status.textContent = `✅ Created ${blobSystem.getBlobCount()} colored blobs! Each blob has 10-15 outline particles with filled interior. Click "Animate" to see movement.`;
+            animateBtn.disabled = false;
+        });
+        
+        // Animation loop
+        animateBtn.addEventListener('click', () => {
+            if (animationRunning) {
+                animationRunning = false;
+                cancelAnimationFrame(animationId);
+                animateBtn.textContent = 'Animate';
+                status.textContent = 'Animation paused';
+            } else {
+                animationRunning = true;
+                animateBtn.textContent = 'Stop Animation';
+                status.textContent = 'Animation running - blobs update smoothly';
+                animate();
+            }
+        });
+        
+        function animate() {
+            if (!animationRunning) return;
+            
+            const deltaTime = 0.016; // ~60 FPS
+            
+            // Update blob system
+            blobSystem.update(deltaTime);
+            
+            // Render
+            blobRenderer.renderBlobs(blobSystem);
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Initial status
+        status.textContent = 'Click "Load Test Image" to start';
+        createBlobsBtn.disabled = true;
+        animateBtn.disabled = true;
+    </script>
+</body>
+</html>
