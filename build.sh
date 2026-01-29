@@ -66,6 +66,10 @@ if [ -f hybrid-transition-example.html ]; then
   cp hybrid-transition-example.html public/
 fi
 
+if [ -f ferrofluid-demo.html ]; then
+  cp ferrofluid-demo.html public/
+fi
+
 # Copy JavaScript files needed by index.html
 echo "Copying JavaScript files..."
 if [ -f morph-ui.js ]; then
@@ -131,6 +135,12 @@ fi
 if [ -d src/utils ]; then
   mkdir -p public/src/utils
   cp -r src/utils/* public/src/utils/
+fi
+
+# Copy physics directory if exists
+if [ -d src/physics ]; then
+  mkdir -p public/src/physics
+  cp -r src/physics/* public/src/physics/
 fi
 
 # Copy image files needed for demos
