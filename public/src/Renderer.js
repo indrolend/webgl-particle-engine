@@ -78,9 +78,16 @@ export class Renderer {
       varying vec4 v_color;
       
       void main() {
-        // Render as SQUARE tiles (mosaic effect) instead of circles
-        // Simply output the color without circular masking
-        gl_FragColor = vec4(v_color.rgb, v_color.a);
+        // Render as CIRCLES for liquid blob appearance
+        // Calculate distance from center of point sprite
+        vec2 coord = gl_PointCoord - vec2(0.5);
+        float dist = length(coord);
+        
+        // Create smooth circular edges with soft falloff
+        float alpha = smoothstep(0.5, 0.3, dist);
+        
+        // Apply alpha to create soft circular particles
+        gl_FragColor = vec4(v_color.rgb, v_color.a * alpha);
       }
     `;
     
