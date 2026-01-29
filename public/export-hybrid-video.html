@@ -337,6 +337,52 @@
         </div>
     </div>
     
+    <div class="controls-section">
+        <h3>🧲 Ferrofluid Physics Controls</h3>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Enable Ferrofluid Physics:</span>
+                <input type="checkbox" id="enableFerrofluid" checked style="width: auto; height: 20px; margin-left: 10px; cursor: pointer;">
+            </div>
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Cohesion Strength:</span>
+                <span class="slider-value" id="cohesionStrengthValue">0.05</span>
+            </div>
+            <input type="range" id="cohesionStrength" min="0" max="0.2" step="0.01" value="0.05">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Surface Tension:</span>
+                <span class="slider-value" id="surfaceTensionValue">0.1</span>
+            </div>
+            <input type="range" id="surfaceTension" min="0" max="0.3" step="0.01" value="0.1">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Enable Image Containers:</span>
+                <input type="checkbox" id="enableContainer" checked style="width: auto; height: 20px; margin-left: 10px; cursor: pointer;">
+            </div>
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Container Padding (px):</span>
+                <span class="slider-value" id="containerPaddingValue">10</span>
+            </div>
+            <input type="range" id="containerPadding" min="0" max="50" step="5" value="10">
+        </div>
+        
+        <div class="info-box">
+            <strong>🧲 Ferrofluid Features:</strong> Enable blob-like particle clustering and container-based physics for organic, fluid transitions.
+        </div>
+    </div>
+    
     <canvas id="canvas" width="720" height="1280"></canvas>
     
     <div class="controls">
@@ -393,6 +439,16 @@
         const blendDuration = document.getElementById('blendDuration');
         const blendDurationValue = document.getElementById('blendDurationValue');
         
+        // Get ferrofluid control elements
+        const enableFerrofluid = document.getElementById('enableFerrofluid');
+        const cohesionStrength = document.getElementById('cohesionStrength');
+        const cohesionStrengthValue = document.getElementById('cohesionStrengthValue');
+        const surfaceTension = document.getElementById('surfaceTension');
+        const surfaceTensionValue = document.getElementById('surfaceTensionValue');
+        const enableContainer = document.getElementById('enableContainer');
+        const containerPadding = document.getElementById('containerPadding');
+        const containerPaddingValue = document.getElementById('containerPaddingValue');
+        
         // Add slider event listeners
         particleCountSlider.addEventListener('input', () => {
             particleCountValue.textContent = particleCountSlider.value;
@@ -420,6 +476,19 @@
         
         blendDuration.addEventListener('input', () => {
             blendDurationValue.textContent = blendDuration.value;
+        });
+        
+        // Add ferrofluid slider event listeners
+        cohesionStrength.addEventListener('input', () => {
+            cohesionStrengthValue.textContent = cohesionStrength.value;
+        });
+        
+        surfaceTension.addEventListener('input', () => {
+            surfaceTensionValue.textContent = surfaceTension.value;
+        });
+        
+        containerPadding.addEventListener('input', () => {
+            containerPaddingValue.textContent = containerPadding.value;
         });
         
         // Initialize FFmpeg
@@ -694,7 +763,16 @@
                 particleFadeRate: 0.7,
                 staticDisplayDuration: parseInt(staticDisplayDuration.value, 10),
                 disintegrationDuration: parseInt(disintegrationDuration.value, 10),
-                finalStaticDuration: 2000 // Display final image for 2 seconds
+                finalStaticDuration: 2000, // Display final image for 2 seconds
+                
+                // Ferrofluid physics parameters
+                enableFerrofluid: enableFerrofluid.checked,
+                cohesionStrength: parseFloat(cohesionStrength.value),
+                surfaceTension: parseFloat(surfaceTension.value),
+                
+                // Container physics parameters
+                enableContainer: enableContainer.checked,
+                containerPadding: parseInt(containerPadding.value, 10)
             };
             
             // Set render mode and start transition
