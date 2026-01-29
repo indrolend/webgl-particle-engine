@@ -30,9 +30,19 @@ export class Blob {
     this.targetG = this.g;
     this.targetB = this.b;
     
+    // Elastic physics properties
+    this.restLengths = [];           // Rest distances between adjacent particles
+    this.restArea = 0;               // Target area for volume preservation
+    this.springStiffness = config.springStiffness || 0.5;      // Spring force strength
+    this.damping = config.damping || 0.92;                     // Velocity damping
+    this.surfaceTension = config.surfaceTension || 0.3;        // Surface tension strength
+    this.pressureStrength = config.pressureStrength || 0.2;    // Volume preservation strength
+    this.enableElastic = config.enableElastic !== false;       // Enable elastic physics
+    
     // Calculate initial center and radius
     if (this.outlineParticles.length > 0) {
       this.updateBounds();
+      this.initializeElasticProperties();
     }
   }
   
@@ -126,10 +136,21 @@ export class Blob {
    * Update outline particle positions
    */
   updateOutlineParticles(deltaTime) {
+    if (this.enableElastic) {
+      // Apply elastic physics
+      this.applyElasticForces(deltaTime);
+    }
+    
     for (const particle of this.outlineParticles) {
       // Update particle physics
       particle.x += particle.vx * deltaTime;
       particle.y += particle.vy * deltaTime;
+      
+      // Apply damping
+      if (this.enableElastic) {
+        particle.vx *= this.damping;
+        particle.vy *= this.damping;
+      }
       
       // Update particle colors to match blob color
       particle.r = this.r;
@@ -139,6 +160,181 @@ export class Blob {
     
     // Recalculate bounds
     this.updateBounds();
+  }
+  
+  /**
+   * Initialize elastic properties (rest lengths, rest area)
+   */
+  initializeElasticProperties() {
+    const n = this.outlineParticles.length;
+    if (n < 3) return;
+    
+    // Calculate rest lengths between adjacent particles
+    this.restLengths = [];
+    for (let i = 0; i < n; i++) {
+      const p1 = this.outlineParticles[i];
+      const p2 = this.outlineParticles[(i + 1) % n];
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      this.restLengths.push(Math.sqrt(dx * dx + dy * dy));
+    }
+    
+    // Calculate rest area using polygon formula
+    this.restArea = this.calculateArea();
+  }
+  
+  /**
+   * Calculate blob area using shoelace formula
+   */
+  calculateArea() {
+    const n = this.outlineParticles.length;
+    if (n < 3) return 0;
+    
+    let area = 0;
+    for (let i = 0; i < n; i++) {
+      const p1 = this.outlineParticles[i];
+      const p2 = this.outlineParticles[(i + 1) % n];
+      area += p1.x * p2.y - p2.x * p1.y;
+    }
+    return Math.abs(area) / 2;
+  }
+  
+  /**
+   * Apply elastic forces to outline particles
+   */
+  applyElasticForces(deltaTime) {
+    const n = this.outlineParticles.length;
+    if (n < 3) return;
+    
+    // 1. Spring forces (maintain shape)
+    this.applySpringForces();
+    
+    // 2. Surface tension (minimize perimeter)
+    this.applySurfaceTension();
+    
+    // 3. Volume preservation (maintain area)
+    this.applyVolumePressure();
+  }
+  
+  /**
+   * Apply spring forces between adjacent outline particles
+   */
+  applySpringForces() {
+    const n = this.outlineParticles.length;
+    
+    for (let i = 0; i < n; i++) {
+      const p1 = this.outlineParticles[i];
+      const p2 = this.outlineParticles[(i + 1) % n];
+      const restLength = this.restLengths[i];
+      
+      // Calculate current distance
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const currentLength = Math.sqrt(dx * dx + dy * dy);
+      
+      if (currentLength < 0.001) continue; // Avoid division by zero
+      
+      // Calculate spring force (Hooke's law)
+      const displacement = currentLength - restLength;
+      const force = this.springStiffness * displacement;
+      
+      // Apply force to both particles
+      const fx = (dx / currentLength) * force;
+      const fy = (dy / currentLength) * force;
+      
+      p1.vx += fx * 0.5;
+      p1.vy += fy * 0.5;
+      p2.vx -= fx * 0.5;
+      p2.vy -= fy * 0.5;
+    }
+    
+    // Add diagonal springs for stability
+    for (let i = 0; i < n; i++) {
+      const p1 = this.outlineParticles[i];
+      const p2 = this.outlineParticles[(i + 2) % n]; // Skip one particle
+      
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const currentLength = Math.sqrt(dx * dx + dy * dy);
+      
+      if (currentLength < 0.001) continue;
+      
+      // Diagonal springs are weaker
+      const targetLength = this.radius * 1.5;
+      const displacement = currentLength - targetLength;
+      const force = this.springStiffness * 0.3 * displacement;
+      
+      const fx = (dx / currentLength) * force;
+      const fy = (dy / currentLength) * force;
+      
+      p1.vx += fx * 0.5;
+      p1.vy += fy * 0.5;
+      p2.vx -= fx * 0.5;
+      p2.vy -= fy * 0.5;
+    }
+  }
+  
+  /**
+   * Apply surface tension forces (pull particles toward center)
+   */
+  applySurfaceTension() {
+    const n = this.outlineParticles.length;
+    
+    for (const particle of this.outlineParticles) {
+      // Vector from particle to center
+      const dx = this.centerX - particle.x;
+      const dy = this.centerY - particle.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < 0.001) continue;
+      
+      // Apply inward force proportional to distance
+      const force = this.surfaceTension * (distance - this.radius * 0.8) / distance;
+      
+      particle.vx += dx * force;
+      particle.vy += dy * force;
+    }
+  }
+  
+  /**
+   * Apply volume preservation forces (maintain blob area)
+   */
+  applyVolumePressure() {
+    const currentArea = this.calculateArea();
+    if (currentArea < 0.001 || this.restArea < 0.001) return;
+    
+    // Calculate pressure based on area difference
+    const areaDiff = this.restArea - currentArea;
+    const pressure = this.pressureStrength * areaDiff / this.restArea;
+    
+    const n = this.outlineParticles.length;
+    
+    // Apply outward/inward pressure forces
+    for (let i = 0; i < n; i++) {
+      const particle = this.outlineParticles[i];
+      
+      // Calculate normal vector (perpendicular to edge)
+      const prev = this.outlineParticles[(i - 1 + n) % n];
+      const next = this.outlineParticles[(i + 1) % n];
+      
+      // Edge vectors
+      const dx1 = particle.x - prev.x;
+      const dy1 = particle.y - prev.y;
+      const dx2 = next.x - particle.x;
+      const dy2 = next.y - particle.y;
+      
+      // Average normal (perpendicular to edges)
+      const nx = -(dy1 + dy2) / 2;
+      const ny = (dx1 + dx2) / 2;
+      const normalLength = Math.sqrt(nx * nx + ny * ny);
+      
+      if (normalLength < 0.001) continue;
+      
+      // Apply pressure force along normal
+      const forceMagnitude = pressure * 50; // Scale factor
+      particle.vx += (nx / normalLength) * forceMagnitude;
+      particle.vy += (ny / normalLength) * forceMagnitude;
+    }
   }
   
   /**

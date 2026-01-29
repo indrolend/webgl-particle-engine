@@ -16,7 +16,14 @@ export class BlobSystem {
       minBlobSize: config.minBlobSize || 8,          // Min particles per blob
       maxBlobSize: config.maxBlobSize || 15,         // Max particles per blob
       colorThreshold: config.colorThreshold || 0.2,  // Color similarity threshold
-      targetBlobCount: config.targetBlobCount || 50  // Approximate number of blobs
+      targetBlobCount: config.targetBlobCount || 50, // Approximate number of blobs
+      
+      // Elastic physics configuration
+      enableElastic: config.enableElastic !== false,
+      springStiffness: config.springStiffness || 0.5,
+      damping: config.damping || 0.92,
+      surfaceTension: config.surfaceTension || 0.3,
+      pressureStrength: config.pressureStrength || 0.2
     };
     
     console.log('[BlobSystem] Initialized with config:', this.config);
@@ -58,7 +65,12 @@ export class BlobSystem {
         r: avgR,
         g: avgG,
         b: avgB,
-        outlineParticles: outlineParticles
+        outlineParticles: outlineParticles,
+        enableElastic: this.config.enableElastic,
+        springStiffness: this.config.springStiffness,
+        damping: this.config.damping,
+        surfaceTension: this.config.surfaceTension,
+        pressureStrength: this.config.pressureStrength
       });
       
       this.blobs.push(blob);
