@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced Hybrid Transition - Liquid Dynamics Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      overflow: hidden;
+    }
+    
+    #canvas-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #particleCanvas {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      background: white;
+    }
+    
+    #controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      max-width: 350px;
+      z-index: 100;
+    }
+    
+    h1 {
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: #fff;
+    }
+    
+    .control-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 5px;
+      color: #ccc;
+    }
+    
+    input[type="range"] {
+      width: 100%;
+      margin: 5px 0;
+    }
+    
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px 5px 5px 0;
+      transition: transform 0.2s;
+    }
+    
+    button:hover {
+      transform: scale(1.05);
+    }
+    
+    button:active {
+      transform: scale(0.95);
+    }
+    
+    .value-display {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-left: 10px;
+    }
+    
+    .info {
+      font-size: 11px;
+      color: #999;
+      margin-top: 5px;
+    }
+    
+    #status {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 12px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <canvas id="particleCanvas" width="800" height="600"></canvas>
+    
+    <div id="controls">
+      <h1>🌊 Enhanced Hybrid Transition</h1>
+      
+      <div class="control-group">
+        <label>
+          Liquid Thickness: <span class="value-display" id="thicknessValue">0.50</span>
+        </label>
+        <input type="range" id="liquidThickness" min="0" max="1" step="0.05" value="0.5">
+        <div class="info">Thin (water) ← → Thick (honey)</div>
+      </div>
+      
+      <div class="control-group">
+        <label>
+          Watercolor Intensity: <span class="value-display" id="watercolorValue">0.50</span>
+        </label>
+        <input type="range" id="watercolorIntensity" min="0" max="1" step="0.1" value="0.5">
+        <div class="info">Controls paint-like blending</div>
+      </div>
+      
+      <div class="control-group">
+        <label>
+          Total Duration: <span class="value-display" id="durationValue">5000ms</span>
+        </label>
+        <input type="range" id="totalDuration" min="2000" max="10000" step="500" value="5000">
+      </div>
+      
+      <div class="control-group checkbox-group">
+        <input type="checkbox" id="enableGradients" checked>
+        <label for="enableGradients" style="margin: 0;">Enable Gradient Mixing</label>
+      </div>
+      
+      <div class="control-group checkbox-group">
+        <input type="checkbox" id="useUnifiedPhysics" checked>
+        <label for="useUnifiedPhysics" style="margin: 0;">Use Unified Physics (NEW)</label>
+      </div>
+      
+      <div class="control-group">
+        <button id="startTransition">🚀 Start Transition</button>
+        <button id="reverseTransition">🔄 Reverse</button>
+      </div>
+    </div>
+    
+    <div id="status">
+      <div>Status: <span id="statusText">Ready</span></div>
+      <div>FPS: <span id="fpsText">60</span></div>
+    </div>
+  </div>
+  
+  <script type="module">
+    import { HybridEngine } from './src/HybridEngine.js';
+    
+    // Initialize canvas and engine
+    const canvas = document.getElementById('particleCanvas');
+    const engine = new HybridEngine(canvas, {
+      particleCount: 2000,
+      enableTriangulation: true
+    });
+    
+    // Create test images
+    const image1 = createColoredImage(400, 400, ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A']);
+    const image2 = createColoredImage(400, 400, ['#95E1D3', '#F38181', '#EAFFD0', '#FCE38A']);
+    
+    // Initialize engine with first image
+    engine.initializeFromImage(image1);
+    engine.start();
+    
+    // State tracking
+    let isTransitioning = false;
+    let currentImage = image1;
+    let targetImage = image2;
+    
+    // Control elements
+    const liquidThicknessInput = document.getElementById('liquidThickness');
+    const watercolorIntensityInput = document.getElementById('watercolorIntensity');
+    const totalDurationInput = document.getElementById('totalDuration');
+    const enableGradientsCheckbox = document.getElementById('enableGradients');
+    const useUnifiedPhysicsCheckbox = document.getElementById('useUnifiedPhysics');
+    const startTransitionBtn = document.getElementById('startTransition');
+    const reverseTransitionBtn = document.getElementById('reverseTransition');
+    
+    // Value displays
+    const thicknessValue = document.getElementById('thicknessValue');
+    const watercolorValue = document.getElementById('watercolorValue');
+    const durationValue = document.getElementById('durationValue');
+    const statusText = document.getElementById('statusText');
+    const fpsText = document.getElementById('fpsText');
+    
+    // Update value displays
+    liquidThicknessInput.addEventListener('input', (e) => {
+      thicknessValue.textContent = parseFloat(e.target.value).toFixed(2);
+    });
+    
+    watercolorIntensityInput.addEventListener('input', (e) => {
+      watercolorValue.textContent = parseFloat(e.target.value).toFixed(2);
+    });
+    
+    totalDurationInput.addEventListener('input', (e) => {
+      durationValue.textContent = e.target.value + 'ms';
+    });
+    
+    // Start transition
+    startTransitionBtn.addEventListener('click', () => {
+      if (isTransitioning) {
+        console.log('Transition already in progress');
+        return;
+      }
+      
+      isTransitioning = true;
+      statusText.textContent = 'Transitioning...';
+      
+      const config = {
+        liquidThickness: parseFloat(liquidThicknessInput.value),
+        watercolorIntensity: parseFloat(watercolorIntensityInput.value),
+        totalDuration: parseInt(totalDurationInput.value),
+        enableGradients: enableGradientsCheckbox.checked,
+        useUnifiedPhysics: useUnifiedPhysicsCheckbox.checked,
+        staticDisplayDuration: 500,
+        disintegrationDuration: 1000
+      };
+      
+      console.log('Starting transition with config:', config);
+      engine.startHybridTransition(currentImage, targetImage, config);
+      
+      // Reset after transition completes
+      setTimeout(() => {
+        isTransitioning = false;
+        statusText.textContent = 'Complete';
+        // Swap images for next transition
+        [currentImage, targetImage] = [targetImage, currentImage];
+      }, config.totalDuration + 2000);
+    });
+    
+    // Reverse transition
+    reverseTransitionBtn.addEventListener('click', () => {
+      if (isTransitioning) {
+        console.log('Transition already in progress');
+        return;
+      }
+      
+      // Swap and start
+      [currentImage, targetImage] = [targetImage, currentImage];
+      startTransitionBtn.click();
+    });
+    
+    // Update FPS display
+    setInterval(() => {
+      fpsText.textContent = engine.fps || 0;
+    }, 500);
+    
+    // Helper function to create colored test images
+    function createColoredImage(width, height, colors) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      
+      // Create gradient with multiple colors
+      const numColors = colors.length;
+      const sectionHeight = height / numColors;
+      
+      for (let i = 0; i < numColors; i++) {
+        const gradient = ctx.createLinearGradient(0, i * sectionHeight, width, (i + 1) * sectionHeight);
+        gradient.addColorStop(0, colors[i]);
+        gradient.addColorStop(1, colors[(i + 1) % numColors]);
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, i * sectionHeight, width, sectionHeight);
+      }
+      
+      // Add some circles for visual interest
+      for (let i = 0; i < 5; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const radius = 30 + Math.random() * 50;
+        const colorIdx = Math.floor(Math.random() * colors.length);
+        
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, colors[colorIdx] + 'CC');
+        gradient.addColorStop(1, colors[colorIdx] + '00');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      const img = new Image();
+      img.src = canvas.toDataURL();
+      return img;
+    }
+    
+    console.log('Enhanced Hybrid Transition Demo loaded!');
+    console.log('Try different liquid thickness values:');
+    console.log('  0.0-0.2: Very thin (water-like, flexible, many particles)');
+    console.log('  0.4-0.6: Medium (syrup-like)');
+    console.log('  0.8-1.0: Very thick (honey-like, rigid, fewer particles)');
+  </script>
+</body>
+</html>

@@ -486,14 +486,27 @@ export class HybridEngine extends ParticleEngine {
    * @param {number} [config.blendDuration=1500] - Duration of particle-to-triangulation blend (ms)
    * @param {number} [config.particleFadeRate=0.7] - Rate at which particles fade during blend (0-1)
    * @param {number} [config.finalStaticDuration=500] - Duration to display final static image (ms)
+   * @param {number} [config.liquidThickness] - Liquid thickness parameter (0=thin/water, 1=thick/honey)
+   * @param {boolean} [config.useUnifiedPhysics=true] - Use new unified physics engine (recommended)
+   * @param {boolean} [config.enableGradients=true] - Enable gradient-based color mixing
+   * @param {number} [config.watercolorIntensity=0.5] - Watercolor effect intensity (0-1)
    * 
    * @example
    * // Basic usage with defaults
    * engine.startHybridTransition(image1, image2);
    * 
    * @example
-   * // Custom configuration
+   * // Custom configuration with liquid thickness
    * engine.startHybridTransition(image1, image2, {
+   *   liquidThickness: 0.7,  // Thick, honey-like behavior
+   *   watercolorIntensity: 0.8,  // Strong watercolor effect
+   *   totalDuration: 6000  // 6 second transition
+   * });
+   * 
+   * @example
+   * // Legacy configuration (discrete phases)
+   * engine.startHybridTransition(image1, image2, {
+   *   useUnifiedPhysics: false,  // Use legacy phase-based system
    *   staticDisplayDuration: 700,
    *   disintegrationDuration: 1200,
    *   explosionIntensity: 200,
@@ -502,7 +515,59 @@ export class HybridEngine extends ParticleEngine {
    * });
    */
   startHybridTransition(sourceImage, targetImage, config = {}) {
-    console.log('[HybridEngine] Starting hybrid transition with disintegration effect...');
+    // Determine which transition system to use
+    const useUnifiedPhysics = config.useUnifiedPhysics !== false; // Default to true
+    
+    if (useUnifiedPhysics) {
+      console.log('[HybridEngine] Starting UNIFIED hybrid transition with liquid dynamics...');
+      this.startUnifiedHybridTransition(sourceImage, targetImage, config);
+    } else {
+      console.log('[HybridEngine] Starting LEGACY hybrid transition with discrete phases...');
+      this.startLegacyHybridTransition(sourceImage, targetImage, config);
+    }
+  }
+  
+  /**
+   * Start unified hybrid transition with continuous physics (NEW)
+   */
+  startUnifiedHybridTransition(sourceImage, targetImage, config = {}) {
+    console.log('[HybridEngine] Initializing unified physics-based transition...');
+    
+    // Store images for bidirectional support
+    this.triangulationImages.source = sourceImage;
+    this.triangulationImages.target = targetImage;
+    this.hybridTransitionState = {
+      sourceImage: sourceImage,
+      targetImage: targetImage,
+      config: config
+    };
+    
+    // Static display and disintegration (same as legacy)
+    const staticDisplayDuration = config.staticDisplayDuration || DEFAULT_STATIC_DISPLAY_DURATION;
+    const disintegrationDuration = config.disintegrationDuration || DEFAULT_DISINTEGRATION_DURATION;
+    
+    this.staticImageState = {
+      isDisplaying: true,
+      image: sourceImage,
+      startTime: performance.now(),
+      displayDuration: staticDisplayDuration,
+      disintegrationDuration: disintegrationDuration,
+      onComplete: () => {
+        // After static display and disintegration, start unified particle transition
+        this.startUnifiedParticleTransition(sourceImage, targetImage, config);
+      }
+    };
+    
+    console.log(`[HybridEngine] Phase 1: Static display for ${staticDisplayDuration}ms`);
+    console.log(`[HybridEngine] Phase 2: Disintegration for ${disintegrationDuration}ms`);
+    console.log(`[HybridEngine] Phase 3+: Unified continuous physics transition`);
+  }
+  
+  /**
+   * Start legacy hybrid transition with discrete phases (LEGACY)
+   */
+  startLegacyHybridTransition(sourceImage, targetImage, config = {}) {
+    console.log('[HybridEngine] Initializing legacy phase-based transition...');
     
     // Store images for bidirectional support
     this.triangulationImages.source = sourceImage;
@@ -534,7 +599,69 @@ export class HybridEngine extends ParticleEngine {
   }
 
   /**
-   * Internal method to start the particle-based transition after static image display
+   * Internal method to start unified particle-based transition (NEW)
+   * @param {HTMLImageElement} sourceImage - Source image
+   * @param {HTMLImageElement} targetImage - Target image  
+   * @param {Object} config - Transition configuration
+   */
+  async startUnifiedParticleTransition(sourceImage, targetImage, config) {
+    console.log('[HybridEngine] Starting unified particle transition...');
+    
+    // Import UnifiedHybridTransitionPreset dynamically
+    const { UnifiedHybridTransitionPreset } = await import('./presets/UnifiedHybridTransitionPreset.js');
+    
+    const preset = new UnifiedHybridTransitionPreset(config);
+    
+    // Register and activate preset
+    this.registerPreset('unifiedHybridTransition', preset);
+    
+    // Initialize triangulation morph for blend phase
+    if (this.triangulationMorph) {
+      this.triangulationMorph.setImages(sourceImage, targetImage);
+      this.triangulationRenderer.createTexture(sourceImage, 'source');
+      this.triangulationRenderer.createTexture(targetImage, 'target');
+      
+      // Start triangulation transition for blend phase
+      const totalDuration = config.totalDuration || 5000;
+      this.triangulationTransition = {
+        isActive: true,
+        progress: 0,
+        duration: totalDuration,
+        startTime: performance.now()
+      };
+    }
+    
+    // Extract target positions from target image
+    const imageData = this.particleSystem.extractImageData(targetImage, this.particleSystem.getParticles().length);
+    const targets = this.particleSystem.imageDataToTargets(imageData);
+    
+    // Activate preset with target data
+    const particles = this.particleSystem.getParticles();
+    const dimensions = { width: this.canvas.width, height: this.canvas.height };
+    this.activatePreset('unifiedHybridTransition', {
+      sourceImage: sourceImage,
+      targetImage: targetImage
+    });
+    
+    // Set targets for recombination
+    preset.setTargets(targets);
+    
+    // Enable gradient rendering and watercolor effects
+    if (this.renderer.enableGradientRendering) {
+      const enableGradients = config.enableGradients !== false;
+      const watercolorIntensity = config.watercolorIntensity || 0.5;
+      
+      this.renderer.enableGradientRendering(enableGradients);
+      this.renderer.setWatercolorIntensity(watercolorIntensity);
+      
+      console.log(`[HybridEngine] Gradient rendering: ${enableGradients}, Watercolor: ${watercolorIntensity}`);
+    }
+    
+    console.log('[HybridEngine] Unified hybrid transition preset activated');
+  }
+
+  /**
+   * Internal method to start the particle-based transition after static image display (LEGACY)
    * @param {HTMLImageElement} sourceImage - Source image
    * @param {HTMLImageElement} targetImage - Target image  
    * @param {Object} config - Transition configuration

@@ -646,6 +646,17 @@ export class HybridEngine extends ParticleEngine {
     // Set targets for recombination
     preset.setTargets(targets);
     
+    // Enable gradient rendering and watercolor effects
+    if (this.renderer.enableGradientRendering) {
+      const enableGradients = config.enableGradients !== false;
+      const watercolorIntensity = config.watercolorIntensity || 0.5;
+      
+      this.renderer.enableGradientRendering(enableGradients);
+      this.renderer.setWatercolorIntensity(watercolorIntensity);
+      
+      console.log(`[HybridEngine] Gradient rendering: ${enableGradients}, Watercolor: ${watercolorIntensity}`);
+    }
+    
     console.log('[HybridEngine] Unified hybrid transition preset activated');
   }
 

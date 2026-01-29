@@ -2,18 +2,24 @@
  * WebGL Renderer for Particle Engine
  * Handles WebGL context initialization, shader compilation, and rendering
  * Supports both solid image rendering and particle rendering with smooth transitions
+ * Enhanced with gradient and watercolor effects
  */
+import { GradientShaderProgram } from './shaders/GradientShaderProgram.js';
+
 export class Renderer {
   constructor(canvas) {
     this.canvas = canvas;
     this.gl = null;
     this.program = null;
     this.imageProgram = null;
+    this.gradientProgram = null; // New gradient shader program
     this.buffers = {};
     this.uniformLocations = {};
     this.imageUniformLocations = {};
     this.texture = null;
     this.imageLoaded = false;
+    this.useGradientShader = false;  // Toggle for gradient rendering
+    this.watercolorIntensity = 0;    // Watercolor effect intensity
     
     this.init();
   }
@@ -45,6 +51,15 @@ export class Renderer {
     // Compile shaders and create programs
     this.createShaderProgram();
     this.createImageShaderProgram();
+    
+    // Initialize gradient shader program
+    try {
+      this.gradientProgram = new GradientShaderProgram(this.gl);
+      console.log('[Renderer] Gradient shader program initialized');
+    } catch (error) {
+      console.warn('[Renderer] Failed to initialize gradient shader:', error);
+      this.gradientProgram = null;
+    }
     
     console.log('[Renderer] Initialization complete');
   }
@@ -366,6 +381,22 @@ export class Renderer {
       return;
     }
     
+    // Choose shader program based on gradient mode
+    const useGradient = this.useGradientShader && this.gradientProgram;
+    
+    if (useGradient) {
+      this.renderParticlesWithGradient(particles, globalOpacity);
+    } else {
+      this.renderParticlesStandard(particles, globalOpacity);
+    }
+  }
+  
+  /**
+   * Render particles with standard shader (legacy)
+   */
+  renderParticlesStandard(particles, globalOpacity = 1.0) {
+    const gl = this.gl;
+    
     // Use program
     gl.useProgram(this.program);
     
@@ -412,6 +443,114 @@ export class Renderer {
     // Draw particles
     gl.drawArrays(gl.POINTS, 0, particles.length);
   }
+  
+  /**
+   * Render particles with gradient shader (new)
+   */
+  renderParticlesWithGradient(particles, globalOpacity = 1.0) {
+    const gl = this.gl;
+    const program = this.gradientProgram.getProgram();
+    const attrLocs = this.gradientProgram.getAttributeLocations();
+    
+    // Use gradient program
+    gl.useProgram(program);
+    
+    // Set uniforms
+    this.gradientProgram.setResolution(this.canvas.width, this.canvas.height);
+    this.gradientProgram.setWatercolorEffect(this.watercolorIntensity);
+    
+    // Prepare data arrays
+    const positions = new Float32Array(particles.length * 2);
+    const colors = new Float32Array(particles.length * 4);
+    const colorsSecondary = new Float32Array(particles.length * 4);
+    const sizes = new Float32Array(particles.length);
+    const gradientMix = new Float32Array(particles.length);
+    
+    for (let i = 0; i < particles.length; i++) {
+      const particle = particles[i];
+      
+      positions[i * 2] = particle.x;
+      positions[i * 2 + 1] = particle.y;
+      
+      // Primary color
+      colors[i * 4] = particle.r;
+      colors[i * 4 + 1] = particle.g;
+      colors[i * 4 + 2] = particle.b;
+      colors[i * 4 + 3] = particle.alpha * globalOpacity;
+      
+      // Secondary color (for gradients)
+      colorsSecondary[i * 4] = particle.rSecondary !== undefined ? particle.rSecondary : particle.r;
+      colorsSecondary[i * 4 + 1] = particle.gSecondary !== undefined ? particle.gSecondary : particle.g;
+      colorsSecondary[i * 4 + 2] = particle.bSecondary !== undefined ? particle.bSecondary : particle.b;
+      colorsSecondary[i * 4 + 3] = particle.alpha * globalOpacity;
+      
+      sizes[i] = particle.size;
+      gradientMix[i] = particle.gradientMix !== undefined ? particle.gradientMix : 0.0;
+    }
+    
+    // Create or update buffers for gradient rendering
+    if (!this.buffers.gradientPosition) {
+      this.buffers.gradientPosition = gl.createBuffer();
+      this.buffers.gradientColor = gl.createBuffer();
+      this.buffers.gradientColorSecondary = gl.createBuffer();
+      this.buffers.gradientSize = gl.createBuffer();
+      this.buffers.gradientMix = gl.createBuffer();
+    }
+    
+    // Update position buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.gradientPosition);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(attrLocs.position);
+    gl.vertexAttribPointer(attrLocs.position, 2, gl.FLOAT, false, 0, 0);
+    
+    // Update color buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.gradientColor);
+    gl.bufferData(gl.ARRAY_BUFFER, colors, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(attrLocs.color);
+    gl.vertexAttribPointer(attrLocs.color, 4, gl.FLOAT, false, 0, 0);
+    
+    // Update secondary color buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.gradientColorSecondary);
+    gl.bufferData(gl.ARRAY_BUFFER, colorsSecondary, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(attrLocs.colorSecondary);
+    gl.vertexAttribPointer(attrLocs.colorSecondary, 4, gl.FLOAT, false, 0, 0);
+    
+    // Update size buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.gradientSize);
+    gl.bufferData(gl.ARRAY_BUFFER, sizes, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(attrLocs.size);
+    gl.vertexAttribPointer(attrLocs.size, 1, gl.FLOAT, false, 0, 0);
+    
+    // Update gradient mix buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.gradientMix);
+    gl.bufferData(gl.ARRAY_BUFFER, gradientMix, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(attrLocs.gradientMix);
+    gl.vertexAttribPointer(attrLocs.gradientMix, 1, gl.FLOAT, false, 0, 0);
+    
+    // Draw particles
+    gl.drawArrays(gl.POINTS, 0, particles.length);
+  }
+  
+  /**
+   * Enable gradient rendering mode
+   * @param {boolean} enable - Enable/disable gradient rendering
+   */
+  enableGradientRendering(enable = true) {
+    if (this.gradientProgram) {
+      this.useGradientShader = enable;
+      console.log(`[Renderer] Gradient rendering ${enable ? 'enabled' : 'disabled'}`);
+    } else {
+      console.warn('[Renderer] Gradient shader not available');
+    }
+  }
+  
+  /**
+   * Set watercolor effect intensity
+   * @param {number} intensity - Watercolor intensity (0-1)
+   */
+  setWatercolorIntensity(intensity) {
+    this.watercolorIntensity = Math.max(0, Math.min(1, intensity));
+  }
 
   resize(width, height) {
     this.canvas.width = width;
@@ -432,12 +571,20 @@ export class Renderer {
     if (this.buffers.imagePosition) gl.deleteBuffer(this.buffers.imagePosition);
     if (this.buffers.imageTexCoord) gl.deleteBuffer(this.buffers.imageTexCoord);
     
+    // Delete gradient buffers
+    if (this.buffers.gradientPosition) gl.deleteBuffer(this.buffers.gradientPosition);
+    if (this.buffers.gradientColor) gl.deleteBuffer(this.buffers.gradientColor);
+    if (this.buffers.gradientColorSecondary) gl.deleteBuffer(this.buffers.gradientColorSecondary);
+    if (this.buffers.gradientSize) gl.deleteBuffer(this.buffers.gradientSize);
+    if (this.buffers.gradientMix) gl.deleteBuffer(this.buffers.gradientMix);
+    
     // Delete texture
     if (this.texture) gl.deleteTexture(this.texture);
     
     // Delete programs
     if (this.program) gl.deleteProgram(this.program);
     if (this.imageProgram) gl.deleteProgram(this.imageProgram);
+    if (this.gradientProgram) this.gradientProgram.destroy();
     
     console.log('[Renderer] Cleanup complete');
   }
