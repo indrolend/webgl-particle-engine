@@ -10,21 +10,21 @@
 export class FerrofluidPhysics {
   constructor(config = {}) {
     this.config = {
-      // Cohesion parameters
-      cohesionRadius: config.cohesionRadius || 30,      // Distance for cohesion effect
-      cohesionStrength: config.cohesionStrength || 0.1,  // Strength of cohesion force
+      // Cohesion parameters - enhanced for thick liquid behavior
+      cohesionRadius: config.cohesionRadius || 50,      // Increased from 30 for longer-range attraction
+      cohesionStrength: config.cohesionStrength || 0.2,  // Increased from 0.1 for stronger clustering
       
-      // Surface tension parameters
-      surfaceTension: config.surfaceTension || 0.15,     // Blob-like clustering strength
+      // Surface tension parameters - enhanced for blob formation
+      surfaceTension: config.surfaceTension || 0.25,     // Increased from 0.15 for better blob cohesion
       
       // Attraction/repulsion parameters
-      attractionStrength: config.attractionStrength || 0.2,
-      repulsionDistance: config.repulsionDistance || 5,   // Min distance before repulsion
-      repulsionStrength: config.repulsionStrength || 0.3,
+      attractionStrength: config.attractionStrength || 0.3,  // Increased from 0.2
+      repulsionDistance: config.repulsionDistance || 3,   // Decreased from 5 so particles pack closer
+      repulsionStrength: config.repulsionStrength || 0.2,  // Decreased from 0.3 to allow tighter packing
       
       // Performance optimization
       enableSpatialHashing: config.enableSpatialHashing !== false,
-      cellSize: config.cellSize || 50,                   // Grid cell size for spatial hashing
+      cellSize: config.cellSize || 60,                   // Increased from 50 to match larger cohesion radius
       
       // Phase-specific settings
       enableDuringExplosion: config.enableDuringExplosion !== false,
