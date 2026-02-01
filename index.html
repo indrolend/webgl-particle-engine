@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebGL Particle Engine - Demos & Examples</title>
+    <title>WebGL Hybrid Particle Transition Engine</title>
     <style>
         * {
             margin: 0;
@@ -12,41 +12,24 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             min-height: 100vh;
-            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: 20px;
         }
 
-        #background-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-
-        .content {
-            position: relative;
-            z-index: 1;
+        .header {
             text-align: center;
-            max-width: 1100px;
-            width: 100%;
-            padding: 40px;
-            background: rgba(20, 20, 35, 0.9);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+            max-width: 900px;
         }
 
         h1 {
-            font-size: 48px;
+            font-size: 2.5rem;
             margin-bottom: 10px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
@@ -55,265 +38,525 @@
         }
 
         .tagline {
-            font-size: 18px;
+            font-size: 1.1rem;
             color: #aaa;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+        }
+
+        .main-container {
+            background: rgba(30, 30, 45, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 1200px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        #canvas {
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto 30px;
+            background: #000;
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .controls-section {
+            margin-bottom: 25px;
+        }
+
+        .controls-section h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+            padding-bottom: 8px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        button, .file-button {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 2px solid #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        button:hover:not(:disabled), .file-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #20bf6b 0%, #01a3a4 100%);
+            border-color: #20bf6b;
+        }
+
+        button.warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            border-color: #f39c12;
+        }
+
+        .file-button {
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            left: 0;
+            top: 0;
+        }
+
+        .slider-group {
+            margin-bottom: 20px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .slider-value {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .status {
+            text-align: center;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            font-size: 14px;
+            color: #aaa;
+            font-family: monospace;
+        }
+
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
             line-height: 1.6;
         }
 
-        .demos-section {
-            margin-top: 30px;
+        .preview-images {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 15px;
         }
 
-        .section-title {
-            font-size: 24px;
-            color: #00d4ff;
-            margin-bottom: 20px;
-            text-align: left;
-            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
-            padding-bottom: 10px;
+        .preview-box {
+            text-align: center;
         }
 
-        .demo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .demo-card {
-            display: block;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            border: 2px solid rgba(102, 126, 234, 0.3);
-            text-decoration: none;
-            color: white;
-            transition: all 0.3s ease;
-            text-align: left;
-        }
-
-        .demo-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
-            border-color: rgba(102, 126, 234, 0.6);
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .demo-card.featured {
-            border-color: rgba(255, 107, 107, 0.5);
-            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 143, 178, 0.1) 100%);
-        }
-
-        .demo-card.featured:hover {
-            border-color: rgba(255, 107, 107, 0.8);
-            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
-        }
-
-        .demo-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .demo-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #fff;
-        }
-
-        .demo-description {
-            font-size: 14px;
-            color: #aaa;
-            line-height: 1.4;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            background: rgba(255, 107, 107, 0.3);
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #ff6b6b;
-            margin-top: 8px;
-            text-transform: uppercase;
-        }
-
-        .github-link {
-            display: inline-block;
-            padding: 15px 40px;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            text-decoration: none;
+        .preview-box img {
+            max-width: 120px;
+            max-height: 120px;
+            border: 2px solid #667eea;
             border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
-            margin-top: 30px;
+            background: #000;
+            object-fit: contain;
         }
 
-        .github-link:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.6);
+        .preview-box label {
+            display: block;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .footer a {
+            color: #00d4ff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
         }
 
         @media (max-width: 768px) {
-            .content {
-                padding: 30px 20px;
-            }
-
             h1 {
-                font-size: 36px;
+                font-size: 2rem;
             }
-
-            .tagline {
-                font-size: 16px;
+            
+            .main-container {
+                padding: 20px;
             }
-
-            .demo-grid {
-                grid-template-columns: 1fr;
+            
+            #canvas {
+                width: 100%;
+                height: auto;
             }
         }
     </style>
 </head>
 <body>
-    <canvas id="background-canvas"></canvas>
+    <div class="header">
+        <h1>🎨 WebGL Hybrid Particle Transition Engine</h1>
+        <p class="tagline">High-performance animated transitions between images using WebGL particles</p>
+    </div>
 
-    <div class="content">
-        <h1>🎨 WebGL Particle Engine</h1>
-        <p class="tagline">
-            High-performance WebGL particle system with image morphing, transitions, and video export
+    <div class="main-container">
+        <canvas id="canvas" width="800" height="600"></canvas>
+
+        <div class="controls-panel">
+            <!-- Image Upload Section -->
+            <div class="controls-section">
+                <h3>📸 Images</h3>
+                <div class="info-box">
+                    Upload two images to create a seamless particle transition animation. The engine converts images to particles, applies physics-based effects, and smoothly morphs between states.
+                </div>
+                <div class="button-group">
+                    <label class="file-button">
+                        Choose Source Image
+                        <input type="file" id="image1Input" accept="image/*">
+                    </label>
+                    <label class="file-button">
+                        Choose Target Image
+                        <input type="file" id="image2Input" accept="image/*">
+                    </label>
+                </div>
+                <div class="preview-images">
+                    <div class="preview-box">
+                        <div id="preview1"></div>
+                        <label>Source Image</label>
+                    </div>
+                    <div class="preview-box">
+                        <div id="preview2"></div>
+                        <label>Target Image</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="controls-section">
+                <h3>🎬 Actions</h3>
+                <div class="button-group">
+                    <button id="initBtn" disabled>Initialize</button>
+                    <button id="transitionBtn" class="secondary" disabled>Start Transition</button>
+                    <button id="exportBtn" class="warning" disabled>Export Video</button>
+                </div>
+            </div>
+
+            <!-- Transition Controls -->
+            <div class="controls-section">
+                <h3>⚙️ Hybrid Transition Parameters</h3>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Total Duration (ms)</span>
+                        <span class="slider-value" id="totalDurationValue">6700</span>
+                    </div>
+                    <input type="range" id="totalDuration" min="3000" max="12000" step="100" value="6700">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Particle Density</span>
+                        <span class="slider-value" id="particleDensityValue">2000</span>
+                    </div>
+                    <input type="range" id="particleDensity" min="500" max="5000" step="100" value="2000">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Explosion Weight</span>
+                        <span class="slider-value" id="explosionWeightValue">150</span>
+                    </div>
+                    <input type="range" id="explosionWeight" min="50" max="300" step="10" value="150">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Recombination Weight</span>
+                        <span class="slider-value" id="recombinationWeightValue">2500</span>
+                    </div>
+                    <input type="range" id="recombinationWeight" min="1000" max="4000" step="100" value="2500">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Blend Weight</span>
+                        <span class="slider-value" id="blendWeightValue">2000</span>
+                    </div>
+                    <input type="range" id="blendWeight" min="500" max="3000" step="100" value="2000">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Liquid Thickness (Chaos)</span>
+                        <span class="slider-value" id="liquidThicknessValue">0.3</span>
+                    </div>
+                    <input type="range" id="liquidThickness" min="0" max="1" step="0.1" value="0.3">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Watercolor Intensity (Vacuum Strength)</span>
+                        <span class="slider-value" id="watercolorIntensityValue">0.15</span>
+                    </div>
+                    <input type="range" id="watercolorIntensity" min="0.05" max="0.5" step="0.05" value="0.15">
+                </div>
+            </div>
+        </div>
+
+        <div class="status" id="status">Upload two images to begin</div>
+    </div>
+
+    <div class="footer">
+        <p>
+            <a href="export-hybrid-video.html">📹 Export Video Demo</a> | 
+            <a href="https://github.com/indrolend/webgl-particle-engine" target="_blank">⭐ View on GitHub</a> |
+            <a href="API.md">📖 API Documentation</a>
         </p>
-
-        <!-- Main Demos Section -->
-        <div class="demos-section">
-            <h2 class="section-title">🚀 Main Demos</h2>
-            <div class="demo-grid">
-                <a href="image-morph-demo.html" class="demo-card">
-                    <span class="demo-icon">🎨</span>
-                    <div class="demo-title">Image Morph Interface</div>
-                    <div class="demo-description">
-                        Streamlined interface for particle-based image morphing with real-time controls
-                    </div>
-                </a>
-
-                <a href="export-hybrid-video.html" class="demo-card featured">
-                    <span class="demo-icon">🎬</span>
-                    <div class="demo-title">Video Export (9:16)</div>
-                    <div class="demo-description">
-                        Record and export hybrid transitions as video files (portrait format)
-                    </div>
-                    <span class="badge">New</span>
-                </a>
-
-                <a href="test-hybrid.html" class="demo-card">
-                    <span class="demo-icon">🌟</span>
-                    <div class="demo-title">Hybrid Transition Test</div>
-                    <div class="demo-description">
-                        Test hybrid transitions with explosion, recombination, and blend effects
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <!-- Page Transitions Section -->
-        <div class="demos-section">
-            <h2 class="section-title">📄 Page Transitions</h2>
-            <div class="demo-grid">
-                <a href="page-transition-demo.html" class="demo-card">
-                    <span class="demo-icon">✨</span>
-                    <div class="demo-title">Page Transition Demo</div>
-                    <div class="demo-description">
-                        Full-featured page transition system with DOM capture
-                    </div>
-                </a>
-
-                <a href="simple-page-transition-demo.html" class="demo-card">
-                    <span class="demo-icon">💫</span>
-                    <div class="demo-title">Simple Page Transition</div>
-                    <div class="demo-description">
-                        Simplified page transition demo with basic controls
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <!-- Technical Demos Section -->
-        <div class="demos-section">
-            <h2 class="section-title">🔧 Technical Demos</h2>
-            <div class="demo-grid">
-                <a href="triangulation-demo.html" class="demo-card">
-                    <span class="demo-icon">🔺</span>
-                    <div class="demo-title">Triangulation Demo</div>
-                    <div class="demo-description">
-                        Delaunay triangulation morphing with key point detection
-                    </div>
-                </a>
-
-                <a href="disintegration-demo.html" class="demo-card">
-                    <span class="demo-icon">💥</span>
-                    <div class="demo-title">Disintegration Effect</div>
-                    <div class="demo-description">
-                        Particle disintegration and explosion effects
-                    </div>
-                </a>
-
-                <a href="debug.html" class="demo-card">
-                    <span class="demo-icon">🐛</span>
-                    <div class="demo-title">Debug Interface</div>
-                    <div class="demo-description">
-                        Advanced debugging tools with real-time parameter adjustment
-                    </div>
-                </a>
-
-                <a href="minimal-example.html" class="demo-card">
-                    <span class="demo-icon">📝</span>
-                    <div class="demo-title">Minimal Example</div>
-                    <div class="demo-description">
-                        Simple starter example demonstrating basic particle engine usage
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <a href="https://github.com/indrolend/webgl-particle-engine" class="github-link" target="_blank">
-            ⭐ View on GitHub
-        </a>
     </div>
 
     <script type="module">
-        import { ParticleEngine } from './src/ParticleEngine.js';
+        import { HybridEngine } from './src/HybridEngine.js';
 
-        const canvas = document.getElementById('background-canvas');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const canvas = document.getElementById('canvas');
+        const status = document.getElementById('status');
+        const image1Input = document.getElementById('image1Input');
+        const image2Input = document.getElementById('image2Input');
+        const preview1 = document.getElementById('preview1');
+        const preview2 = document.getElementById('preview2');
+        const initBtn = document.getElementById('initBtn');
+        const transitionBtn = document.getElementById('transitionBtn');
+        const exportBtn = document.getElementById('exportBtn');
 
-        const engine = new ParticleEngine(canvas, {
-            particleCount: 800,
-            speed: 0.5,
-            autoResize: false
+        // Sliders
+        const totalDuration = document.getElementById('totalDuration');
+        const totalDurationValue = document.getElementById('totalDurationValue');
+        const particleDensity = document.getElementById('particleDensity');
+        const particleDensityValue = document.getElementById('particleDensityValue');
+        const explosionWeight = document.getElementById('explosionWeight');
+        const explosionWeightValue = document.getElementById('explosionWeightValue');
+        const recombinationWeight = document.getElementById('recombinationWeight');
+        const recombinationWeightValue = document.getElementById('recombinationWeightValue');
+        const blendWeight = document.getElementById('blendWeight');
+        const blendWeightValue = document.getElementById('blendWeightValue');
+        const liquidThickness = document.getElementById('liquidThickness');
+        const liquidThicknessValue = document.getElementById('liquidThicknessValue');
+        const watercolorIntensity = document.getElementById('watercolorIntensity');
+        const watercolorIntensityValue = document.getElementById('watercolorIntensityValue');
+
+        let engine = null;
+        let image1 = null;
+        let image2 = null;
+
+        // Initialize engine
+        engine = new HybridEngine(canvas, {
+            particleCount: 2000,
+            speed: 1.0,
+            enableTriangulation: true,
+            triangulationMode: 'hybrid',
+            gridSize: 8
         });
 
-        engine.initializeParticles('random');
-        engine.start();
+        // Slider event listeners
+        totalDuration.addEventListener('input', () => {
+            totalDurationValue.textContent = totalDuration.value;
+        });
 
-        // Cycle through patterns
-        let patternIndex = 0;
-        const patterns = ['grid', 'circle', 'spiral', 'random'];
-        
-        setInterval(() => {
-            patternIndex = (patternIndex + 1) % patterns.length;
-            engine.transition(patterns[patternIndex], 3000);
-        }, 6000);
+        particleDensity.addEventListener('input', () => {
+            particleDensityValue.textContent = particleDensity.value;
+            if (engine) {
+                engine.config.particleCount = parseInt(particleDensity.value);
+            }
+        });
+
+        explosionWeight.addEventListener('input', () => {
+            explosionWeightValue.textContent = explosionWeight.value;
+        });
+
+        recombinationWeight.addEventListener('input', () => {
+            recombinationWeightValue.textContent = recombinationWeight.value;
+        });
+
+        blendWeight.addEventListener('input', () => {
+            blendWeightValue.textContent = blendWeight.value;
+        });
+
+        liquidThickness.addEventListener('input', () => {
+            liquidThicknessValue.textContent = liquidThickness.value;
+        });
+
+        watercolorIntensity.addEventListener('input', () => {
+            watercolorIntensityValue.textContent = watercolorIntensity.value;
+        });
+
+        // Image upload handlers
+        image1Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image1 = new Image();
+                    image1.onload = () => {
+                        preview1.innerHTML = `<img src="${image1.src}" alt="Source">`;
+                        status.textContent = `Source image loaded: ${image1.width}x${image1.height}`;
+                        checkImagesLoaded();
+                    };
+                    image1.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        image2Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image2 = new Image();
+                    image2.onload = () => {
+                        preview2.innerHTML = `<img src="${image2.src}" alt="Target">`;
+                        status.textContent = `Target image loaded: ${image2.width}x${image2.height}`;
+                        checkImagesLoaded();
+                    };
+                    image2.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function checkImagesLoaded() {
+            if (image1 && image2) {
+                initBtn.disabled = false;
+                status.textContent = 'Both images loaded! Click Initialize to begin.';
+            }
+        }
+
+        // Initialize button
+        initBtn.addEventListener('click', async () => {
+            try {
+                status.textContent = 'Initializing engine with source image...';
+                initBtn.disabled = true;
+                
+                await engine.setImage(image1);
+                engine.start();
+                
+                transitionBtn.disabled = false;
+                exportBtn.disabled = false;
+                status.textContent = 'Ready! Click Start Transition to begin the animation.';
+            } catch (error) {
+                console.error('Initialization error:', error);
+                status.textContent = `Error: ${error.message}`;
+                initBtn.disabled = false;
+            }
+        });
+
+        // Transition button
+        transitionBtn.addEventListener('click', async () => {
+            try {
+                status.textContent = 'Starting hybrid transition...';
+                transitionBtn.disabled = true;
+                
+                const config = {
+                    staticDisplayDuration: 500,
+                    disintegrationDuration: 1000,
+                    explosionTime: 800,
+                    explosionIntensity: parseInt(explosionWeight.value),
+                    recombinationDuration: parseInt(recombinationWeight.value),
+                    recombinationChaos: parseFloat(liquidThickness.value),
+                    vacuumStrength: parseFloat(watercolorIntensity.value),
+                    blendDuration: parseInt(blendWeight.value),
+                    finalStaticDuration: 500
+                };
+                
+                await engine.startHybridTransition(image1, image2, config);
+                
+                transitionBtn.disabled = false;
+                status.textContent = 'Transition complete! Click again to replay.';
+            } catch (error) {
+                console.error('Transition error:', error);
+                status.textContent = `Error: ${error.message}`;
+                transitionBtn.disabled = false;
+            }
+        });
+
+        // Export button
+        exportBtn.addEventListener('click', () => {
+            window.location.href = 'export-hybrid-video.html';
+        });
 
         // Handle window resize
         window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            engine.resize(canvas.width, canvas.height);
+            const containerWidth = canvas.parentElement.clientWidth;
+            if (containerWidth < 800) {
+                canvas.style.width = '100%';
+                canvas.style.height = 'auto';
+            }
         });
     </script>
 </body>
