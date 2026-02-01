@@ -46,6 +46,8 @@ echo "Copying documentation..."
 cp README.md public/
 cp API.md public/
 cp HYBRID_PAGE_TRANSITION_API.md public/
+cp CLOUDFLARE_PAGES.md public/
+cp QUICK_DEPLOY.md public/
 
 # Copy assets
 echo "Copying assets..."

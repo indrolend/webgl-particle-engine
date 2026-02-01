@@ -214,17 +214,24 @@ engine.config.speed = 0.8;           // Adjust animation speed
 
 ## 📦 Deployment
 
-### GitHub Pages / Cloudflare Pages
+### Cloudflare Pages (Recommended)
 
+**Quick Deploy**:
 ```bash
 # Build for deployment
 npm run build
 
 # Deploy to Cloudflare Pages
-npx wrangler pages deploy ./public --project-name=your-project-name
+npx wrangler pages deploy ./public --project-name=webgl-particle-engine
 ```
 
-The `public/` directory is automatically generated with all necessary files.
+**Automatic Deployment**: Connect your GitHub repository to Cloudflare Pages for automatic deployments on every push!
+
+📖 **[Complete Cloudflare Pages Deployment Guide](CLOUDFLARE_PAGES.md)** - Step-by-step instructions with screenshots, troubleshooting, and CI/CD setup.
+
+### GitHub Pages
+
+The `public/` directory is automatically generated with all necessary files and can be deployed to any static hosting service.
 
 ### CDN Integration
 
