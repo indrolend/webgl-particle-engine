@@ -115,6 +115,18 @@ export class ParticleEngine {
   }
 
   /**
+   * Set image for the engine (alias for initializeFromImage)
+   * @param {HTMLImageElement} image - The image to load
+   * @returns {Promise<void>}
+   */
+  async setImage(image) {
+    return new Promise((resolve) => {
+      this.initializeFromImage(image);
+      resolve();
+    });
+  }
+
+  /**
    * Start disintegration effect from solid image to particles
    * @param {HTMLImageElement} image - The image element
    * @param {number} duration - Disintegration duration in milliseconds (0 means no auto-animation)

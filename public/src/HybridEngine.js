@@ -135,6 +135,19 @@ export class HybridEngine extends ParticleEngine {
   }
 
   /**
+   * Set image for the engine (alias for initializeFromImage)
+   * @param {HTMLImageElement} image - The image to load
+   * @param {Object} options - Optional configuration
+   * @returns {Promise<void>}
+   */
+  async setImage(image, options = {}) {
+    return new Promise((resolve) => {
+      this.initializeFromImage(image, options);
+      resolve();
+    });
+  }
+
+  /**
    * Transition to image with hybrid support
    * @param {HTMLImageElement} image 
    * @param {number} duration 

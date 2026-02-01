@@ -33,8 +33,11 @@
 
 ## 🚀 Deployment Steps
 
-### Option 1: Cloudflare Pages
+### Option 1: Cloudflare Pages (Recommended)
 
+📖 **See [CLOUDFLARE_PAGES.md](CLOUDFLARE_PAGES.md) for detailed step-by-step guide**
+
+**Quick Deploy**:
 ```bash
 # Build the project
 npm run build
@@ -42,6 +45,8 @@ npm run build
 # Deploy to Cloudflare Pages
 npx wrangler pages deploy ./public --project-name=webgl-particle-engine
 ```
+
+**Automatic Deployment**: Use GitHub Actions workflow (included in `.github/workflows/`) for automatic deployments.
 
 ### Option 2: GitHub Pages
 
