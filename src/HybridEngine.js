@@ -43,7 +43,7 @@ export class HybridEngine extends ParticleEngine {
     // Triangulation-specific configuration
     this.triangulationConfig = {
       enabled: config.enableTriangulation !== false,
-      mode: config.triangulationMode || 'blob', // 'particles', 'triangulation', 'hybrid', or 'blob'
+      mode: config.triangulationMode || 'hybrid', // 'particles', 'triangulation', 'hybrid', or 'blob' (default: 'hybrid' for backward compatibility)
       keyPointMethod: config.keyPointMethod || 'grid', // 'grid' or 'feature'
       gridSize: config.gridSize || 8,
       featurePointCount: config.featurePointCount || 64,

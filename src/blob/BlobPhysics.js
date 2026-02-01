@@ -233,27 +233,30 @@ export class BlobPhysics {
       centroids.push({ x: particles[idx].x, y: particles[idx].y });
     }
     
+    let assignments = new Array(particles.length);
+    
     // Run k-means iterations
     const maxIterations = 10;
     for (let iter = 0; iter < maxIterations; iter++) {
       // Assign particles to nearest centroid
-      const assignments = particles.map(p => {
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
         let minDist = Infinity;
         let nearestIdx = 0;
         
-        for (let i = 0; i < k; i++) {
-          const dx = p.x - centroids[i].x;
-          const dy = p.y - centroids[i].y;
+        for (let j = 0; j < k; j++) {
+          const dx = p.x - centroids[j].x;
+          const dy = p.y - centroids[j].y;
           const dist = dx * dx + dy * dy;
           
           if (dist < minDist) {
             minDist = dist;
-            nearestIdx = i;
+            nearestIdx = j;
           }
         }
         
-        return nearestIdx;
-      });
+        assignments[i] = nearestIdx;
+      }
       
       // Update centroids
       for (let i = 0; i < k; i++) {
@@ -274,28 +277,10 @@ export class BlobPhysics {
       }
     }
     
-    // Group particles by cluster
+    // Group particles by cluster using stored assignments
     const clusters = Array.from({ length: k }, () => []);
     for (let i = 0; i < particles.length; i++) {
-      const clusterIdx = particles.map((p, idx) => {
-        let minDist = Infinity;
-        let nearestIdx = 0;
-        
-        for (let j = 0; j < k; j++) {
-          const dx = p.x - centroids[j].x;
-          const dy = p.y - centroids[j].y;
-          const dist = dx * dx + dy * dy;
-          
-          if (dist < minDist) {
-            minDist = dist;
-            nearestIdx = j;
-          }
-        }
-        
-        return nearestIdx;
-      })[i];
-      
-      clusters[clusterIdx].push(particles[i]);
+      clusters[assignments[i]].push(particles[i]);
     }
     
     return clusters;
