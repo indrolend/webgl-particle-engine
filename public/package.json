@@ -1,13 +1,31 @@
 {
   "name": "webgl-particle-engine",
-  "version": "1.0.0",
-  "description": "WebGL Particle Transition Engine with Triangulation Morphing",
+  "version": "2.0.0",
+  "description": "High-performance WebGL engine for animated hybrid particle transitions between images and pages",
   "type": "module",
+  "main": "src/HybridPageTransitionAPI.js",
   "scripts": {
+    "build": "bash build.sh",
     "serve": "python3 -m http.server 8000"
   },
-  "dependencies": {},
+  "keywords": [
+    "webgl",
+    "particles",
+    "transitions",
+    "animation",
+    "hybrid",
+    "image-morphing",
+    "page-transitions"
+  ],
+  "dependencies": {
+    "proton-engine": "^5.0.3",
+    "html2canvas": "^1.4.1"
+  },
   "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/indrolend/webgl-particle-engine"
+  },
   "author": "",
   "license": "MIT"
 }

@@ -185,9 +185,10 @@ Export transitions as video for use in presentations, social media, or video edi
 
 ## 📚 Documentation
 
-- **[API Documentation](HYBRID_PAGE_TRANSITION_API.md)** - Complete API reference
+- **[API Documentation](API.md)** - Complete API reference with examples
+- **[Page Transition API Guide](HYBRID_PAGE_TRANSITION_API.md)** - Detailed page transition documentation
 - **[JSDoc Comments](src/)** - Inline documentation in source files
-- **[Live Examples](index.html)** - Interactive demos with source code
+- **[Live Demo](index.html)** - Interactive demo with source code
 
 ## ⚡ Performance
 
@@ -268,4 +269,4 @@ Built with:
 
 ---
 
-**[Live Demo](https://webgl-particle-engine.pages.dev/)** | **[GitHub Repository](https://github.com/indrolend/webgl-particle-engine)** | **[API Docs](HYBRID_PAGE_TRANSITION_API.md)**
+**[Live Demo](https://webgl-particle-engine.pages.dev/)** | **[GitHub Repository](https://github.com/indrolend/webgl-particle-engine)** | **[API Docs](API.md)**

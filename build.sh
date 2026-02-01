@@ -44,6 +44,7 @@ cp -r src/utils/* public/src/utils/
 # Copy documentation
 echo "Copying documentation..."
 cp README.md public/
+cp API.md public/
 cp HYBRID_PAGE_TRANSITION_API.md public/
 
 # Copy assets
