@@ -119,6 +119,18 @@
             border-color: #f39c12;
         }
 
+        button.mode-btn {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+            padding: 10px 20px;
+        }
+
+        button.mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+
         .file-button {
             display: inline-block;
             position: relative;
@@ -308,6 +320,20 @@
                 </div>
             </div>
 
+            <!-- Rendering Mode Selection -->
+            <div class="controls-section">
+                <h3>🎨 Rendering Mode</h3>
+                <div class="info-box">
+                    Choose how particles are rendered: as individual points, organic blob mesh, triangulation morphing, or hybrid combination.
+                </div>
+                <div class="button-group">
+                    <button id="modeParticles" class="mode-btn">Particles</button>
+                    <button id="modeBlob" class="mode-btn active">Blob Mesh</button>
+                    <button id="modeTriangulation" class="mode-btn">Triangulation</button>
+                    <button id="modeHybrid" class="mode-btn">Hybrid</button>
+                </div>
+            </div>
+
             <!-- Transition Controls -->
             <div class="controls-section">
                 <h3>⚙️ Hybrid Transition Parameters</h3>
@@ -394,6 +420,12 @@
         const transitionBtn = document.getElementById('transitionBtn');
         const exportBtn = document.getElementById('exportBtn');
 
+        // Mode buttons
+        const modeParticles = document.getElementById('modeParticles');
+        const modeBlob = document.getElementById('modeBlob');
+        const modeTriangulation = document.getElementById('modeTriangulation');
+        const modeHybrid = document.getElementById('modeHybrid');
+
         // Sliders
         const totalDuration = document.getElementById('totalDuration');
         const totalDurationValue = document.getElementById('totalDurationValue');
@@ -419,9 +451,36 @@
             particleCount: 2000,
             speed: 1.0,
             enableTriangulation: true,
-            triangulationMode: 'hybrid',
-            gridSize: 8
+            triangulationMode: 'blob',  // Start with blob mode
+            gridSize: 8,
+            enableBlobRendering: true,
+            blobInfluenceRadius: 80,
+            surfaceTension: 0.5,
+            mitosisFactor: 0.5
         });
+
+        // Mode switching handlers
+        function setRenderMode(mode) {
+            if (engine) {
+                engine.setRenderMode(mode);
+                // Update button states
+                [modeParticles, modeBlob, modeTriangulation, modeHybrid].forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                if (mode === 'particles') modeParticles.classList.add('active');
+                else if (mode === 'blob') modeBlob.classList.add('active');
+                else if (mode === 'triangulation') modeTriangulation.classList.add('active');
+                else if (mode === 'hybrid') modeHybrid.classList.add('active');
+                
+                status.textContent = `Rendering mode set to: ${mode}`;
+            }
+        }
+
+        modeParticles.addEventListener('click', () => setRenderMode('particles'));
+        modeBlob.addEventListener('click', () => setRenderMode('blob'));
+        modeTriangulation.addEventListener('click', () => setRenderMode('triangulation'));
+        modeHybrid.addEventListener('click', () => setRenderMode('hybrid'));
 
         // Slider event listeners
         totalDuration.addEventListener('input', () => {
