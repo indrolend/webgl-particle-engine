@@ -357,8 +357,8 @@
 
         <!-- Prominent Blob Mesh Toggle -->
         <div class="blob-toggle-container">
-            <button id="blobToggleBtn" class="blob-toggle-btn">
-                <span class="blob-icon">🧬</span>
+            <button id="blobToggleBtn" class="blob-toggle-btn" aria-label="Toggle Blob Mesh rendering mode">
+                <span class="blob-icon" aria-hidden="true">🧬</span>
                 <span class="blob-text">Enable Blob Mesh</span>
             </button>
         </div>
@@ -543,6 +543,7 @@
         let image1 = null;
         let image2 = null;
         let previousMode = 'hybrid'; // Track previous mode for toggling
+        let currentMode = 'hybrid'; // Track current mode
         let isBlobModeActive = false;
 
         // Initialize engine
@@ -562,6 +563,8 @@
         function setRenderMode(mode) {
             if (engine) {
                 engine.setRenderMode(mode);
+                currentMode = mode; // Track current mode
+                
                 // Update button states
                 [modeParticles, modeBlob, modeTriangulation, modeHybrid].forEach(btn => {
                     btn.classList.remove('active');
@@ -604,7 +607,6 @@
                     status.textContent = `Blob Mesh disabled. Returned to ${previousMode} mode.`;
                 } else {
                     // Enable blob mode - save current mode as previous
-                    const currentMode = engine.triangulationConfig.mode;
                     if (currentMode !== 'blob') {
                         previousMode = currentMode;
                     }
