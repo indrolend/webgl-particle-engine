@@ -492,7 +492,8 @@
             triangulationMode: DEFAULT_MODE,  // Default mode for backward compatibility
             gridSize: 8,
             enableBlobRendering: true,    // Enable blob rendering capability
-            blobInfluenceRadius: 80,
+            blobInfluenceRadius: 40,      // Smaller radius for better blob size
+            blobThreshold: 0.5,           // Lower threshold for more visible blobs
             surfaceTension: 0.5,
             mitosisFactor: 0.5
         });
