@@ -278,6 +278,19 @@
         <p class="tagline">High-performance animated transitions between images using WebGL particles</p>
     </div>
 
+    <!-- Blob Demo Banner -->
+    <div style="max-width: 1200px; width: 100%; margin: 0 auto 20px; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+            <div style="flex: 1; min-width: 250px;">
+                <h3 style="margin: 0 0 5px 0; color: white; font-size: 1.2rem;">🧬 New: Organic Blob Mesh Rendering!</h3>
+                <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 0.95rem;">Watch particles form liquid-like blobs that split and merge organically</p>
+            </div>
+            <a href="blob-demo.html" style="padding: 12px 30px; background: white; color: #667eea; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s; display: inline-block;">
+                Try Blob Demo →
+            </a>
+        </div>
+    </div>
+
     <div class="main-container">
         <canvas id="canvas" width="800" height="600"></canvas>
 
@@ -328,9 +341,12 @@
                 </div>
                 <div class="button-group">
                     <button id="modeParticles" class="mode-btn">Particles</button>
-                    <button id="modeBlob" class="mode-btn active">Blob Mesh</button>
+                    <button id="modeBlob" class="mode-btn">Blob Mesh</button>
                     <button id="modeTriangulation" class="mode-btn">Triangulation</button>
-                    <button id="modeHybrid" class="mode-btn">Hybrid</button>
+                    <button id="modeHybrid" class="mode-btn active">Hybrid</button>
+                </div>
+                <div style="margin-top: 10px; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; font-size: 14px;">
+                    <strong>💡 Tip:</strong> Try the <a href="blob-demo.html" style="color: #00d4ff; text-decoration: none; font-weight: 600;">Blob Mesh Demo</a> to see organic blob rendering with interactive controls!
                 </div>
             </div>
 
@@ -481,6 +497,9 @@
         modeBlob.addEventListener('click', () => setRenderMode('blob'));
         modeTriangulation.addEventListener('click', () => setRenderMode('triangulation'));
         modeHybrid.addEventListener('click', () => setRenderMode('hybrid'));
+
+        // Set initial status message to show current mode
+        status.textContent = 'Rendering mode: Hybrid (default) - Upload two images to begin';
 
         // Slider event listeners
         totalDuration.addEventListener('input', () => {

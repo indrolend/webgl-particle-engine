@@ -42,9 +42,12 @@ php -S localhost:8000
 
 3. **Open in browser**:
 ```
-http://localhost:8000/                    # Main hybrid transition demo
-http://localhost:8000/export-hybrid-video.html  # Video export demo
+http://localhost:8000/                         # Main hybrid transition demo
+http://localhost:8000/blob-demo.html           # Blob mesh rendering demo (NEW!)
+http://localhost:8000/export-hybrid-video.html # Video export demo
 ```
+
+> **🧬 Try the Blob Demo!** Experience organic blob mesh rendering with interactive controls. Watch particles form liquid-like blobs that automatically split (mitosis) and merge!
 
 ## 📖 API Usage
 
@@ -187,6 +190,27 @@ The engine includes built-in video recording capabilities:
 ```
 
 Visit `/export-hybrid-video.html` for a ready-to-use video export interface.
+
+## 🧬 Blob Mesh Demo
+
+Experience organic blob rendering with the dedicated demo page:
+
+```bash
+# Open blob-demo.html in your browser
+http://localhost:8000/blob-demo.html
+```
+
+**Interactive Features:**
+- **Random Particles**: Generate random particle formations
+- **Circle/Grid Formation**: Organize particles into shapes
+- **Explode!**: Trigger mitosis effect - watch one blob split into many
+- **Real-time Stats**: Monitor particle count, blob count, and FPS
+
+The demo showcases:
+- Metaball rendering with marching squares algorithm
+- Automatic blob detection and splitting (mitosis)
+- Organic blob merging when particles come together
+- Surface tension physics creating liquid-like behavior
 
 ## 🏗️ Project Structure
 
