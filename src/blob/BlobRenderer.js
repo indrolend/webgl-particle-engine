@@ -23,6 +23,7 @@ export class BlobRenderer {
       fillOpacity: config.fillOpacity || 0.95,        // Higher opacity for visibility
       edgeSoftness: config.edgeSoftness || 0.15,      // Edge fade amount
       sharedContext: config.sharedContext || null,    // Optional shared WebGL context
+      unifiedBlob: config.unifiedBlob !== false,      // Render all particles as single blob (default: true)
       ...config
     };
     
@@ -405,9 +406,6 @@ export class BlobRenderer {
   render(particles, canvasWidth, canvasHeight) {
     if (!particles || particles.length === 0) return;
     
-    // Detect separate blobs
-    this.blobs = this.detectBlobs(particles);
-    
     // Set viewport (but don't clear - let the main renderer handle that)
     this.gl.viewport(0, 0, canvasWidth, canvasHeight);
     
@@ -416,12 +414,26 @@ export class BlobRenderer {
     this.gl.uniform2f(this.uniformLocations.resolution, canvasWidth, canvasHeight);
     this.gl.uniform1f(this.uniformLocations.edgeSoftness, this.config.edgeSoftness);
     
-    // First pass: Render all particles as circles to establish blob cores
-    this.renderParticleCircles(particles, canvasWidth, canvasHeight);
-    
-    // Second pass: Render each blob mesh for smooth organic boundaries
-    for (const blob of this.blobs) {
-      this.renderBlob(blob, canvasWidth, canvasHeight);
+    if (this.config.unifiedBlob) {
+      // UNIFIED BLOB MODE: Treat all particles as single cohesive blob
+      // This creates a blob that looks exactly like the source image
+      // Don't render individual particle circles - let metaball surface do all the work
+      
+      // Render all particles as one unified blob mesh
+      this.renderBlob(particles, canvasWidth, canvasHeight);
+      this.blobs = [particles]; // Store as single blob for getBlobCount()
+    } else {
+      // MULTI-BLOB MODE: Detect and render separate blobs (old behavior)
+      // Used for mitosis/splitting effects
+      this.blobs = this.detectBlobs(particles);
+      
+      // First pass: Render all particles as circles to establish blob cores
+      this.renderParticleCircles(particles, canvasWidth, canvasHeight);
+      
+      // Second pass: Render each blob mesh for smooth organic boundaries
+      for (const blob of this.blobs) {
+        this.renderBlob(blob, canvasWidth, canvasHeight);
+      }
     }
   }
   

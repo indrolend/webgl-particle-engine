@@ -147,7 +147,8 @@ export class HybridEngine extends ParticleEngine {
         surfaceTension: this.blobConfig.surfaceTension,
         fillOpacity: this.blobConfig.fillOpacity,
         edgeSoftness: this.blobConfig.edgeSoftness,
-        sharedContext: this.renderer.gl  // Pass existing WebGL context
+        sharedContext: this.renderer.gl,  // Pass existing WebGL context
+        unifiedBlob: this.blobConfig.unifiedBlob  // Pass unified blob setting
       });
       
       this.blobPhysics = new BlobPhysics({
