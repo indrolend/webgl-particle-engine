@@ -138,13 +138,15 @@ export class HybridEngine extends ParticleEngine {
     console.log('[HybridEngine] Initializing blob rendering system...');
     
     try {
+      // Share the WebGL context from the main renderer instead of creating a new one
       this.blobRenderer = new BlobRenderer(this.canvas, {
         threshold: this.blobConfig.threshold,
         influenceRadius: this.blobConfig.influenceRadius,
         resolution: this.blobConfig.resolution,
         surfaceTension: this.blobConfig.surfaceTension,
         fillOpacity: this.blobConfig.fillOpacity,
-        edgeSoftness: this.blobConfig.edgeSoftness
+        edgeSoftness: this.blobConfig.edgeSoftness,
+        sharedContext: this.renderer.gl  // Pass existing WebGL context
       });
       
       this.blobPhysics = new BlobPhysics({
@@ -487,6 +489,11 @@ export class HybridEngine extends ParticleEngine {
     // Render blobs (if enabled and in blob mode)
     if (mode === 'blob' && this.blobConfig.enabled && this.blobRenderer) {
       try {
+        // Clear canvas before blob rendering
+        const gl = this.renderer.gl;
+        gl.clearColor(0, 0, 0, 1); // Black background for blob mode
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        
         // Render particles as organic blob mesh
         this.blobRenderer.render(particles, this.canvas.width, this.canvas.height);
         return; // Skip particle rendering when in blob mode

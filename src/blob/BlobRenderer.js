@@ -22,6 +22,7 @@ export class BlobRenderer {
       surfaceTension: config.surfaceTension || 0.5,   // Surface smoothness (0-1)
       fillOpacity: config.fillOpacity || 0.95,        // Higher opacity for visibility (was 0.85)
       edgeSoftness: config.edgeSoftness || 0.15,      // Edge fade amount
+      sharedContext: config.sharedContext || null,    // Optional shared WebGL context
       ...config
     };
     
@@ -37,17 +38,23 @@ export class BlobRenderer {
   }
   
   init() {
-    // Get WebGL context
-    this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
-    
-    if (!this.gl) {
-      console.error('[BlobRenderer] WebGL not supported');
-      throw new Error('WebGL is not supported');
+    // Use shared context if provided, otherwise create new one
+    if (this.config.sharedContext) {
+      this.gl = this.config.sharedContext;
+      console.log('[BlobRenderer] Using shared WebGL context');
+    } else {
+      // Get WebGL context
+      this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
+      
+      if (!this.gl) {
+        console.error('[BlobRenderer] WebGL not supported');
+        throw new Error('WebGL is not supported');
+      }
+      
+      console.log('[BlobRenderer] WebGL context created');
     }
     
-    console.log('[BlobRenderer] WebGL context created');
-    
-    // Enable blending for organic appearance
+    // Enable blending for organic appearance (may already be enabled if shared)
     this.gl.enable(this.gl.BLEND);
     this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
     
@@ -393,6 +400,7 @@ export class BlobRenderer {
   /**
    * Render blobs from particles
    * Uses a hybrid approach: render particle cores first, then blend with metaball surface
+   * NOTE: Does NOT clear canvas - that should be done by the calling code
    */
   render(particles, canvasWidth, canvasHeight) {
     if (!particles || particles.length === 0) return;
@@ -400,10 +408,8 @@ export class BlobRenderer {
     // Detect separate blobs
     this.blobs = this.detectBlobs(particles);
     
-    // Clear canvas to black opaque background
+    // Set viewport (but don't clear - let the main renderer handle that)
     this.gl.viewport(0, 0, canvasWidth, canvasHeight);
-    this.gl.clearColor(0, 0, 0, 1); // Black background
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     
     // Use the shader program
     this.gl.useProgram(this.program);
