@@ -123,12 +123,21 @@
             background: rgba(102, 126, 234, 0.2);
             border-color: #667eea;
             padding: 10px 20px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        button.mode-btn:hover {
+            background: rgba(102, 126, 234, 0.4);
+            transform: translateY(-1px);
         }
 
         button.mode-btn.active {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-color: #667eea;
             box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            font-weight: 600;
+            transform: scale(1.05);
         }
 
         .file-button {
@@ -345,8 +354,17 @@
                     <button id="modeTriangulation" class="mode-btn">Triangulation</button>
                     <button id="modeHybrid" class="mode-btn active">Hybrid</button>
                 </div>
-                <div style="margin-top: 10px; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; font-size: 14px;">
-                    <strong>💡 Tip:</strong> Try the <a href="blob-demo.html" style="color: #00d4ff; text-decoration: none; font-weight: 600;">Blob Mesh Demo</a> to see organic blob rendering with interactive controls!
+                <div style="margin-top: 15px; padding: 15px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%); border-radius: 10px; border: 2px solid rgba(102, 126, 234, 0.3);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <span style="font-size: 24px;">🧬</span>
+                        <strong style="color: #00d4ff; font-size: 16px;">Want to see organic blob rendering in action?</strong>
+                    </div>
+                    <p style="margin: 0 0 10px 34px; font-size: 14px; color: #ccc;">
+                        The Blob Mesh mode works with image transitions, but for the <strong>best demonstration</strong> of organic blob behavior, mitosis, and merging effects:
+                    </p>
+                    <a href="blob-demo.html" style="display: inline-block; margin-left: 34px; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); transition: all 0.3s ease;">
+                        🚀 Launch Interactive Blob Demo
+                    </a>
                 </div>
             </div>
 
@@ -489,7 +507,12 @@
                 else if (mode === 'triangulation') modeTriangulation.classList.add('active');
                 else if (mode === 'hybrid') modeHybrid.classList.add('active');
                 
-                status.textContent = `Rendering mode set to: ${mode}`;
+                // Provide specific feedback for blob mode
+                if (mode === 'blob') {
+                    status.textContent = `✨ Blob Mesh mode activated! For best results, visit the dedicated Blob Demo page.`;
+                } else {
+                    status.textContent = `Rendering mode set to: ${mode}`;
+                }
             }
         }
 
