@@ -16,12 +16,12 @@ export class BlobRenderer {
     
     // Blob rendering configuration
     this.config = {
-      threshold: config.threshold || 1.0,           // Metaball threshold for surface generation
-      influenceRadius: config.influenceRadius || 80, // Particle influence radius
-      resolution: config.resolution || 4,            // Grid resolution for marching squares
-      surfaceTension: config.surfaceTension || 0.5,  // Surface smoothness (0-1)
-      fillOpacity: config.fillOpacity || 0.85,       // Blob interior opacity
-      edgeSoftness: config.edgeSoftness || 0.15,     // Edge fade amount
+      threshold: 0.5,                                 // Lower threshold for more visible blobs (was 1.0)
+      influenceRadius: config.influenceRadius || 40,  // Smaller radius for better-sized blobs (was 80)
+      resolution: config.resolution || 3,             // Finer resolution for smoother edges (was 4)
+      surfaceTension: config.surfaceTension || 0.5,   // Surface smoothness (0-1)
+      fillOpacity: config.fillOpacity || 0.95,        // Higher opacity for visibility (was 0.85)
+      edgeSoftness: config.edgeSoftness || 0.15,      // Edge fade amount
       ...config
     };
     
@@ -190,11 +190,12 @@ export class BlobRenderer {
   
   /**
    * Calculate metaball field value at a point
-   * Sum of influence from all particles
+   * Sum of influence from all particles with improved formula for liquid-like appearance
    */
   calculateFieldValue(x, y, particles) {
     let fieldValue = 0;
-    const radiusSq = this.config.influenceRadius * this.config.influenceRadius;
+    const radius = this.config.influenceRadius;
+    const radiusSq = radius * radius;
     
     for (const particle of particles) {
       const dx = x - particle.x;
@@ -202,9 +203,17 @@ export class BlobRenderer {
       const distSq = dx * dx + dy * dy;
       
       if (distSq < radiusSq && distSq > 0.1) {
-        // Metaball formula: influence decreases with distance
-        const influence = radiusSq / distSq;
-        fieldValue += influence * (particle.size || 1.0);
+        // Improved metaball formula for smoother, more liquid-like blobs
+        // Using a falloff curve that creates better blob shapes
+        const dist = Math.sqrt(distSq);
+        const normalizedDist = dist / radius;
+        
+        // Smooth falloff function (1 - normalized distance)^3
+        // This creates more organic, flowing blob boundaries
+        const falloff = Math.pow(1 - normalizedDist, 3);
+        const particleSize = (particle.size || 1.0);
+        
+        fieldValue += falloff * particleSize * 2.0; // Increased multiplier for stronger field
       }
     }
     
@@ -321,24 +330,20 @@ export class BlobRenderer {
         
         const fieldValues = corners.map(c => this.calculateFieldValue(c.x, c.y, particles));
         
-        // Build marching squares case (4-bit value)
-        let caseIndex = 0;
-        if (fieldValues[0] > this.config.threshold) caseIndex |= 1;
-        if (fieldValues[1] > this.config.threshold) caseIndex |= 2;
-        if (fieldValues[2] > this.config.threshold) caseIndex |= 4;
-        if (fieldValues[3] > this.config.threshold) caseIndex |= 8;
+        // Calculate average field value
+        const avgField = (fieldValues[0] + fieldValues[1] + fieldValues[2] + fieldValues[3]) / 4;
         
-        // Skip if no surface or completely inside
-        if (caseIndex === 0 || caseIndex === 15) continue;
-        
-        // Generate triangles for this cell
-        const cellVertices = this.generateCellGeometry(
-          gx, gy, gridRes, fieldValues, avgR, avgG, avgB, avgAlpha
-        );
-        
-        vertices.push(...cellVertices.positions);
-        colors.push(...cellVertices.colors);
-        intensities.push(...cellVertices.intensities);
+        // Fill cells that are inside the blob (avgField above threshold)
+        // This creates the filled blob appearance
+        if (avgField > this.config.threshold * 0.3) {
+          const cellVertices = this.generateCellGeometry(
+            gx, gy, gridRes, fieldValues, avgR, avgG, avgB, avgAlpha
+          );
+          
+          vertices.push(...cellVertices.positions);
+          colors.push(...cellVertices.colors);
+          intensities.push(...cellVertices.intensities);
+        }
       }
     }
     
@@ -347,6 +352,7 @@ export class BlobRenderer {
   
   /**
    * Generate geometry for a single marching squares cell
+   * Creates filled blob appearance with smooth edges
    */
   generateCellGeometry(x, y, size, fieldValues, r, g, b, alpha) {
     const positions = [];
@@ -357,21 +363,27 @@ export class BlobRenderer {
     const cx = x + size / 2;
     const cy = y + size / 2;
     
-    // Create triangles to fill the blob area
-    // Simple approach: create a quad for cells above threshold
+    // Calculate average field value
     const avgField = (fieldValues[0] + fieldValues[1] + fieldValues[2] + fieldValues[3]) / 4;
     
-    if (avgField > this.config.threshold) {
-      // Create two triangles for the quad
-      // Triangle 1
+    // If field is significantly above threshold, fill this cell
+    // Using a lower threshold multiplier (0.3) to capture more of the blob
+    if (avgField > this.config.threshold * 0.3) {
+      // Create two triangles for a filled quad
+      // Triangle 1: top-left, top-right, bottom-right
       positions.push(x, y, x + size, y, x + size, y + size);
-      // Triangle 2
+      // Triangle 2: top-left, bottom-right, bottom-left
       positions.push(x, y, x + size, y + size, x, y + size);
+      
+      // Calculate intensity based on field strength
+      // Higher field = more opaque
+      const intensity = Math.min(avgField / this.config.threshold, 1.0);
+      const cellAlpha = alpha * this.config.fillOpacity * intensity;
       
       // Apply color and intensity for all 6 vertices
       for (let i = 0; i < 6; i++) {
-        colors.push(r, g, b, alpha * this.config.fillOpacity);
-        intensities.push(avgField / this.config.threshold);
+        colors.push(r, g, b, cellAlpha);
+        intensities.push(intensity);
       }
     }
     
@@ -380,6 +392,7 @@ export class BlobRenderer {
   
   /**
    * Render blobs from particles
+   * Uses a hybrid approach: render particle cores first, then blend with metaball surface
    */
   render(particles, canvasWidth, canvasHeight) {
     if (!particles || particles.length === 0) return;
@@ -387,15 +400,82 @@ export class BlobRenderer {
     // Detect separate blobs
     this.blobs = this.detectBlobs(particles);
     
-    // Clear canvas
+    // Clear canvas to black opaque background
     this.gl.viewport(0, 0, canvasWidth, canvasHeight);
-    this.gl.clearColor(0, 0, 0, 0); // Transparent background
+    this.gl.clearColor(0, 0, 0, 1); // Black background
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     
-    // Render each blob separately
+    // Use the shader program
+    this.gl.useProgram(this.program);
+    this.gl.uniform2f(this.uniformLocations.resolution, canvasWidth, canvasHeight);
+    this.gl.uniform1f(this.uniformLocations.edgeSoftness, this.config.edgeSoftness);
+    
+    // First pass: Render all particles as circles to establish blob cores
+    this.renderParticleCircles(particles, canvasWidth, canvasHeight);
+    
+    // Second pass: Render each blob mesh for smooth organic boundaries
     for (const blob of this.blobs) {
       this.renderBlob(blob, canvasWidth, canvasHeight);
     }
+  }
+  
+  /**
+   * Render particles as filled circles to create blob cores
+   */
+  renderParticleCircles(particles, canvasWidth, canvasHeight) {
+    const vertices = [];
+    const colors = [];
+    const intensities = [];
+    
+    const circleRes = 16; // Number of segments per circle
+    const radius = this.config.influenceRadius * 0.5; // Circle radius
+    
+    for (const p of particles) {
+      const r = p.r || 1.0;
+      const g = p.g || 1.0;
+      const b = p.b || 1.0;
+      const alpha = (p.alpha || 1.0) * this.config.fillOpacity;
+      
+      // Generate circle as triangle fan
+      const cx = p.x;
+      const cy = p.y;
+      
+      for (let i = 0; i < circleRes; i++) {
+        const angle1 = (i / circleRes) * Math.PI * 2;
+        const angle2 = ((i + 1) / circleRes) * Math.PI * 2;
+        
+        // Triangle: center, point1, point2
+        vertices.push(cx, cy);
+        vertices.push(cx + Math.cos(angle1) * radius, cy + Math.sin(angle1) * radius);
+        vertices.push(cx + Math.cos(angle2) * radius, cy + Math.sin(angle2) * radius);
+        
+        // Colors for each vertex
+        for (let j = 0; j < 3; j++) {
+          colors.push(r, g, b, alpha);
+          intensities.push(1.0);
+        }
+      }
+    }
+    
+    if (vertices.length === 0) return;
+    
+    // Upload and render
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.position);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.DYNAMIC_DRAW);
+    this.gl.enableVertexAttribArray(this.attribLocations.position);
+    this.gl.vertexAttribPointer(this.attribLocations.position, 2, this.gl.FLOAT, false, 0, 0);
+    
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.color);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.DYNAMIC_DRAW);
+    this.gl.enableVertexAttribArray(this.attribLocations.color);
+    this.gl.vertexAttribPointer(this.attribLocations.color, 4, this.gl.FLOAT, false, 0, 0);
+    
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers.intensity);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(intensities), this.gl.DYNAMIC_DRAW);
+    this.gl.enableVertexAttribArray(this.attribLocations.intensity);
+    this.gl.vertexAttribPointer(this.attribLocations.intensity, 1, this.gl.FLOAT, false, 0, 0);
+    
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, vertices.length / 2);
   }
   
   /**

@@ -26,11 +26,11 @@ export class HybridEngine extends ParticleEngine {
     // Blob rendering configuration
     this.blobConfig = {
       enabled: config.enableBlobRendering !== false, // Enable blob rendering by default
-      threshold: config.blobThreshold || 1.0,
-      influenceRadius: config.blobInfluenceRadius || 80,
-      resolution: config.blobResolution || 4,
+      threshold: config.blobThreshold || 0.5,        // Lower threshold for more visible blobs (was 1.0)
+      influenceRadius: config.blobInfluenceRadius || 40, // Smaller radius for better-sized blobs (was 80)
+      resolution: config.blobResolution || 3,        // Finer resolution for smoother edges (was 4)
       surfaceTension: config.surfaceTension || 0.5,
-      fillOpacity: config.blobFillOpacity || 0.85,
+      fillOpacity: config.blobFillOpacity || 0.95,   // Higher opacity for visibility (was 0.85)
       edgeSoftness: config.blobEdgeSoftness || 0.15,
       // Physics
       cohesionStrength: config.cohesionStrength || 0.3,
