@@ -144,7 +144,6 @@
 
         <div class="controls">
             <button id="randomBtn">Random Particles</button>
-            <button id="circleBtn">Circle Formation</button>
             <button id="gridBtn">Grid Formation</button>
             <button id="explodeBtn">Explode!</button>
         </div>
@@ -180,19 +179,21 @@
             speed: 1.0,
             enableBlobRendering: true,
             triangulationMode: 'blob',
-            blobInfluenceRadius: 60,
+            blobInfluenceRadius: 45,  // Optimized for particle spacing (~30px grid)
+            blobThreshold: 0.4,       // Balanced threshold
             surfaceTension: 0.5,
             cohesionStrength: 0.3,
             elasticity: 0.7,
             mitosisFactor: 0.6,
             splitThreshold: 120,
             mergeThreshold: 70,
-            blobResolution: 5,
-            blobFillOpacity: 0.9
+            blobResolution: 4,        // Slightly coarser for better performance
+            blobFillOpacity: 0.95,    // Higher opacity for better visibility
+            unifiedBlob: true          // Use unified blob mode for cohesive appearance
         });
 
-        // Initialize with circle formation for better initial visibility
-        engine.particleSystem.initializeCircle();
+        // Initialize with grid formation for better initial visibility
+        engine.particleSystem.initializeGrid();
         engine.start();
 
         // Update stats
@@ -211,11 +212,6 @@
         document.getElementById('randomBtn').addEventListener('click', () => {
             engine.particleSystem.initializeRandom();
             console.log('Initialized random particles');
-        });
-
-        document.getElementById('circleBtn').addEventListener('click', () => {
-            engine.particleSystem.initializeCircle();
-            console.log('Initialized circle formation');
         });
 
         document.getElementById('gridBtn').addEventListener('click', () => {

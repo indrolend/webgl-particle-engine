@@ -7,6 +7,7 @@ import { ParticleEngine } from './ParticleEngine.js';
 import { TriangulationMorph } from './triangulation/TriangulationMorph.js';
 import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js';
 import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
+import { BlobImageTransitionPreset } from './presets/BlobImageTransitionPreset.js';
 import { BlobRenderer, BlobPhysics } from './blob/index.js';
 
 // Constants
@@ -26,11 +27,11 @@ export class HybridEngine extends ParticleEngine {
     // Blob rendering configuration
     this.blobConfig = {
       enabled: config.enableBlobRendering !== false, // Enable blob rendering by default
-      threshold: config.blobThreshold || 1.0,
-      influenceRadius: config.blobInfluenceRadius || 80,
-      resolution: config.blobResolution || 4,
+      threshold: config.blobThreshold || 0.4,        // Balanced threshold for cohesive blobs
+      influenceRadius: config.blobInfluenceRadius || 45, // Optimized for grid spacing (~30px between particles)
+      resolution: config.blobResolution || 4,        // Slightly coarser for better performance (was 3)
       surfaceTension: config.surfaceTension || 0.5,
-      fillOpacity: config.blobFillOpacity || 0.85,
+      fillOpacity: config.blobFillOpacity || 0.95,   // Higher opacity for visibility (was 0.85)
       edgeSoftness: config.blobEdgeSoftness || 0.15,
       // Physics
       cohesionStrength: config.cohesionStrength || 0.3,
@@ -138,13 +139,16 @@ export class HybridEngine extends ParticleEngine {
     console.log('[HybridEngine] Initializing blob rendering system...');
     
     try {
+      // Share the WebGL context from the main renderer instead of creating a new one
       this.blobRenderer = new BlobRenderer(this.canvas, {
         threshold: this.blobConfig.threshold,
         influenceRadius: this.blobConfig.influenceRadius,
         resolution: this.blobConfig.resolution,
         surfaceTension: this.blobConfig.surfaceTension,
         fillOpacity: this.blobConfig.fillOpacity,
-        edgeSoftness: this.blobConfig.edgeSoftness
+        edgeSoftness: this.blobConfig.edgeSoftness,
+        sharedContext: this.renderer.gl,  // Pass existing WebGL context
+        unifiedBlob: this.blobConfig.unifiedBlob  // Pass unified blob setting
       });
       
       this.blobPhysics = new BlobPhysics({
@@ -389,6 +393,29 @@ export class HybridEngine extends ParticleEngine {
       return;
     }
     
+    // Check if blob transition is in static image phases
+    if (this.presetManager.hasActivePreset()) {
+      const activePreset = this.presetManager.getActivePreset();
+      
+      // Check for BlobImageTransitionPreset static phases
+      if (activePreset && typeof activePreset.isInStaticImage1 === 'function' && activePreset.isInStaticImage1()) {
+        // Display source image as static
+        if (this.hybridTransitionState && this.hybridTransitionState.sourceImage) {
+          this.renderStaticImageToWebGL(this.hybridTransitionState.sourceImage);
+          return;
+        }
+      }
+      
+      // Check for final static phase (both HybridTransition and BlobImageTransition)
+      if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
+        // Display target image as solid static image
+        if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
+          this.renderStaticImageToWebGL(this.hybridTransitionState.targetImage);
+          return;
+        }
+      }
+    }
+    
     // If in disintegration phase, render with dual rendering (fading image + appearing particles)
     if (this.disintegrationState.isActive) {
       const progress = this.disintegrationState.progress;
@@ -403,21 +430,20 @@ export class HybridEngine extends ParticleEngine {
       return;
     }
     
-    // Check if in final static phase (show target image as static)
-    if (this.presetManager.hasActivePreset()) {
-      const activePreset = this.presetManager.getActivePreset();
-      if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
-        // Display target image as solid static image
-        if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
-          // Render directly to WebGL canvas
-          this.renderStaticImageToWebGL(this.hybridTransitionState.targetImage);
-          return;
-        }
-      }
-    }
-    
     const mode = this.triangulationConfig.mode;
     const particles = this.particleSystem.getParticles();
+    
+    // Ensure particles exist before rendering
+    if (!particles || particles.length === 0) {
+      console.warn('[HybridEngine] No particles available for rendering');
+      // Clear canvas to prevent artifacts
+      if (this.renderer && this.renderer.gl) {
+        const gl = this.renderer.gl;
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+      }
+      return;
+    }
     
     // Check if HybridTransitionPreset is active and in blend phase
     let dynamicTriangleOpacity = this.triangulationConfig.triangleOpacity;
@@ -443,21 +469,30 @@ export class HybridEngine extends ParticleEngine {
         this.triangulationImages.source &&
         this.triangulationImages.target) {
       
-      const morphData = this.triangulationMorph.getTriangulationData();
-      let progress = this.triangulationTransition.progress;
-      
-      // Apply easing for smooth transition
-      progress = this.easeInOutCubic(progress);
-      
-      // Apply dynamic opacity during blend phase
-      if (this.triangulationRenderer && typeof this.triangulationRenderer.setOpacity === 'function') {
-        this.triangulationRenderer.setOpacity(dynamicTriangleOpacity);
+      try {
+        const morphData = this.triangulationMorph.getTriangulationData();
+        let progress = this.triangulationTransition.progress;
+        
+        // Apply easing for smooth transition
+        progress = this.easeInOutCubic(progress);
+        
+        // Apply dynamic opacity during blend phase
+        if (this.triangulationRenderer && typeof this.triangulationRenderer.setOpacity === 'function') {
+          this.triangulationRenderer.setOpacity(dynamicTriangleOpacity);
+        }
+        
+        this.triangulationRenderer.clear(0, 0, 0, 0);
+        this.triangulationRenderer.render(morphData, progress, 'source', 'target');
+      } catch (error) {
+        console.error('[HybridEngine] Triangulation rendering error:', error);
+        // Clear to prevent artifacts on error
+        if (this.triangulationRenderer) {
+          this.triangulationRenderer.clear(0, 0, 0, 0);
+        }
       }
-      
-      this.triangulationRenderer.clear(0, 0, 0, 0);
-      this.triangulationRenderer.render(morphData, progress, 'source', 'target');
     } else if (this.triangulationConfig.enabled && 
                (mode === 'triangulation' || mode === 'hybrid') &&
+               this.triangulationRenderer &&
                (!this.triangulationMorph || !this.triangulationMorph.isReady())) {
       // Triangulation not ready - clear to prevent artifacts
       this.triangulationRenderer.clear(0, 0, 0, 0);
@@ -465,30 +500,51 @@ export class HybridEngine extends ParticleEngine {
     
     // Render blobs (if enabled and in blob mode)
     if (mode === 'blob' && this.blobConfig.enabled && this.blobRenderer) {
-      // Render particles as organic blob mesh
-      this.blobRenderer.render(particles, this.canvas.width, this.canvas.height);
-      return; // Skip particle rendering when in blob mode
+      try {
+        // Clear canvas before blob rendering
+        const gl = this.renderer.gl;
+        gl.clearColor(0, 0, 0, 1); // Black background for blob mode
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        
+        // Render particles as organic blob mesh
+        this.blobRenderer.render(particles, this.canvas.width, this.canvas.height);
+        return; // Skip particle rendering when in blob mode
+      } catch (error) {
+        console.error('[HybridEngine] Blob rendering error:', error);
+        // Fall back to particle rendering on error
+        console.log('[HybridEngine] Falling back to particle rendering');
+      }
     }
     
-    // Render particles (if enabled)
-    if (mode === 'particles' || mode === 'hybrid') {
-      // Adjust particle opacity in hybrid mode
-      if (mode === 'hybrid' && this.triangulationConfig.enabled) {
-        // Clear and reuse cache for original alpha values
-        this.originalAlphasCache.clear();
-        particles.forEach((p, i) => {
-          this.originalAlphasCache.set(i, p.alpha);
-          p.alpha = p.alpha * dynamicParticleOpacity;
-        });
-      }
-      
-      this.renderer.render(particles);
-      
-      // Restore original alpha values
-      if (mode === 'hybrid' && this.triangulationConfig.enabled) {
-        particles.forEach((p, i) => {
-          p.alpha = this.originalAlphasCache.get(i);
-        });
+    // Render particles (if enabled or as fallback)
+    if (mode === 'particles' || mode === 'hybrid' || mode === 'blob') {
+      try {
+        // Adjust particle opacity in hybrid mode
+        if (mode === 'hybrid' && this.triangulationConfig.enabled) {
+          // Clear and reuse cache for original alpha values
+          this.originalAlphasCache.clear();
+          particles.forEach((p, i) => {
+            this.originalAlphasCache.set(i, p.alpha);
+            p.alpha = p.alpha * dynamicParticleOpacity;
+          });
+        }
+        
+        this.renderer.render(particles);
+        
+        // Restore original alpha values
+        if (mode === 'hybrid' && this.triangulationConfig.enabled) {
+          particles.forEach((p, i) => {
+            p.alpha = this.originalAlphasCache.get(i);
+          });
+        }
+      } catch (error) {
+        console.error('[HybridEngine] Particle rendering error:', error);
+        // Clear canvas on critical error
+        if (this.renderer && this.renderer.gl) {
+          const gl = this.renderer.gl;
+          gl.clearColor(0, 0, 0, 1);
+          gl.clear(gl.COLOR_BUFFER_BIT);
+        }
       }
     }
   }
@@ -635,13 +691,34 @@ export class HybridEngine extends ParticleEngine {
   startParticleTransition(sourceImage, targetImage, config) {
     console.log('[HybridEngine] Starting particle transition phase...');
     
-    const preset = new HybridTransitionPreset(config);
+    // Choose preset based on render mode
+    let preset;
+    let presetName;
+    
+    if (this.renderMode === 'blob') {
+      // Use blob-specific transition for blob mode
+      console.log('[HybridEngine] Using BlobImageTransitionPreset for blob mode');
+      preset = new BlobImageTransitionPreset({
+        ...config,
+        staticImage1Duration: config.staticDisplayDuration || 800,
+        explosionDuration: config.explosionTime || 600,
+        splatterDuration: 400,
+        recombinationDuration: config.recombinationDuration || 1200,
+        elasticStrength: config.vacuumStrength ? config.vacuumStrength * 0.8 : 0.12,
+        explosionIntensity: config.explosionIntensity || 180
+      });
+      presetName = 'blobImageTransition';
+    } else {
+      // Use standard hybrid transition for other modes
+      preset = new HybridTransitionPreset(config);
+      presetName = 'hybridTransition';
+    }
     
     // Register and activate preset
-    this.registerPreset('hybridTransition', preset);
+    this.registerPreset(presetName, preset);
     
-    // Initialize triangulation morph for blend phase
-    if (this.triangulationMorph) {
+    // Initialize triangulation morph for blend phase (only for hybrid/triangulation modes)
+    if (this.renderMode !== 'blob' && this.triangulationMorph) {
       this.triangulationMorph.setImages(sourceImage, targetImage);
       this.triangulationRenderer.createTexture(sourceImage, 'source');
       this.triangulationRenderer.createTexture(targetImage, 'target');
@@ -662,15 +739,16 @@ export class HybridEngine extends ParticleEngine {
     // Activate preset with target data
     const particles = this.particleSystem.getParticles();
     const dimensions = { width: this.canvas.width, height: this.canvas.height };
-    this.activatePreset('hybridTransition', {
+    this.activatePreset(presetName, {
       sourceImage: sourceImage,
-      targetImage: targetImage
+      targetImage: targetImage,
+      targets: targets
     });
     
     // Set targets for recombination phase
     preset.targets = targets;
     
-    console.log('[HybridEngine] Hybrid transition preset activated - particles will now explode');
+    console.log(`[HybridEngine] ${presetName} preset activated - transition starting`);
   }
 
   /**

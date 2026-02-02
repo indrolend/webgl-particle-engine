@@ -86,9 +86,6 @@ export class ParticleEngine {
       case 'grid':
         this.particleSystem.initializeGrid();
         break;
-      case 'circle':
-        this.particleSystem.initializeCircle();
-        break;
       case 'spiral':
         this.particleSystem.initializeSpiral();
         break;
