@@ -128,32 +128,7 @@ export class ParticleSystem {
     console.log(`[ParticleSystem] Created ${this.particles.length} particles in ${cols}x${rows} grid`);
   }
 
-  initializeCircle() {
-    console.log(`[ParticleSystem] Initializing particles in circle formation...`);
-    
-    this.particles = [];
-    const centerX = this.width / 2;
-    const centerY = this.height / 2;
-    const radius = Math.min(this.width, this.height) * 0.35;
-    
-    for (let i = 0; i < this.config.particleCount; i++) {
-      const angle = (i / this.config.particleCount) * Math.PI * 2;
-      const x = centerX + Math.cos(angle) * radius;
-      const y = centerY + Math.sin(angle) * radius;
-      
-      const hue = i / this.config.particleCount;
-      this.particles.push(this.createParticle(
-        x, y, 0, 0,
-        {
-          r: Math.abs(Math.cos(hue * Math.PI * 2)),
-          g: Math.abs(Math.sin(hue * Math.PI * 2)),
-          b: Math.abs(Math.cos(hue * Math.PI * 2 + Math.PI / 2))
-        }
-      ));
-    }
-    
-    console.log(`[ParticleSystem] Created ${this.particles.length} particles in circle formation`);
-  }
+
 
   initializeSpiral() {
     console.log(`[ParticleSystem] Initializing particles in spiral formation...`);
