@@ -504,6 +504,9 @@
     <script type="module">
         import { HybridEngine } from './src/HybridEngine.js';
 
+        // Constants
+        const DEFAULT_MODE = 'hybrid';
+
         const canvas = document.getElementById('canvas');
         const status = document.getElementById('status');
         const image1Input = document.getElementById('image1Input');
@@ -542,8 +545,8 @@
         let engine = null;
         let image1 = null;
         let image2 = null;
-        let currentMode = 'hybrid'; // Will be synced with engine after initialization
-        let previousMode = 'hybrid'; // Track previous mode for toggling
+        let currentMode = DEFAULT_MODE; // Will be synced with engine after initialization
+        let previousMode = DEFAULT_MODE; // Track previous mode for toggling
         let isBlobModeActive = false;
 
         // Initialize engine
@@ -551,7 +554,7 @@
             particleCount: 2000,
             speed: 1.0,
             enableTriangulation: true,
-            triangulationMode: 'hybrid',  // Default mode for backward compatibility
+            triangulationMode: DEFAULT_MODE,  // Default mode for backward compatibility
             gridSize: 8,
             enableBlobRendering: true,    // Enable blob rendering capability
             blobInfluenceRadius: 80,
@@ -560,35 +563,41 @@
         });
         
         // Sync state with engine's initial mode
-        currentMode = 'hybrid'; // Engine is initialized with 'hybrid' mode
-        previousMode = 'hybrid';
+        currentMode = DEFAULT_MODE; // Engine is initialized with DEFAULT_MODE
+        previousMode = DEFAULT_MODE;
         isBlobModeActive = false;
 
         // Mode switching handlers
         function setRenderMode(mode) {
             if (engine) {
-                engine.setRenderMode(mode);
-                currentMode = mode; // Track current mode
-                
-                // Update button states
-                [modeParticles, modeBlob, modeTriangulation, modeHybrid].forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                
-                if (mode === 'particles') modeParticles.classList.add('active');
-                else if (mode === 'blob') modeBlob.classList.add('active');
-                else if (mode === 'triangulation') modeTriangulation.classList.add('active');
-                else if (mode === 'hybrid') modeHybrid.classList.add('active');
-                
-                // Update blob toggle button state
-                isBlobModeActive = (mode === 'blob');
-                updateBlobToggleButton();
-                
-                // Provide specific feedback for blob mode
-                if (mode === 'blob') {
-                    status.textContent = `✨ Blob Mesh mode activated! Watch particles form organic, liquid-like blobs.`;
-                } else {
-                    status.textContent = `Rendering mode set to: ${mode}`;
+                try {
+                    engine.setRenderMode(mode);
+                    // Update currentMode only after successful mode change
+                    currentMode = mode;
+                    
+                    // Update button states
+                    [modeParticles, modeBlob, modeTriangulation, modeHybrid].forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    if (mode === 'particles') modeParticles.classList.add('active');
+                    else if (mode === 'blob') modeBlob.classList.add('active');
+                    else if (mode === 'triangulation') modeTriangulation.classList.add('active');
+                    else if (mode === 'hybrid') modeHybrid.classList.add('active');
+                    
+                    // Update blob toggle button state
+                    isBlobModeActive = (mode === 'blob');
+                    updateBlobToggleButton();
+                    
+                    // Provide specific feedback for blob mode
+                    if (mode === 'blob') {
+                        status.textContent = `✨ Blob Mesh mode activated! Watch particles form organic, liquid-like blobs.`;
+                    } else {
+                        status.textContent = `Rendering mode set to: ${mode}`;
+                    }
+                } catch (error) {
+                    console.error('Failed to set render mode:', error);
+                    status.textContent = `Error setting render mode: ${error.message}`;
                 }
             }
         }
@@ -611,8 +620,10 @@
                     setRenderMode(previousMode);
                     status.textContent = `Blob Mesh disabled. Returned to ${previousMode} mode.`;
                 } else {
-                    // Enable blob mode - save current mode as previous
-                    previousMode = currentMode;
+                    // Enable blob mode - save current mode as previous (only if not already blob)
+                    if (currentMode !== 'blob') {
+                        previousMode = currentMode;
+                    }
                     setRenderMode('blob');
                     status.textContent = '🧬 Blob Mesh enabled! Particles now render as organic blobs.';
                 }
