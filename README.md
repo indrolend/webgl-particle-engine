@@ -308,24 +308,33 @@ engine.config.speed = 0.8;           // Adjust animation speed
 
 ## 📦 Deployment
 
-### Cloudflare Pages (Recommended)
+### Cloudflare Pages (Recommended) - Simple!
 
-**Quick Deploy**:
+**No build step needed!** Just deploy directly from your repository:
+
+1. Go to [Cloudflare Pages](https://pages.cloudflare.com/)
+2. Connect your GitHub repository
+3. Set build output directory to: `/` (root)
+4. Leave build command empty
+5. Deploy!
+
+**OR use Wrangler CLI**:
 ```bash
-# Build for deployment
-npm run build
+# One-time setup
+npm install -g wrangler
+wrangler login
 
-# Deploy to Cloudflare Pages
-npx wrangler pages deploy ./public --project-name=webgl-particle-engine
+# Deploy (no build needed!)
+wrangler pages deploy . --project-name=webgl-particle-engine
 ```
 
-**Automatic Deployment**: Connect your GitHub repository to Cloudflare Pages for automatic deployments on every push!
+📖 **[Simple Deployment Guide](CLOUDFLARE_SIMPLE.md)** - Quick start with no build complexity!
 
-📖 **[Complete Cloudflare Pages Deployment Guide](CLOUDFLARE_PAGES.md)** - Step-by-step instructions with screenshots, troubleshooting, and CI/CD setup.
+📖 **[Advanced Deployment Guide](CLOUDFLARE_PAGES.md)** - Build-based approach (not needed for most cases)
 
 ### GitHub Pages
 
-The `public/` directory is automatically generated with all necessary files and can be deployed to any static hosting service.
+You can also deploy directly to GitHub Pages from the repository root. No build step required!
 
 ### CDN Integration
 
