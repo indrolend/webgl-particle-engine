@@ -179,15 +179,15 @@
             speed: 1.0,
             enableBlobRendering: true,
             triangulationMode: 'blob',
-            blobInfluenceRadius: 40,  // Smaller radius for better blob size
-            blobThreshold: 0.5,       // Lower threshold for more visible blobs
+            blobInfluenceRadius: 45,  // Optimized for particle spacing (~30px grid)
+            blobThreshold: 0.4,       // Balanced threshold
             surfaceTension: 0.5,
             cohesionStrength: 0.3,
             elasticity: 0.7,
             mitosisFactor: 0.6,
             splitThreshold: 120,
             mergeThreshold: 70,
-            blobResolution: 3,        // Finer resolution for smoother edges
+            blobResolution: 4,        // Slightly coarser for better performance
             blobFillOpacity: 0.95     // Higher opacity for better visibility
         });
 

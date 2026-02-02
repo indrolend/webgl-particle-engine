@@ -16,11 +16,11 @@ export class BlobRenderer {
     
     // Blob rendering configuration
     this.config = {
-      threshold: 0.5,                                 // Lower threshold for more visible blobs (was 1.0)
-      influenceRadius: config.influenceRadius || 40,  // Smaller radius for better-sized blobs (was 80)
-      resolution: config.resolution || 3,             // Finer resolution for smoother edges (was 4)
+      threshold: 0.4,                                 // Balanced threshold for cohesive blobs
+      influenceRadius: config.influenceRadius || 45,  // Optimized for particle spacing
+      resolution: config.resolution || 4,             // Slightly coarser for better performance
       surfaceTension: config.surfaceTension || 0.5,   // Surface smoothness (0-1)
-      fillOpacity: config.fillOpacity || 0.95,        // Higher opacity for visibility (was 0.85)
+      fillOpacity: config.fillOpacity || 0.95,        // Higher opacity for visibility
       edgeSoftness: config.edgeSoftness || 0.15,      // Edge fade amount
       sharedContext: config.sharedContext || null,    // Optional shared WebGL context
       ...config
@@ -220,7 +220,7 @@ export class BlobRenderer {
         const falloff = Math.pow(1 - normalizedDist, 3);
         const particleSize = (particle.size || 1.0);
         
-        fieldValue += falloff * particleSize * 2.0; // Increased multiplier for stronger field
+        fieldValue += falloff * particleSize * 2.5; // Optimized multiplier (was 2.0, tried 3.0, 4.0)
       }
     }
     
@@ -235,7 +235,7 @@ export class BlobRenderer {
     
     const visited = new Set();
     const blobs = [];
-    const connectionThreshold = this.config.influenceRadius * 1.5;
+    const connectionThreshold = this.config.influenceRadius * 1.6; // Optimized (was 1.5, tried 2.0)
     
     // Helper: check if two particles are connected
     const areConnected = (p1, p2) => {
@@ -374,8 +374,8 @@ export class BlobRenderer {
     const avgField = (fieldValues[0] + fieldValues[1] + fieldValues[2] + fieldValues[3]) / 4;
     
     // If field is significantly above threshold, fill this cell
-    // Using a lower threshold multiplier (0.3) to capture more of the blob
-    if (avgField > this.config.threshold * 0.3) {
+    // Using a moderate threshold multiplier for cohesive appearance without over-filling
+    if (avgField > this.config.threshold * 0.5) {  // Moderate multiplier (was 0.3, tried 0.15)
       // Create two triangles for a filled quad
       // Triangle 1: top-left, top-right, bottom-right
       positions.push(x, y, x + size, y, x + size, y + size);
@@ -427,20 +427,21 @@ export class BlobRenderer {
   
   /**
    * Render particles as filled circles to create blob cores
+   * Smaller circles to prevent "boba pearl" effect - metaball surface does most of the work
    */
   renderParticleCircles(particles, canvasWidth, canvasHeight) {
     const vertices = [];
     const colors = [];
     const intensities = [];
     
-    const circleRes = 16; // Number of segments per circle
-    const radius = this.config.influenceRadius * 0.5; // Circle radius
+    const circleRes = 12; // Number of segments per circle (reduced from 16)
+    const radius = this.config.influenceRadius * 0.25; // Smaller circles (was 0.5, tried 0.15) for less prominence
     
     for (const p of particles) {
       const r = p.r || 1.0;
       const g = p.g || 1.0;
       const b = p.b || 1.0;
-      const alpha = (p.alpha || 1.0) * this.config.fillOpacity;
+      const alpha = (p.alpha || 1.0) * this.config.fillOpacity * 0.5; // Moderate opacity (was 1.0, tried 0.3)
       
       // Generate circle as triangle fan
       const cx = p.x;
