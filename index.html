@@ -140,6 +140,58 @@
             transform: scale(1.05);
         }
 
+        .blob-toggle-btn {
+            padding: 18px 40px;
+            font-size: 18px;
+            font-weight: 700;
+            border: 3px solid #00d4ff;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .blob-toggle-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 212, 255, 0.5);
+            background: linear-gradient(135deg, #00e5ff 0%, #00b0dd 100%);
+        }
+
+        .blob-toggle-btn.active {
+            background: linear-gradient(135deg, #20bf6b 0%, #01a3a4 100%);
+            border-color: #20bf6b;
+            box-shadow: 0 8px 25px rgba(32, 191, 107, 0.4);
+        }
+
+        .blob-toggle-btn.active:hover {
+            background: linear-gradient(135deg, #26d97f 0%, #01b5b8 100%);
+            box-shadow: 0 12px 35px rgba(32, 191, 107, 0.6);
+        }
+
+        .blob-icon {
+            font-size: 24px;
+            animation: blob-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes blob-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .blob-text {
+            letter-spacing: 0.5px;
+        }
+
+        .blob-toggle-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
         .file-button {
             display: inline-block;
             position: relative;
@@ -303,6 +355,14 @@
     <div class="main-container">
         <canvas id="canvas" width="800" height="600"></canvas>
 
+        <!-- Prominent Blob Mesh Toggle -->
+        <div class="blob-toggle-container">
+            <button id="blobToggleBtn" class="blob-toggle-btn" aria-label="Toggle Blob Mesh rendering mode">
+                <span class="blob-icon" aria-hidden="true">🧬</span>
+                <span class="blob-text">Enable Blob Mesh</span>
+            </button>
+        </div>
+
         <div class="controls-panel">
             <!-- Image Upload Section -->
             <div class="controls-section">
@@ -444,6 +504,9 @@
     <script type="module">
         import { HybridEngine } from './src/HybridEngine.js';
 
+        // Constants
+        const DEFAULT_MODE = 'hybrid';
+
         const canvas = document.getElementById('canvas');
         const status = document.getElementById('status');
         const image1Input = document.getElementById('image1Input');
@@ -459,6 +522,9 @@
         const modeBlob = document.getElementById('modeBlob');
         const modeTriangulation = document.getElementById('modeTriangulation');
         const modeHybrid = document.getElementById('modeHybrid');
+        
+        // Blob toggle button
+        const blobToggleBtn = document.getElementById('blobToggleBtn');
 
         // Sliders
         const totalDuration = document.getElementById('totalDuration');
@@ -479,42 +545,90 @@
         let engine = null;
         let image1 = null;
         let image2 = null;
+        let currentMode = DEFAULT_MODE; // Will be synced with engine after initialization
+        let previousMode = DEFAULT_MODE; // Track previous mode for toggling
+        let isBlobModeActive = false;
 
         // Initialize engine
         engine = new HybridEngine(canvas, {
             particleCount: 2000,
             speed: 1.0,
             enableTriangulation: true,
-            triangulationMode: 'hybrid',  // Default mode for backward compatibility
+            triangulationMode: DEFAULT_MODE,  // Default mode for backward compatibility
             gridSize: 8,
             enableBlobRendering: true,    // Enable blob rendering capability
             blobInfluenceRadius: 80,
             surfaceTension: 0.5,
             mitosisFactor: 0.5
         });
+        
+        // Sync state with engine's initial mode
+        currentMode = DEFAULT_MODE; // Engine is initialized with DEFAULT_MODE
+        previousMode = DEFAULT_MODE;
+        isBlobModeActive = false;
 
         // Mode switching handlers
         function setRenderMode(mode) {
             if (engine) {
-                engine.setRenderMode(mode);
-                // Update button states
-                [modeParticles, modeBlob, modeTriangulation, modeHybrid].forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                
-                if (mode === 'particles') modeParticles.classList.add('active');
-                else if (mode === 'blob') modeBlob.classList.add('active');
-                else if (mode === 'triangulation') modeTriangulation.classList.add('active');
-                else if (mode === 'hybrid') modeHybrid.classList.add('active');
-                
-                // Provide specific feedback for blob mode
-                if (mode === 'blob') {
-                    status.textContent = `✨ Blob Mesh mode activated! For best results, visit the dedicated Blob Demo page.`;
-                } else {
-                    status.textContent = `Rendering mode set to: ${mode}`;
+                try {
+                    engine.setRenderMode(mode);
+                    // Update currentMode only after successful mode change
+                    currentMode = mode;
+                    
+                    // Update button states
+                    [modeParticles, modeBlob, modeTriangulation, modeHybrid].forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    if (mode === 'particles') modeParticles.classList.add('active');
+                    else if (mode === 'blob') modeBlob.classList.add('active');
+                    else if (mode === 'triangulation') modeTriangulation.classList.add('active');
+                    else if (mode === 'hybrid') modeHybrid.classList.add('active');
+                    
+                    // Update blob toggle button state
+                    isBlobModeActive = (mode === 'blob');
+                    updateBlobToggleButton();
+                    
+                    // Provide specific feedback for blob mode
+                    if (mode === 'blob') {
+                        status.textContent = `✨ Blob Mesh mode activated! Watch particles form organic, liquid-like blobs.`;
+                    } else {
+                        status.textContent = `Rendering mode set to: ${mode}`;
+                    }
+                } catch (error) {
+                    console.error('Failed to set render mode:', error);
+                    status.textContent = `Error setting render mode: ${error.message}`;
                 }
             }
         }
+
+        function updateBlobToggleButton() {
+            if (isBlobModeActive) {
+                blobToggleBtn.classList.add('active');
+                blobToggleBtn.querySelector('.blob-text').textContent = 'Disable Blob Mesh';
+            } else {
+                blobToggleBtn.classList.remove('active');
+                blobToggleBtn.querySelector('.blob-text').textContent = 'Enable Blob Mesh';
+            }
+        }
+
+        // Blob toggle button handler
+        blobToggleBtn.addEventListener('click', () => {
+            if (engine) {
+                if (isBlobModeActive) {
+                    // Disable blob mode - return to previous mode
+                    setRenderMode(previousMode);
+                    status.textContent = `Blob Mesh disabled. Returned to ${previousMode} mode.`;
+                } else {
+                    // Enable blob mode - save current mode as previous (only if not already blob)
+                    if (currentMode !== 'blob') {
+                        previousMode = currentMode;
+                    }
+                    setRenderMode('blob');
+                    status.textContent = '🧬 Blob Mesh enabled! Particles now render as organic blobs.';
+                }
+            }
+        });
 
         modeParticles.addEventListener('click', () => setRenderMode('particles'));
         modeBlob.addEventListener('click', () => setRenderMode('blob'));

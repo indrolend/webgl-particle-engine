@@ -2,6 +2,6 @@ name = "webgl-particle-engine"
 compatibility_date = "2026-01-12"
 
 [assets]
-directory = "./public"
+directory = "."
 # Exclude large demo files that exceed Cloudflare Workers asset size limits
-exclude = ["*.webm", "*.mp4", "cover art.jpeg"]
+exclude = ["*.webm", "*.mp4", "cover art.jpeg", "node_modules", ".git", "archived", "*.backup", "*.old"]
