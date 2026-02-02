@@ -7,6 +7,7 @@ import { ParticleEngine } from './ParticleEngine.js';
 import { TriangulationMorph } from './triangulation/TriangulationMorph.js';
 import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js';
 import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
+import { BlobImageTransitionPreset } from './presets/BlobImageTransitionPreset.js';
 import { BlobRenderer, BlobPhysics } from './blob/index.js';
 
 // Constants
@@ -391,6 +392,29 @@ export class HybridEngine extends ParticleEngine {
       return;
     }
     
+    // Check if blob transition is in static image phases
+    if (this.presetManager.hasActivePreset()) {
+      const activePreset = this.presetManager.getActivePreset();
+      
+      // Check for BlobImageTransitionPreset static phases
+      if (activePreset && typeof activePreset.isInStaticImage1 === 'function' && activePreset.isInStaticImage1()) {
+        // Display source image as static
+        if (this.hybridTransitionState && this.hybridTransitionState.sourceImage) {
+          this.renderStaticImageToWebGL(this.hybridTransitionState.sourceImage);
+          return;
+        }
+      }
+      
+      // Check for final static phase (both HybridTransition and BlobImageTransition)
+      if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
+        // Display target image as solid static image
+        if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
+          this.renderStaticImageToWebGL(this.hybridTransitionState.targetImage);
+          return;
+        }
+      }
+    }
+    
     // If in disintegration phase, render with dual rendering (fading image + appearing particles)
     if (this.disintegrationState.isActive) {
       const progress = this.disintegrationState.progress;
@@ -403,19 +427,6 @@ export class HybridEngine extends ParticleEngine {
         particleOpacity: particleOpacity
       });
       return;
-    }
-    
-    // Check if in final static phase (show target image as static)
-    if (this.presetManager.hasActivePreset()) {
-      const activePreset = this.presetManager.getActivePreset();
-      if (activePreset && typeof activePreset.isInFinalStatic === 'function' && activePreset.isInFinalStatic()) {
-        // Display target image as solid static image
-        if (this.hybridTransitionState && this.hybridTransitionState.targetImage) {
-          // Render directly to WebGL canvas
-          this.renderStaticImageToWebGL(this.hybridTransitionState.targetImage);
-          return;
-        }
-      }
     }
     
     const mode = this.triangulationConfig.mode;
@@ -679,13 +690,34 @@ export class HybridEngine extends ParticleEngine {
   startParticleTransition(sourceImage, targetImage, config) {
     console.log('[HybridEngine] Starting particle transition phase...');
     
-    const preset = new HybridTransitionPreset(config);
+    // Choose preset based on render mode
+    let preset;
+    let presetName;
+    
+    if (this.renderMode === 'blob') {
+      // Use blob-specific transition for blob mode
+      console.log('[HybridEngine] Using BlobImageTransitionPreset for blob mode');
+      preset = new BlobImageTransitionPreset({
+        ...config,
+        staticImage1Duration: config.staticDisplayDuration || 800,
+        explosionDuration: config.explosionTime || 600,
+        splatterDuration: 400,
+        recombinationDuration: config.recombinationDuration || 1200,
+        elasticStrength: config.vacuumStrength ? config.vacuumStrength * 0.8 : 0.12,
+        explosionIntensity: config.explosionIntensity || 180
+      });
+      presetName = 'blobImageTransition';
+    } else {
+      // Use standard hybrid transition for other modes
+      preset = new HybridTransitionPreset(config);
+      presetName = 'hybridTransition';
+    }
     
     // Register and activate preset
-    this.registerPreset('hybridTransition', preset);
+    this.registerPreset(presetName, preset);
     
-    // Initialize triangulation morph for blend phase
-    if (this.triangulationMorph) {
+    // Initialize triangulation morph for blend phase (only for hybrid/triangulation modes)
+    if (this.renderMode !== 'blob' && this.triangulationMorph) {
       this.triangulationMorph.setImages(sourceImage, targetImage);
       this.triangulationRenderer.createTexture(sourceImage, 'source');
       this.triangulationRenderer.createTexture(targetImage, 'target');
@@ -706,15 +738,16 @@ export class HybridEngine extends ParticleEngine {
     // Activate preset with target data
     const particles = this.particleSystem.getParticles();
     const dimensions = { width: this.canvas.width, height: this.canvas.height };
-    this.activatePreset('hybridTransition', {
+    this.activatePreset(presetName, {
       sourceImage: sourceImage,
-      targetImage: targetImage
+      targetImage: targetImage,
+      targets: targets
     });
     
     // Set targets for recombination phase
     preset.targets = targets;
     
-    console.log('[HybridEngine] Hybrid transition preset activated - particles will now explode');
+    console.log(`[HybridEngine] ${presetName} preset activated - transition starting`);
   }
 
   /**

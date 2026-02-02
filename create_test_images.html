@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head><title>Create Test Images</title></head>
+<body>
+<canvas id="c1" width="400" height="400"></canvas>
+<canvas id="c2" width="400" height="400"></canvas>
+<script>
+// Image 1 - Red circle
+const c1 = document.getElementById('c1');
+const ctx1 = c1.getContext('2d');
+ctx1.fillStyle = 'white';
+ctx1.fillRect(0, 0, 400, 400);
+ctx1.fillStyle = 'red';
+ctx1.beginPath();
+ctx1.arc(200, 200, 100, 0, Math.PI * 2);
+ctx1.fill();
+
+// Image 2 - Blue square
+const c2 = document.getElementById('c2');
+const ctx2 = c2.getContext('2d');
+ctx2.fillStyle = 'white';
+ctx2.fillRect(0, 0, 400, 400);
+ctx2.fillStyle = 'blue';
+ctx2.fillRect(100, 100, 200, 200);
+
+console.log('Images created');
+</script>
+</body>
+</html>
