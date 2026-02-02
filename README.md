@@ -1,15 +1,18 @@
-# WebGL Hybrid Particle Transition Engine
+# WebGL Hybrid Blob Mesh Transition Engine
 
-A high-performance WebGL-based particle engine for creating seamless, animated transitions between images and pages. Built for developers who need stunning visual effects with minimal integration effort.
+A high-performance WebGL-based particle engine for creating seamless, animated transitions between images and pages with organic **blob mesh rendering**. Built for developers who need stunning mitosis-like visual effects with minimal integration effort.
 
 ## ✨ Core Features
 
-- **🎨 Hybrid Particle Transitions**: Seamless multi-phase transitions combining disintegration, explosion, recombination, and blend effects
+- **🎨 Organic Blob Mesh Transitions**: Physics-driven blob meshes that split and merge like cell division/mitosis
+- **🧬 Metaball Rendering**: Smooth, organic surfaces generated from particle influence fields using marching squares
+- **💧 Surface Tension Physics**: Cohesion forces create liquid-like blob behavior with elasticity
+- **🔀 Blob Splitting & Merging**: Automatic mitosis detection and blob recombination
 - **⚡ WebGL-Accelerated**: Hardware-accelerated rendering for smooth 60 FPS performance
 - **🎬 Video Export**: Record and export transitions as MP4 videos (9:16 portrait format)
 - **🎯 Developer-Friendly API**: Clean, intuitive API for easy integration into any web project
 - **📱 Responsive**: Works on desktop and mobile devices with automatic performance optimization
-- **🔧 Highly Configurable**: Full control over particle density, explosion force, blend timing, and physics parameters
+- **🔧 Highly Configurable**: Full control over blob physics, surface tension, mitosis factor, and elasticity
 
 ## 🚀 Quick Start
 
@@ -39,11 +42,66 @@ php -S localhost:8000
 
 3. **Open in browser**:
 ```
-http://localhost:8000/                    # Main hybrid transition demo
-http://localhost:8000/export-hybrid-video.html  # Video export demo
+http://localhost:8000/                         # Main hybrid transition demo
+http://localhost:8000/blob-demo.html           # Blob mesh rendering demo (NEW!)
+http://localhost:8000/export-hybrid-video.html # Video export demo
 ```
 
+> **🧬 Try the Blob Demo!** Experience organic blob mesh rendering with interactive controls. Watch particles form liquid-like blobs that automatically split (mitosis) and merge!
+
 ## 📖 API Usage
+
+### Basic Integration with Blob Rendering
+
+```javascript
+import { HybridEngine } from './src/HybridEngine.js';
+
+// Create engine instance with blob mesh rendering
+const canvas = document.getElementById('myCanvas');
+const engine = new HybridEngine(canvas, {
+    particleCount: 2000,
+    enableBlobRendering: true,
+    triangulationMode: 'blob',  // Use blob mesh rendering
+    
+    // Blob-specific parameters
+    blobInfluenceRadius: 80,    // Particle influence radius for metaball
+    surfaceTension: 0.5,        // Surface tension strength (0-1)
+    cohesionStrength: 0.3,      // Blob cohesion force (0-1)
+    elasticity: 0.7,            // Bounce/recovery (0-1)
+    mitosisFactor: 0.5,         // Splitting tendency (0-1)
+    splitThreshold: 150,        // Distance threshold for blob splitting
+    mergeThreshold: 80          // Distance threshold for blob merging
+});
+
+// Load source image
+await engine.setImage(sourceImage);
+engine.start();
+
+// Trigger hybrid blob transition
+await engine.startHybridTransition(sourceImage, targetImage, {
+    explosionIntensity: 150,
+    recombinationDuration: 2500,
+    blendDuration: 2000
+});
+```
+
+### Rendering Modes
+
+The engine supports multiple rendering modes:
+
+```javascript
+// Blob mesh mode - organic liquid-like rendering
+engine.setRenderMode('blob');
+
+// Particle mode - individual particle points
+engine.setRenderMode('particles');
+
+// Triangulation mode - mesh morphing
+engine.setRenderMode('triangulation');
+
+// Hybrid mode - particles + triangulation
+engine.setRenderMode('hybrid');
+```
 
 ### Basic Integration
 
@@ -72,7 +130,7 @@ await engine.startHybridTransition(sourceImage, targetImage, {
 
 ### Configuration Options
 
-The hybrid transition system supports extensive configuration:
+The blob mesh transition system supports extensive configuration:
 
 ```javascript
 const config = {
@@ -88,6 +146,17 @@ const config = {
     explosionIntensity: 150,         // Explosion force (50-300)
     recombinationChaos: 0.3,         // Chaos during recombination (0-1)
     vacuumStrength: 0.15,            // Vacuum pull strength (0.05-0.5)
+    
+    // Blob-specific parameters
+    blobInfluenceRadius: 80,         // Particle influence radius for metaball (50-150)
+    surfaceTension: 0.5,             // Surface tension strength (0-1)
+    cohesionStrength: 0.3,           // Blob cohesion force (0-1)
+    elasticity: 0.7,                 // Bounce/recovery factor (0-1)
+    mitosisFactor: 0.5,              // Controls splitting tendency (0-1)
+    splitThreshold: 150,             // Distance for blob mitosis (100-300)
+    mergeThreshold: 80,              // Distance for blob merging (50-150)
+    blobResolution: 4,               // Grid resolution for marching squares (2-8)
+    blobFillOpacity: 0.85,           // Blob interior opacity (0-1)
     
     // Particles
     particleCount: 2000,             // Number of particles (500-5000)
@@ -106,6 +175,10 @@ await engine.startHybridTransition(image1, image2, config);
 | **blendWeight** | Duration of final blend transition | 500-3000ms | 2000ms |
 | **liquidThickness** | Chaos factor during recombination | 0-1 | 0.3 |
 | **watercolorIntensity** | Vacuum strength pulling particles | 0.05-0.5 | 0.15 |
+| **surfaceTension** | Blob surface tension strength | 0-1 | 0.5 |
+| **mitosisFactor** | Controls blob splitting tendency | 0-1 | 0.5 |
+| **elasticity** | Blob bounce and recovery | 0-1 | 0.7 |
+| **blobInfluenceRadius** | Particle influence for metaball | 50-150 | 80 |
 
 ## 🎬 Video Export
 
@@ -117,6 +190,27 @@ The engine includes built-in video recording capabilities:
 ```
 
 Visit `/export-hybrid-video.html` for a ready-to-use video export interface.
+
+## 🧬 Blob Mesh Demo
+
+Experience organic blob rendering with the dedicated demo page:
+
+```bash
+# Open blob-demo.html in your browser
+http://localhost:8000/blob-demo.html
+```
+
+**Interactive Features:**
+- **Random Particles**: Generate random particle formations
+- **Circle/Grid Formation**: Organize particles into shapes
+- **Explode!**: Trigger mitosis effect - watch one blob split into many
+- **Real-time Stats**: Monitor particle count, blob count, and FPS
+
+The demo showcases:
+- Metaball rendering with marching squares algorithm
+- Automatic blob detection and splitting (mitosis)
+- Organic blob merging when particles come together
+- Surface tension physics creating liquid-like behavior
 
 ## 🏗️ Project Structure
 

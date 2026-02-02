@@ -1,11 +1,13 @@
 /**
- * HybridEngine - Extended ParticleEngine with triangulation morphing support
- * Combines particle-based and triangulation-based image morphing
+ * HybridEngine - Extended ParticleEngine with blob mesh transitions
+ * Combines particle-based, blob mesh, and triangulation-based image morphing
+ * Implements organic blob transitions with mitosis-like splitting/merging
  */
 import { ParticleEngine } from './ParticleEngine.js';
 import { TriangulationMorph } from './triangulation/TriangulationMorph.js';
 import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js';
 import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
+import { BlobRenderer, BlobPhysics } from './blob/index.js';
 
 // Constants
 const DEFAULT_STATIC_DISPLAY_DURATION = 500; // ms - how long to show static image before disintegration
@@ -21,10 +23,27 @@ export class HybridEngine extends ParticleEngine {
     
     console.log('[HybridEngine] Initializing hybrid rendering system...');
     
+    // Blob rendering configuration
+    this.blobConfig = {
+      enabled: config.enableBlobRendering !== false, // Enable blob rendering by default
+      threshold: config.blobThreshold || 1.0,
+      influenceRadius: config.blobInfluenceRadius || 80,
+      resolution: config.blobResolution || 4,
+      surfaceTension: config.surfaceTension || 0.5,
+      fillOpacity: config.blobFillOpacity || 0.85,
+      edgeSoftness: config.blobEdgeSoftness || 0.15,
+      // Physics
+      cohesionStrength: config.cohesionStrength || 0.3,
+      elasticity: config.elasticity || 0.7,
+      mitosisFactor: config.mitosisFactor || 0.5,
+      splitThreshold: config.splitThreshold || 150,
+      mergeThreshold: config.mergeThreshold || 80
+    };
+    
     // Triangulation-specific configuration
     this.triangulationConfig = {
       enabled: config.enableTriangulation !== false,
-      mode: config.triangulationMode || 'hybrid', // 'particles', 'triangulation', or 'hybrid'
+      mode: config.triangulationMode || 'hybrid', // 'particles', 'triangulation', 'hybrid', or 'blob' (default: 'hybrid' for backward compatibility)
       keyPointMethod: config.keyPointMethod || 'grid', // 'grid' or 'feature'
       gridSize: config.gridSize || 8,
       featurePointCount: config.featurePointCount || 64,
@@ -46,6 +65,10 @@ export class HybridEngine extends ParticleEngine {
       duration: 0,
       startTime: 0
     };
+    
+    // Initialize blob components
+    this.blobRenderer = null;
+    this.blobPhysics = null;
     
     // Hybrid transition state for bidirectional support
     this.hybridTransitionState = null;
@@ -77,8 +100,13 @@ export class HybridEngine extends ParticleEngine {
       this.initializeTriangulation();
     }
     
+    if (this.blobConfig.enabled) {
+      this.initializeBlobRendering();
+    }
+    
     console.log('[HybridEngine] Hybrid engine initialized');
     console.log('[HybridEngine] Triangulation config:', this.triangulationConfig);
+    console.log('[HybridEngine] Blob config:', this.blobConfig);
   }
 
   /**
@@ -104,11 +132,44 @@ export class HybridEngine extends ParticleEngine {
   }
 
   /**
+   * Initialize blob rendering components
+   */
+  initializeBlobRendering() {
+    console.log('[HybridEngine] Initializing blob rendering system...');
+    
+    try {
+      this.blobRenderer = new BlobRenderer(this.canvas, {
+        threshold: this.blobConfig.threshold,
+        influenceRadius: this.blobConfig.influenceRadius,
+        resolution: this.blobConfig.resolution,
+        surfaceTension: this.blobConfig.surfaceTension,
+        fillOpacity: this.blobConfig.fillOpacity,
+        edgeSoftness: this.blobConfig.edgeSoftness
+      });
+      
+      this.blobPhysics = new BlobPhysics({
+        surfaceTension: this.blobConfig.surfaceTension,
+        tensionRadius: this.blobConfig.influenceRadius,
+        cohesionStrength: this.blobConfig.cohesionStrength,
+        elasticity: this.blobConfig.elasticity,
+        mitosisFactor: this.blobConfig.mitosisFactor,
+        splitThreshold: this.blobConfig.splitThreshold,
+        mergeThreshold: this.blobConfig.mergeThreshold
+      });
+      
+      console.log('[HybridEngine] Blob rendering system initialized');
+    } catch (error) {
+      console.error('[HybridEngine] Failed to initialize blob rendering:', error);
+      this.blobConfig.enabled = false;
+    }
+  }
+
+  /**
    * Set rendering mode
-   * @param {string} mode - 'particles', 'triangulation', or 'hybrid'
+   * @param {string} mode - 'particles', 'triangulation', 'hybrid', or 'blob'
    */
   setRenderMode(mode) {
-    if (['particles', 'triangulation', 'hybrid'].includes(mode)) {
+    if (['particles', 'triangulation', 'hybrid', 'blob'].includes(mode)) {
       this.triangulationConfig.mode = mode;
       console.log(`[HybridEngine] Render mode set to: ${mode}`);
     } else {
@@ -299,6 +360,18 @@ export class HybridEngine extends ParticleEngine {
       this.particleSystem.update(deltaTime);
     }
     
+    // Apply blob physics if enabled and in blob mode
+    if (this.blobConfig.enabled && this.blobPhysics && this.triangulationConfig.mode === 'blob') {
+      const particles = this.particleSystem.getParticles();
+      const boundaries = {
+        minX: 0,
+        minY: 0,
+        maxX: this.canvas.width,
+        maxY: this.canvas.height
+      };
+      this.blobPhysics.update(particles, deltaTime, boundaries);
+    }
+    
     // Render based on mode
     this.renderHybrid();
     
@@ -388,6 +461,13 @@ export class HybridEngine extends ParticleEngine {
                (!this.triangulationMorph || !this.triangulationMorph.isReady())) {
       // Triangulation not ready - clear to prevent artifacts
       this.triangulationRenderer.clear(0, 0, 0, 0);
+    }
+    
+    // Render blobs (if enabled and in blob mode)
+    if (mode === 'blob' && this.blobConfig.enabled && this.blobRenderer) {
+      // Render particles as organic blob mesh
+      this.blobRenderer.render(particles, this.canvas.width, this.canvas.height);
+      return; // Skip particle rendering when in blob mode
     }
     
     // Render particles (if enabled)

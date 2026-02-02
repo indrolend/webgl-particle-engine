@@ -119,6 +119,27 @@
             border-color: #f39c12;
         }
 
+        button.mode-btn {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        button.mode-btn:hover {
+            background: rgba(102, 126, 234, 0.4);
+            transform: translateY(-1px);
+        }
+
+        button.mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            font-weight: 600;
+            transform: scale(1.05);
+        }
+
         .file-button {
             display: inline-block;
             position: relative;
@@ -266,6 +287,19 @@
         <p class="tagline">High-performance animated transitions between images using WebGL particles</p>
     </div>
 
+    <!-- Blob Demo Banner -->
+    <div style="max-width: 1200px; width: 100%; margin: 0 auto 20px; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+            <div style="flex: 1; min-width: 250px;">
+                <h3 style="margin: 0 0 5px 0; color: white; font-size: 1.2rem;">🧬 New: Organic Blob Mesh Rendering!</h3>
+                <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 0.95rem;">Watch particles form liquid-like blobs that split and merge organically</p>
+            </div>
+            <a href="blob-demo.html" style="padding: 12px 30px; background: white; color: #667eea; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s; display: inline-block;">
+                Try Blob Demo →
+            </a>
+        </div>
+    </div>
+
     <div class="main-container">
         <canvas id="canvas" width="800" height="600"></canvas>
 
@@ -305,6 +339,32 @@
                     <button id="initBtn" disabled>Initialize</button>
                     <button id="transitionBtn" class="secondary" disabled>Start Transition</button>
                     <button id="exportBtn" class="warning" disabled>Export Video</button>
+                </div>
+            </div>
+
+            <!-- Rendering Mode Selection -->
+            <div class="controls-section">
+                <h3>🎨 Rendering Mode</h3>
+                <div class="info-box">
+                    Choose how particles are rendered: as individual points, organic blob mesh, triangulation morphing, or hybrid combination.
+                </div>
+                <div class="button-group">
+                    <button id="modeParticles" class="mode-btn">Particles</button>
+                    <button id="modeBlob" class="mode-btn">Blob Mesh</button>
+                    <button id="modeTriangulation" class="mode-btn">Triangulation</button>
+                    <button id="modeHybrid" class="mode-btn active">Hybrid</button>
+                </div>
+                <div style="margin-top: 15px; padding: 15px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%); border-radius: 10px; border: 2px solid rgba(102, 126, 234, 0.3);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <span style="font-size: 24px;">🧬</span>
+                        <strong style="color: #00d4ff; font-size: 16px;">Want to see organic blob rendering in action?</strong>
+                    </div>
+                    <p style="margin: 0 0 10px 34px; font-size: 14px; color: #ccc;">
+                        The Blob Mesh mode works with image transitions, but for the <strong>best demonstration</strong> of organic blob behavior, mitosis, and merging effects:
+                    </p>
+                    <a href="blob-demo.html" style="display: inline-block; margin-left: 34px; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); transition: all 0.3s ease;">
+                        🚀 Launch Interactive Blob Demo
+                    </a>
                 </div>
             </div>
 
@@ -394,6 +454,12 @@
         const transitionBtn = document.getElementById('transitionBtn');
         const exportBtn = document.getElementById('exportBtn');
 
+        // Mode buttons
+        const modeParticles = document.getElementById('modeParticles');
+        const modeBlob = document.getElementById('modeBlob');
+        const modeTriangulation = document.getElementById('modeTriangulation');
+        const modeHybrid = document.getElementById('modeHybrid');
+
         // Sliders
         const totalDuration = document.getElementById('totalDuration');
         const totalDurationValue = document.getElementById('totalDurationValue');
@@ -419,9 +485,44 @@
             particleCount: 2000,
             speed: 1.0,
             enableTriangulation: true,
-            triangulationMode: 'hybrid',
-            gridSize: 8
+            triangulationMode: 'hybrid',  // Default mode for backward compatibility
+            gridSize: 8,
+            enableBlobRendering: true,    // Enable blob rendering capability
+            blobInfluenceRadius: 80,
+            surfaceTension: 0.5,
+            mitosisFactor: 0.5
         });
+
+        // Mode switching handlers
+        function setRenderMode(mode) {
+            if (engine) {
+                engine.setRenderMode(mode);
+                // Update button states
+                [modeParticles, modeBlob, modeTriangulation, modeHybrid].forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                if (mode === 'particles') modeParticles.classList.add('active');
+                else if (mode === 'blob') modeBlob.classList.add('active');
+                else if (mode === 'triangulation') modeTriangulation.classList.add('active');
+                else if (mode === 'hybrid') modeHybrid.classList.add('active');
+                
+                // Provide specific feedback for blob mode
+                if (mode === 'blob') {
+                    status.textContent = `✨ Blob Mesh mode activated! For best results, visit the dedicated Blob Demo page.`;
+                } else {
+                    status.textContent = `Rendering mode set to: ${mode}`;
+                }
+            }
+        }
+
+        modeParticles.addEventListener('click', () => setRenderMode('particles'));
+        modeBlob.addEventListener('click', () => setRenderMode('blob'));
+        modeTriangulation.addEventListener('click', () => setRenderMode('triangulation'));
+        modeHybrid.addEventListener('click', () => setRenderMode('hybrid'));
+
+        // Set initial status message to show current mode
+        status.textContent = 'Rendering mode: Hybrid (default) - Upload two images to begin';
 
         // Slider event listeners
         totalDuration.addEventListener('input', () => {

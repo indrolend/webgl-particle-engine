@@ -1,10 +1,44 @@
-# WebGL Hybrid Particle Transition Engine - API Reference
+# WebGL Hybrid Blob Mesh Transition Engine - API Reference
 
 ## Overview
 
-The WebGL Hybrid Particle Transition Engine provides a developer-friendly API for creating stunning animated transitions between images and web pages using WebGL-accelerated particle effects.
+The WebGL Hybrid Blob Mesh Transition Engine provides a developer-friendly API for creating stunning animated transitions between images and web pages using organic blob mesh rendering with WebGL-accelerated physics and metaball algorithms.
 
 ## Quick Start
+
+### Blob Mesh Rendering
+
+```javascript
+import { HybridEngine } from './src/HybridEngine.js';
+
+// Create engine instance with blob rendering
+const canvas = document.getElementById('myCanvas');
+const engine = new HybridEngine(canvas, {
+    particleCount: 2000,
+    enableBlobRendering: true,
+    triangulationMode: 'blob',  // Use blob mesh mode
+    
+    // Blob physics parameters
+    blobInfluenceRadius: 80,
+    surfaceTension: 0.5,
+    cohesionStrength: 0.3,
+    elasticity: 0.7,
+    mitosisFactor: 0.5
+});
+
+// Load and display source image
+await engine.setImage(sourceImage);
+engine.start();
+
+// Trigger blob transition with mitosis effect
+await engine.startHybridTransition(sourceImage, targetImage, {
+    explosionIntensity: 150,
+    recombinationDuration: 2500,
+    blendDuration: 2000
+});
+```
+
+### Traditional Particle Rendering
 
 ```javascript
 import { HybridEngine } from './src/HybridEngine.js';
@@ -32,7 +66,7 @@ await engine.startHybridTransition(sourceImage, targetImage, {
 
 ### HybridEngine
 
-The main engine class for particle-based transitions.
+The main engine class for blob mesh and particle-based transitions.
 
 #### Constructor
 
@@ -46,16 +80,31 @@ new HybridEngine(canvas, config)
   - `particleCount` (number): Number of particles (default: 2000)
   - `speed` (number): Animation speed multiplier (default: 1.0)
   - `enableTriangulation` (boolean): Enable triangulation rendering (default: true)
-  - `triangulationMode` (string): 'particles', 'triangulation', or 'hybrid' (default: 'hybrid')
+  - `triangulationMode` (string): 'particles', 'blob', 'triangulation', or 'hybrid' (default: 'hybrid')
   - `gridSize` (number): Triangulation grid density (default: 8)
+  
+  **Blob-Specific Options:**
+  - `enableBlobRendering` (boolean): Enable blob mesh rendering (default: true)
+  - `blobInfluenceRadius` (number): Particle influence radius for metaball (default: 80)
+  - `surfaceTension` (number): Surface tension strength 0-1 (default: 0.5)
+  - `cohesionStrength` (number): Blob cohesion force 0-1 (default: 0.3)
+  - `elasticity` (number): Bounce/recovery factor 0-1 (default: 0.7)
+  - `mitosisFactor` (number): Blob splitting tendency 0-1 (default: 0.5)
+  - `splitThreshold` (number): Distance for blob mitosis (default: 150)
+  - `mergeThreshold` (number): Distance for blob merging (default: 80)
+  - `blobResolution` (number): Grid resolution for marching squares (default: 4)
+  - `blobFillOpacity` (number): Blob interior opacity 0-1 (default: 0.85)
 
 **Example:**
 ```javascript
 const engine = new HybridEngine(canvas, {
     particleCount: 3000,
     speed: 1.2,
-    enableTriangulation: true,
-    triangulationMode: 'hybrid'
+    enableBlobRendering: true,
+    triangulationMode: 'blob',
+    blobInfluenceRadius: 100,
+    surfaceTension: 0.6,
+    mitosisFactor: 0.7
 });
 ```
 
@@ -95,6 +144,31 @@ Stop the render loop.
 ```javascript
 engine.stop();
 ```
+
+##### `setRenderMode(mode)`
+
+Set the rendering mode for the engine.
+
+**Parameters:**
+- `mode` (string): Rendering mode - 'particles', 'blob', 'triangulation', or 'hybrid'
+
+**Example:**
+```javascript
+// Switch to blob mesh rendering
+engine.setRenderMode('blob');
+
+// Switch to particle rendering
+engine.setRenderMode('particles');
+
+// Switch to hybrid mode (particles + triangulation)
+engine.setRenderMode('hybrid');
+```
+
+**Rendering Modes:**
+- `'particles'`: Individual particle points
+- `'blob'`: Organic blob mesh with metaball rendering
+- `'triangulation'`: Mesh morphing with Delaunay triangulation
+- `'hybrid'`: Combined particles and triangulation
 
 ##### `startHybridTransition(sourceImage, targetImage, config)`
 
