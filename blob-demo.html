@@ -45,7 +45,7 @@
             border-radius: 10px;
             display: block;
             margin: 0 auto 20px;
-            background: #000;
+            background: #1a1a2e;
         }
 
         .controls {
@@ -191,8 +191,8 @@
             blobFillOpacity: 0.9
         });
 
-        // Initialize with random particles
-        engine.particleSystem.initializeRandom();
+        // Initialize with circle formation for better initial visibility
+        engine.particleSystem.initializeCircle();
         engine.start();
 
         // Update stats
@@ -255,8 +255,8 @@
         // Add some initial velocity for interesting blob behavior
         const particles = engine.particleSystem.getParticles();
         for (const p of particles) {
-            p.vx = (Math.random() - 0.5) * 20;
-            p.vy = (Math.random() - 0.5) * 20;
+            p.vx = (Math.random() - 0.5) * 10;
+            p.vy = (Math.random() - 0.5) * 10;
         }
     </script>
 </body>
