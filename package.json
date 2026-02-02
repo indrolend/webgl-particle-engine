@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/HybridPageTransitionAPI.js",
   "scripts": {
-    "build": "bash build.sh",
+    "build": "echo 'Note: build.sh is deprecated for Cloudflare deployment. Deploy directly from root with: wrangler pages deploy .' && bash build.sh",
     "serve": "python3 -m http.server 8000"
   },
   "keywords": [

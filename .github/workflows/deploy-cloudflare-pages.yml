@@ -29,24 +29,13 @@ jobs:
       - name: Install dependencies (if any)
         run: npm ci --if-present || echo "No dependencies to install"
 
-      - name: Build project
-        run: npm run build
-
-      - name: Verify build output
-        run: |
-          echo "Build output size:"
-          du -sh public
-          echo ""
-          echo "Files in public directory:"
-          ls -lh public/
-
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: webgl-particle-engine
-          directory: public
+          directory: .
           # Optional: Git info for better deployment tracking
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.ref_name }}

@@ -308,6 +308,8 @@ engine.config.speed = 0.8;           // Adjust animation speed
 
 ## 📦 Deployment
 
+> **📍 Deployment Location**: This project deploys directly from the **repository root** (`.`), not from a `/public` or `/dist` folder. All deployable files (HTML, JS, assets) are in the root directory for static deployment to Cloudflare Workers, Cloudflare Pages, or GitHub Pages.
+
 ### Cloudflare Pages (Recommended) - Simple!
 
 **No build step needed!** Just deploy directly from your repository:

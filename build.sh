@@ -1,9 +1,15 @@
 #!/bin/bash
 
 # Build script for WebGL Hybrid Particle Transition Engine
-# Prepares files for Cloudflare Pages / GitHub Pages deployment
+# NOTE: This script is DEPRECATED for Cloudflare deployment.
+# Cloudflare Wrangler now deploys directly from the repository root (see wrangler.toml).
+# This script may still be useful for creating a standalone package or custom builds.
 
 echo "Building WebGL Hybrid Particle Transition Engine..."
+echo ""
+echo "⚠️  NOTE: For Cloudflare deployment, you don't need to run this script."
+echo "    Use 'wrangler pages deploy .' to deploy directly from the repository root."
+echo ""
 
 # Create public directory
 mkdir -p public
