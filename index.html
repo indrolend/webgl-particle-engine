@@ -542,8 +542,8 @@
         let engine = null;
         let image1 = null;
         let image2 = null;
+        let currentMode = 'hybrid'; // Will be synced with engine after initialization
         let previousMode = 'hybrid'; // Track previous mode for toggling
-        let currentMode = 'hybrid'; // Track current mode
         let isBlobModeActive = false;
 
         // Initialize engine
@@ -558,6 +558,11 @@
             surfaceTension: 0.5,
             mitosisFactor: 0.5
         });
+        
+        // Sync state with engine's initial mode
+        currentMode = 'hybrid'; // Engine is initialized with 'hybrid' mode
+        previousMode = 'hybrid';
+        isBlobModeActive = false;
 
         // Mode switching handlers
         function setRenderMode(mode) {
@@ -607,9 +612,7 @@
                     status.textContent = `Blob Mesh disabled. Returned to ${previousMode} mode.`;
                 } else {
                     // Enable blob mode - save current mode as previous
-                    if (currentMode !== 'blob') {
-                        previousMode = currentMode;
-                    }
+                    previousMode = currentMode;
                     setRenderMode('blob');
                     status.textContent = '🧬 Blob Mesh enabled! Particles now render as organic blobs.';
                 }
