@@ -237,48 +237,6 @@ export class HybridEngine extends ParticleEngine {
   }
 
   /**
-   * Initialize elastic mesh components
-   */
-  initializeElasticMesh() {
-    console.log('[HybridEngine] Initializing elastic mesh system...');
-    
-    try {
-      this.elasticMesh = new ElasticMesh({
-        width: this.canvas.width,
-        height: this.canvas.height,
-        gridDensity: this.meshConfig.gridDensity,
-        springConstant: this.meshConfig.springConstant,
-        damping: this.meshConfig.damping,
-        breakThreshold: this.meshConfig.breakThreshold,
-        alphaThreshold: this.meshConfig.alphaThreshold
-      });
-      
-      this.meshPhysics = new MeshPhysics(this.elasticMesh, {
-        springConstant: this.meshConfig.springConstant,
-        damping: this.meshConfig.damping,
-        breakThreshold: this.meshConfig.breakThreshold
-      });
-      
-      // Get WebGL context for mesh renderer
-      const gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
-      if (!gl) {
-        throw new Error('WebGL not supported');
-      }
-      
-      this.meshRenderer = new MeshRenderer(gl, {
-        showMesh: this.meshConfig.showMesh,
-        showVertices: this.meshConfig.showVertices
-      });
-      
-      this.meshConfig.enabled = true;
-      console.log('[HybridEngine] Elastic mesh system initialized');
-    } catch (error) {
-      console.error('[HybridEngine] Failed to initialize elastic mesh:', error);
-      this.meshConfig.enabled = false;
-    }
-  }
-
-  /**
    * Set rendering mode
    * @param {string} mode - 'particles', 'triangulation', 'hybrid', 'blob', or 'mesh'
    */
