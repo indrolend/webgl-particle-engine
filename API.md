@@ -2,9 +2,50 @@
 
 ## Overview
 
-The WebGL Hybrid Blob Mesh Transition Engine provides a developer-friendly API for creating stunning animated transitions between images and web pages using organic blob mesh rendering with WebGL-accelerated physics and metaball algorithms.
+The WebGL Hybrid Blob Mesh Transition Engine provides a developer-friendly API for creating stunning animated transitions between images and web pages using organic blob mesh rendering, elastic mesh physics, and WebGL-accelerated physics with metaball algorithms.
 
 ## Quick Start
+
+### Elastic Mesh Transitions (NEW!)
+
+```javascript
+import { HybridEngine } from './src/HybridEngine.js';
+
+// Create engine instance with elastic mesh
+const canvas = document.getElementById('myCanvas');
+const engine = new HybridEngine(canvas, {
+    particleCount: 2000,
+    enableMesh: true,
+    triangulationMode: 'mesh',  // Use elastic mesh mode
+    
+    // Mesh physics parameters
+    meshGridDensity: 1.5,          // Vertices per 100px
+    meshSpringConstant: 0.3,       // Spring stiffness (0-1)
+    meshDamping: 0.95,             // Velocity damping (0-1)
+    meshBreakThreshold: 300,       // Distance for spring breaking
+    meshAlphaThreshold: 0.5,       // Alpha threshold for connections (0-1)
+    meshExplosionStrength: 100,    // Default explosion force
+    
+    // Debug visualization
+    showMesh: false,               // Show mesh lines
+    showVertices: false            // Show vertices
+});
+
+// Load source image
+await engine.setImage(sourceImage);
+engine.start();
+
+// Trigger elastic mesh transition
+await engine.hybridTransition(sourceImage, targetImage, {
+    mode: 'mesh',
+    explosionIntensity: 150,
+    staticDisplayDuration: 500,
+    explosionTime: 800,
+    settleDuration: 1000,
+    recombinationDuration: 2500,
+    blendDuration: 2000
+});
+```
 
 ### Blob Mesh Rendering
 
@@ -80,7 +121,7 @@ new HybridEngine(canvas, config)
   - `particleCount` (number): Number of particles (default: 2000)
   - `speed` (number): Animation speed multiplier (default: 1.0)
   - `enableTriangulation` (boolean): Enable triangulation rendering (default: true)
-  - `triangulationMode` (string): 'particles', 'blob', 'triangulation', or 'hybrid' (default: 'hybrid')
+  - `triangulationMode` (string): 'particles', 'blob', 'triangulation', 'hybrid', or 'mesh' (default: 'hybrid')
   - `gridSize` (number): Triangulation grid density (default: 8)
   
   **Blob-Specific Options:**
@@ -94,9 +135,21 @@ new HybridEngine(canvas, config)
   - `mergeThreshold` (number): Distance for blob merging (default: 80)
   - `blobResolution` (number): Grid resolution for marching squares (default: 4)
   - `blobFillOpacity` (number): Blob interior opacity 0-1 (default: 0.85)
+  
+  **Elastic Mesh Options (NEW!):**
+  - `enableMesh` (boolean): Enable elastic mesh system (default: false, auto-enabled for mode='mesh')
+  - `meshGridDensity` (number): Mesh grid density - vertices per 100px (default: 1.5)
+  - `meshSpringConstant` (number): Spring stiffness 0-1 (default: 0.3)
+  - `meshDamping` (number): Velocity damping 0-1 (default: 0.95)
+  - `meshBreakThreshold` (number): Distance for spring breaking (default: 300)
+  - `meshAlphaThreshold` (number): Alpha threshold for connections 0-1 (default: 0.5)
+  - `meshExplosionStrength` (number): Default explosion force (default: 100)
+  - `showMesh` (boolean): Show mesh lines for debugging (default: false)
+  - `showVertices` (boolean): Show vertices for debugging (default: false)
 
 **Example:**
 ```javascript
+// Blob mesh configuration
 const engine = new HybridEngine(canvas, {
     particleCount: 3000,
     speed: 1.2,
@@ -105,6 +158,20 @@ const engine = new HybridEngine(canvas, {
     blobInfluenceRadius: 100,
     surfaceTension: 0.6,
     mitosisFactor: 0.7
+});
+
+// Elastic mesh configuration
+const meshEngine = new HybridEngine(canvas, {
+    particleCount: 2000,
+    enableMesh: true,
+    triangulationMode: 'mesh',
+    meshGridDensity: 2.0,
+    meshSpringConstant: 0.4,
+    meshDamping: 0.97,
+    meshBreakThreshold: 250,
+    meshAlphaThreshold: 0.6,
+    showMesh: true,  // Debug: show spring connections
+    showVertices: true  // Debug: show mesh vertices
 });
 ```
 
@@ -148,6 +215,82 @@ engine.stop();
 ##### `setRenderMode(mode)`
 
 Set the rendering mode for the engine.
+
+**Parameters:**
+- `mode` (string): 'particles', 'blob', 'triangulation', 'hybrid', or 'mesh'
+
+**Example:**
+```javascript
+// Switch to elastic mesh mode
+engine.setRenderMode('mesh');
+
+// Switch to blob mesh mode
+engine.setRenderMode('blob');
+
+// Switch to particle mode
+engine.setRenderMode('particles');
+```
+
+##### `hybridTransition(source, target, options)`
+
+Main API method for hybrid transitions with support for multiple modes.
+
+**Parameters:**
+- `source` (HTMLImageElement): Source image
+- `target` (HTMLImageElement): Target image
+- `options` (Object): Transition options
+  - `mode` (string): Transition mode - 'particles', 'blob', 'triangulation', 'mesh', or 'hybrid' (default: current mode)
+  - `explosionIntensity` (number): Explosion strength (50-300, default: 150)
+  - `staticDisplayDuration` (number): Initial static display (ms, default: 500)
+  - `explosionTime` (number): Explosion phase duration (ms, default: 800)
+  - `settleDuration` (number): Settling phase after explosion (ms, default: 1000, mesh only)
+  - `recombinationDuration` (number): Recombination phase duration (ms, default: 2500)
+  - `blendDuration` (number): Final blend duration (ms, default: 2000)
+  - `meshConfig` (Object): Mesh-specific configuration
+    - `gridDensity` (number): Vertices per 100px (0.5-3.0, default: 1.5)
+    - `springConstant` (number): Spring stiffness (0.1-1.0, default: 0.3)
+    - `damping` (number): Velocity damping (0.8-0.99, default: 0.95)
+    - `breakThreshold` (number): Spring break distance (100-500, default: 300)
+    - `alphaThreshold` (number): Alpha threshold for connections (0-1, default: 0.5)
+    - `showMesh` (boolean): Show mesh lines for debug (default: false)
+    - `showVertices` (boolean): Show vertices for debug (default: false)
+
+**Returns:** Promise<void> - Resolves when transition completes
+
+**Example:**
+```javascript
+// Elastic mesh transition with custom parameters
+await engine.hybridTransition(image1, image2, {
+    mode: 'mesh',
+    explosionIntensity: 200,
+    staticDisplayDuration: 800,
+    explosionTime: 1000,
+    settleDuration: 1200,
+    recombinationDuration: 3000,
+    blendDuration: 2500,
+    meshConfig: {
+        gridDensity: 2.0,
+        springConstant: 0.4,
+        damping: 0.97,
+        breakThreshold: 250,
+        alphaThreshold: 0.6,
+        showMesh: true,  // Enable debug visualization
+        showVertices: true
+    }
+});
+
+// Blob transition
+await engine.hybridTransition(image1, image2, {
+    mode: 'blob',
+    explosionIntensity: 150,
+    recombinationDuration: 2500,
+    blendDuration: 2000
+});
+```
+
+##### `startHybridTransition(sourceImage, targetImage, config)`
+
+Legacy method for hybrid transitions (particles/triangulation modes).
 
 **Parameters:**
 - `mode` (string): Rendering mode - 'particles', 'blob', 'triangulation', or 'hybrid'
