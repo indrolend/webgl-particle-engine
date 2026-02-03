@@ -1,9 +1,10 @@
 # WebGL Hybrid Blob Mesh Transition Engine
 
-A high-performance WebGL-based particle engine for creating seamless, animated transitions between images and pages with organic **blob mesh rendering**. Built for developers who need stunning mitosis-like visual effects with minimal integration effort.
+A high-performance WebGL-based particle engine for creating seamless, animated transitions between images and pages with organic **blob mesh rendering** and **elastic mesh physics**. Built for developers who need stunning mitosis-like visual effects with minimal integration effort.
 
 ## ✨ Core Features
 
+- **🕸️ Elastic Mesh Transitions (NEW!)**: Physics-driven spring mesh with alpha-aware connections that preserves image holes
 - **🎨 Organic Blob Mesh Transitions**: Physics-driven blob meshes that split and merge like cell division/mitosis
 - **🧬 Metaball Rendering**: Smooth, organic surfaces generated from particle influence fields using marching squares
 - **💧 Surface Tension Physics**: Cohesion forces create liquid-like blob behavior with elasticity
@@ -12,7 +13,7 @@ A high-performance WebGL-based particle engine for creating seamless, animated t
 - **🎬 Video Export**: Record and export transitions as MP4 videos (9:16 portrait format)
 - **🎯 Developer-Friendly API**: Clean, intuitive API for easy integration into any web project
 - **📱 Responsive**: Works on desktop and mobile devices with automatic performance optimization
-- **🔧 Highly Configurable**: Full control over blob physics, surface tension, mitosis factor, and elasticity
+- **🔧 Highly Configurable**: Full control over physics parameters, springs, elasticity, and damping
 
 ## 🚀 Quick Start
 
@@ -43,13 +44,51 @@ php -S localhost:8000
 3. **Open in browser**:
 ```
 http://localhost:8000/                         # Main hybrid transition demo
-http://localhost:8000/blob-demo.html           # Blob mesh rendering demo (NEW!)
+http://localhost:8000/blob-demo.html           # Blob mesh rendering demo
+http://localhost:8000/test-mesh.html           # Elastic mesh transition demo (NEW!)
 http://localhost:8000/export-hybrid-video.html # Video export demo
 ```
+
+> **🕸️ Try the Elastic Mesh Demo!** Experience physics-driven spring mesh with alpha-aware connections. Watch the mesh explode, break, reconnect, and morph with organic sloshing motion!
 
 > **🧬 Try the Blob Demo!** Experience organic blob mesh rendering with interactive controls. Watch particles form liquid-like blobs that automatically split (mitosis) and merge!
 
 ## 📖 API Usage
+
+### Elastic Mesh Transitions (NEW!)
+
+```javascript
+import { HybridEngine } from './src/HybridEngine.js';
+
+// Create engine instance with elastic mesh
+const canvas = document.getElementById('myCanvas');
+const engine = new HybridEngine(canvas, {
+    particleCount: 2000,
+    enableMesh: true,
+    triangulationMode: 'mesh',
+    
+    // Elastic mesh parameters
+    meshGridDensity: 1.5,          // Vertices per 100px
+    meshSpringConstant: 0.3,       // Spring stiffness
+    meshDamping: 0.95,             // Velocity damping
+    meshBreakThreshold: 300,       // Distance for spring breaking
+    meshAlphaThreshold: 0.5,       // Alpha threshold for connections
+    showMesh: false,               // Debug: show mesh lines
+    showVertices: false            // Debug: show vertices
+});
+
+// Load source image
+await engine.setImage(sourceImage);
+engine.start();
+
+// Trigger elastic mesh transition
+await engine.hybridTransition(sourceImage, targetImage, {
+    mode: 'mesh',
+    explosionIntensity: 150,
+    recombinationDuration: 2500,
+    blendDuration: 2000
+});
+```
 
 ### Basic Integration with Blob Rendering
 
@@ -90,6 +129,9 @@ await engine.startHybridTransition(sourceImage, targetImage, {
 The engine supports multiple rendering modes:
 
 ```javascript
+// Elastic mesh mode - physics-driven spring mesh with alpha-aware connections
+engine.setRenderMode('mesh');
+
 // Blob mesh mode - organic liquid-like rendering
 engine.setRenderMode('blob');
 
