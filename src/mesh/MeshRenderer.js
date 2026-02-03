@@ -27,6 +27,9 @@ export class MeshRenderer {
     this.sourceTexture = null;
     this.targetTexture = null;
     this.crossfadeProgress = 0;
+    
+    // Cache 2D context for debug rendering (avoid repeated getContext calls)
+    this.ctx2d = null;
 
     this.initShaders();
     this.initBuffers();
@@ -309,9 +312,13 @@ export class MeshRenderer {
    * @param {ElasticMesh} mesh - The mesh to render
    */
   renderMeshLines(mesh) {
-    // Use 2D context for debug rendering (simpler)
-    const canvas = this.gl.canvas;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    // Use cached 2D context for debug rendering
+    if (!this.ctx2d) {
+      const canvas = this.gl.canvas;
+      this.ctx2d = canvas.getContext('2d', { willReadFrequently: true });
+    }
+    
+    const ctx = this.ctx2d;
     
     ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
     ctx.lineWidth = this.config.meshLineWidth;
@@ -340,8 +347,13 @@ export class MeshRenderer {
    * @param {ElasticMesh} mesh - The mesh to render
    */
   renderVertices(mesh) {
-    const canvas = this.gl.canvas;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    // Use cached 2D context for debug rendering
+    if (!this.ctx2d) {
+      const canvas = this.gl.canvas;
+      this.ctx2d = canvas.getContext('2d', { willReadFrequently: true });
+    }
+    
+    const ctx = this.ctx2d;
     
     ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
 

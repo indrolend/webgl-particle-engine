@@ -217,10 +217,13 @@ export class HybridEngine extends ParticleEngine {
         breakThreshold: this.meshConfig.breakThreshold
       });
       
-      // Get WebGL context for mesh renderer
-      const gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
+      // Reuse WebGL context from renderer if available, otherwise create new one
+      let gl = this.renderer?.gl;
       if (!gl) {
-        throw new Error('WebGL not supported');
+        gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
+        if (!gl) {
+          throw new Error('WebGL not supported');
+        }
       }
       
       this.meshRenderer = new MeshRenderer(gl, {
@@ -768,6 +771,20 @@ export class HybridEngine extends ParticleEngine {
   }
 
   /**
+   * Helper method to extract image data from an image
+   * @param {HTMLImageElement} image - Image to extract data from
+   * @returns {ImageData} - Image data
+   */
+  extractImageData(image) {
+    const canvas = document.createElement('canvas');
+    canvas.width = this.canvas.width;
+    canvas.height = this.canvas.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  }
+
+  /**
    * Start elastic mesh transition
    * @param {HTMLImageElement} sourceImage - Source image
    * @param {HTMLImageElement} targetImage - Target image
@@ -795,17 +812,9 @@ export class HybridEngine extends ParticleEngine {
       this.meshRenderer.updateConfig(this.meshConfig);
     }
     
-    // Extract image data for mesh generation
-    const canvas = document.createElement('canvas');
-    canvas.width = this.canvas.width;
-    canvas.height = this.canvas.height;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
-    const sourceImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(targetImage, 0, 0, canvas.width, canvas.height);
-    const targetImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // Extract image data using helper method
+    const sourceImageData = this.extractImageData(sourceImage);
+    const targetImageData = this.extractImageData(targetImage);
     
     // Generate mesh from source image
     const particleCount = config.particleCount || this.config.particleCount || 2000;
