@@ -8,6 +8,7 @@ import { TriangulationMorph } from './triangulation/TriangulationMorph.js';
 import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js';
 import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
 import { BlobRenderer, BlobPhysics } from './blob/index.js';
+import { HybridTransition } from './hybrid/HybridTransition.js';
 
 // Constants
 const DEFAULT_STATIC_DISPLAY_DURATION = 500; // ms - how long to show static image before disintegration
@@ -96,12 +97,20 @@ export class HybridEngine extends ParticleEngine {
     // Track last rendered static image to avoid reloading texture
     this.lastRenderedStaticImage = null;
     
+    // Jelly mesh transition system
+    this.jellyTransition = null;
+    this.jellyMeshEnabled = config.enableJellyMesh !== false;
+    
     if (this.triangulationConfig.enabled) {
       this.initializeTriangulation();
     }
     
     if (this.blobConfig.enabled) {
       this.initializeBlobRendering();
+    }
+    
+    if (this.jellyMeshEnabled) {
+      this.initializeJellyMesh();
     }
     
     console.log('[HybridEngine] Hybrid engine initialized');
@@ -166,10 +175,10 @@ export class HybridEngine extends ParticleEngine {
 
   /**
    * Set rendering mode
-   * @param {string} mode - 'particles', 'triangulation', 'hybrid', or 'blob'
+   * @param {string} mode - 'particles', 'triangulation', 'hybrid', 'blob', or 'jelly'
    */
   setRenderMode(mode) {
-    if (['particles', 'triangulation', 'hybrid', 'blob'].includes(mode)) {
+    if (['particles', 'triangulation', 'hybrid', 'blob', 'jelly'].includes(mode)) {
       this.triangulationConfig.mode = mode;
       console.log(`[HybridEngine] Render mode set to: ${mode}`);
     } else {
@@ -372,6 +381,17 @@ export class HybridEngine extends ParticleEngine {
       this.blobPhysics.update(particles, deltaTime, boundaries);
     }
     
+    // Update jelly mesh transition if active
+    if (this.jellyMeshEnabled && this.jellyTransition && this.jellyTransition.isActive()) {
+      const boundaries = {
+        minX: 0,
+        minY: 0,
+        maxX: this.canvas.width,
+        maxY: this.canvas.height
+      };
+      this.jellyTransition.update(deltaTime, boundaries);
+    }
+    
     // Render based on mode
     this.renderHybrid();
     
@@ -470,6 +490,22 @@ export class HybridEngine extends ParticleEngine {
       return; // Skip particle rendering when in blob mode
     }
     
+    // Render jelly mesh (if enabled and in jelly mode)
+    if (mode === 'jelly' && this.jellyMeshEnabled && this.jellyTransition) {
+      const transitionState = this.jellyTransition.update(0, {
+        minX: 0,
+        minY: 0,
+        maxX: this.canvas.width,
+        maxY: this.canvas.height
+      });
+      
+      if (transitionState.mesh && transitionState.image) {
+        this.renderJellyMesh(transitionState.mesh, transitionState.image, transitionState);
+      }
+      
+      return; // Skip particle rendering when in jelly mode
+    }
+    
     // Render particles (if enabled)
     if (mode === 'particles' || mode === 'hybrid') {
       // Adjust particle opacity in hybrid mode
@@ -518,6 +554,94 @@ export class HybridEngine extends ParticleEngine {
   hideStaticImage() {
     // Method retained for compatibility but no longer does anything
     // Static images are now rendered directly to WebGL canvas
+  }
+  
+  /**
+   * Render jelly mesh with texture
+   * @param {Object} mesh - Mesh data with perimeter and triangles
+   * @param {HTMLImageElement} image - Image to render
+   * @param {Object} state - Transition state
+   */
+  renderJellyMesh(mesh, image, state = {}) {
+    if (!mesh || !mesh.perimeter || !image) {
+      return;
+    }
+    
+    const gl = this.renderer.gl;
+    const ctx = this.canvas.getContext('2d', { willReadFrequently: false });
+    
+    if (!ctx) {
+      console.warn('[HybridEngine] 2D context not available for jelly mesh rendering');
+      return;
+    }
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Create temporary canvas for image
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = image.width;
+    tempCanvas.height = image.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(image, 0, 0);
+    
+    // Draw mesh with texture mapping
+    if (mesh.triangles && mesh.triangles.length > 0) {
+      // Draw triangles with texture mapping
+      for (const triangle of mesh.triangles) {
+        if (triangle.length !== 3) continue;
+        
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(triangle[0].x, triangle[0].y);
+        ctx.lineTo(triangle[1].x, triangle[1].y);
+        ctx.lineTo(triangle[2].x, triangle[2].y);
+        ctx.closePath();
+        ctx.clip();
+        
+        // Sample image color at triangle centroid
+        const cx = (triangle[0].x + triangle[1].x + triangle[2].x) / 3;
+        const cy = (triangle[0].y + triangle[1].y + triangle[2].y) / 3;
+        
+        // Draw image section
+        ctx.drawImage(tempCanvas, 0, 0, tempCanvas.width, tempCanvas.height,
+                      0, 0, this.canvas.width, this.canvas.height);
+        
+        ctx.restore();
+      }
+    } else {
+      // Fallback: draw perimeter outline
+      ctx.strokeStyle = '#667eea';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      
+      for (let i = 0; i < mesh.perimeter.length; i++) {
+        const v = mesh.perimeter[i];
+        if (i === 0) {
+          ctx.moveTo(v.x, v.y);
+        } else {
+          ctx.lineTo(v.x, v.y);
+        }
+      }
+      
+      ctx.closePath();
+      ctx.stroke();
+      
+      // Fill with image
+      ctx.save();
+      ctx.clip();
+      ctx.drawImage(image, 0, 0, this.canvas.width, this.canvas.height);
+      ctx.restore();
+    }
+    
+    // Draw morph overlay if in morph phase
+    if (state.phase === 'morph' && state.targetImage && state.morphProgress > 0) {
+      ctx.globalAlpha = state.morphProgress;
+      ctx.drawImage(state.targetImage, 0, 0, this.canvas.width, this.canvas.height);
+      ctx.globalAlpha = 1.0;
+    }
   }
 
   /**
@@ -671,6 +795,90 @@ export class HybridEngine extends ParticleEngine {
     preset.targets = targets;
     
     console.log('[HybridEngine] Hybrid transition preset activated - particles will now explode');
+  }
+
+  /**
+   * Initialize jelly mesh transition system
+   */
+  initializeJellyMesh() {
+    console.log('[HybridEngine] Initializing jelly mesh system...');
+    
+    try {
+      this.jellyTransition = new HybridTransition({
+        minVertexCount: 20,
+        maxVertexCount: 200,
+        explosionIntensity: 100,
+        edgeBreakChance: 0.3,
+        springStiffness: 0.5,
+        enableAdaptiveDetail: true
+      });
+      
+      console.log('[HybridEngine] Jelly mesh system initialized');
+    } catch (error) {
+      console.error('[HybridEngine] Failed to initialize jelly mesh:', error);
+      this.jellyMeshEnabled = false;
+    }
+  }
+
+  /**
+   * Start jelly mesh hybrid transition
+   * @param {HTMLImageElement} fromImage - Source image
+   * @param {HTMLImageElement} toImage - Target image
+   * @param {Object} options - Transition options
+   * @returns {boolean} Success status
+   */
+  hybridTransition(fromImage, toImage, options = {}) {
+    if (!this.jellyMeshEnabled || !this.jellyTransition) {
+      console.warn('[HybridEngine] Jelly mesh system not available');
+      return false;
+    }
+    
+    console.log('[HybridEngine] Starting jelly mesh hybrid transition...');
+    
+    // Update configuration if provided
+    if (options.explosionIntensity !== undefined ||
+        options.edgeBreakChance !== undefined ||
+        options.springStiffness !== undefined ||
+        options.minVertexCount !== undefined ||
+        options.maxVertexCount !== undefined) {
+      this.jellyTransition.updateConfig(options);
+    }
+    
+    // Start the transition
+    const success = this.jellyTransition.startTransition(fromImage, toImage);
+    
+    if (success) {
+      // Switch to jelly mesh rendering mode
+      this.setRenderMode('jelly');
+      console.log('[HybridEngine] Jelly mesh transition started successfully');
+    } else {
+      console.error('[HybridEngine] Failed to start jelly mesh transition');
+    }
+    
+    return success;
+  }
+  
+  /**
+   * Update jelly mesh transition configuration
+   * @param {Object} config - Configuration updates
+   */
+  updateJellyMeshConfig(config) {
+    if (this.jellyTransition) {
+      this.jellyTransition.updateConfig(config);
+      console.log('[HybridEngine] Jelly mesh configuration updated');
+    }
+  }
+  
+  /**
+   * Get jelly mesh transition state
+   * @returns {Object} Current state
+   */
+  getJellyMeshState() {
+    if (!this.jellyTransition) {
+      return null;
+    }
+    
+    return this.jellyTransition.getState();
   }
 
   /**

@@ -1,6 +1,6 @@
 # WebGL Hybrid Blob Mesh Transition Engine
 
-A high-performance WebGL-based particle engine for creating seamless, animated transitions between images and pages with organic **blob mesh rendering**. Built for developers who need stunning mitosis-like visual effects with minimal integration effort.
+A high-performance WebGL-based particle engine for creating seamless, animated transitions between images and pages with organic **blob mesh rendering** and **jelly mesh physics**. Built for developers who need stunning mitosis-like visual effects with minimal integration effort.
 
 ## ✨ Core Features
 
@@ -8,8 +8,11 @@ A high-performance WebGL-based particle engine for creating seamless, animated t
 - **🧬 Metaball Rendering**: Smooth, organic surfaces generated from particle influence fields using marching squares
 - **💧 Surface Tension Physics**: Cohesion forces create liquid-like blob behavior with elasticity
 - **🔀 Blob Splitting & Merging**: Automatic mitosis detection and blob recombination
+- **🌀 Jelly Mesh Transitions** *(NEW)*: Perimeter-accurate mesh extraction with spring-mass physics, edge breaking, and piece rejoining
+- **🎯 Adaptive Detail**: FPS-based automatic mesh simplification for optimal performance
 - **⚡ WebGL-Accelerated**: Hardware-accelerated rendering for smooth 60 FPS performance
 - **🎬 Video Export**: Record and export transitions as MP4 videos (9:16 portrait format)
+- **🎮 Real-time Debug Panel**: Interactive controls for mesh detail, explosion intensity, and physics parameters
 - **🎯 Developer-Friendly API**: Clean, intuitive API for easy integration into any web project
 - **📱 Responsive**: Works on desktop and mobile devices with automatic performance optimization
 - **🔧 Highly Configurable**: Full control over blob physics, surface tension, mitosis factor, and elasticity
@@ -43,11 +46,12 @@ php -S localhost:8000
 3. **Open in browser**:
 ```
 http://localhost:8000/                         # Main hybrid transition demo
-http://localhost:8000/blob-demo.html           # Blob mesh rendering demo (NEW!)
+http://localhost:8000/blob-demo.html           # Blob mesh rendering demo
+http://localhost:8000/test-jelly-mesh.html     # Jelly mesh transition demo (NEW!)
 http://localhost:8000/export-hybrid-video.html # Video export demo
 ```
 
-> **🧬 Try the Blob Demo!** Experience organic blob mesh rendering with interactive controls. Watch particles form liquid-like blobs that automatically split (mitosis) and merge!
+> **🌀 Try the Jelly Mesh Demo!** Experience perimeter-accurate mesh transitions with physics-based jelly dynamics. Watch meshes explode, contract, and morph between images with optional edge breaking and piece rejoining!
 
 ## 📖 API Usage
 
@@ -93,6 +97,9 @@ The engine supports multiple rendering modes:
 // Blob mesh mode - organic liquid-like rendering
 engine.setRenderMode('blob');
 
+// Jelly mesh mode - perimeter-accurate transitions with physics (NEW!)
+engine.setRenderMode('jelly');
+
 // Particle mode - individual particle points
 engine.setRenderMode('particles');
 
@@ -102,6 +109,44 @@ engine.setRenderMode('triangulation');
 // Hybrid mode - particles + triangulation
 engine.setRenderMode('hybrid');
 ```
+
+### Jelly Mesh Transitions *(NEW)*
+
+```javascript
+import { HybridEngine } from './src/HybridEngine.js';
+import { HybridDebugPanel } from './src/debug/HybridDebugPanel.js';
+
+// Create engine with jelly mesh enabled
+const canvas = document.getElementById('myCanvas');
+const engine = new HybridEngine(canvas, {
+    particleCount: 2000,
+    enableJellyMesh: true,
+    triangulationMode: 'jelly'
+});
+
+// Start jelly mesh transition
+engine.hybridTransition(sourceImage, targetImage, {
+    explosionIntensity: 100,      // Force of explosion
+    edgeBreakChance: 0.3,          // 0-1, probability of edge breaks
+    expansionDuration: 800,        // ms, expansion phase
+    contractionDuration: 1200,     // ms, contraction phase
+    morphDuration: 1000            // ms, morphing phase
+});
+
+// Create debug panel for real-time controls
+const debugPanel = new HybridDebugPanel();
+debugPanel.on('meshDetail', (value) => {
+    engine.updateJellyMeshConfig({ detailLevel: value });
+});
+
+// Get transition state
+const state = engine.getJellyMeshState();
+console.log('FPS:', state.fps);
+console.log('Broken edges:', state.meshStats.brokenEdges);
+console.log('Pieces:', state.meshStats.pieces);
+```
+
+See [JELLY_MESH_API.md](JELLY_MESH_API.md) for complete documentation.
 
 ### Basic Integration
 

@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jelly Mesh Hybrid Transition Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header p {
+            margin: 0;
+            color: #8B9DC3;
+            font-size: 14px;
+        }
+        
+        #canvas {
+            display: block;
+            margin: 20px auto;
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        
+        .controls {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .control-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+        
+        .control-section h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .file-label {
+            display: block;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .file-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 6px;
+            font-size: 14px;
+            color: #8B9DC3;
+            margin-top: 20px;
+        }
+        
+        .info-box {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .info-box strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎨 Jelly Mesh Hybrid Transition</h1>
+        <p>Perimeter-accurate mesh transitions with physics-based jelly dynamics</p>
+    </div>
+    
+    <canvas id="canvas" width="800" height="600"></canvas>
+    
+    <div class="controls">
+        <div class="control-section">
+            <h3>📁 Image Selection</h3>
+            <div class="button-group">
+                <div class="file-input-wrapper">
+                    <label class="file-label" for="image1Input">Choose Image 1</label>
+                    <input type="file" id="image1Input" accept="image/*">
+                </div>
+                <div class="file-input-wrapper">
+                    <label class="file-label" for="image2Input">Choose Image 2</label>
+                    <input type="file" id="image2Input" accept="image/*">
+                </div>
+            </div>
+        </div>
+        
+        <div class="control-section">
+            <h3>🎬 Transition Controls</h3>
+            <div class="button-group">
+                <button id="transitionBtn">Start Jelly Transition</button>
+                <button id="reverseBtn" disabled>Reverse Transition</button>
+                <button id="resetBtn">Reset</button>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <strong>How it works:</strong> The jelly mesh transition extracts the perimeter of each image's alpha channel,
+            creates a triangulated mesh, applies spring-mass physics, and performs expansion → contraction → morph phases
+            with optional edge breaking and piece rejoining. Use the debug panel (top-right) to adjust parameters in real-time.
+        </div>
+        
+        <div class="status" id="status">
+            Load two images to begin. The debug panel will appear once images are loaded.
+        </div>
+    </div>
+    
+    <script type="module">
+        import { HybridEngine } from './src/HybridEngine.js';
+        import { HybridDebugPanel } from './src/debug/HybridDebugPanel.js';
+        
+        const canvas = document.getElementById('canvas');
+        const status = document.getElementById('status');
+        const image1Input = document.getElementById('image1Input');
+        const image2Input = document.getElementById('image2Input');
+        const transitionBtn = document.getElementById('transitionBtn');
+        const reverseBtn = document.getElementById('reverseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        let engine = null;
+        let debugPanel = null;
+        let image1 = null;
+        let image2 = null;
+        let isTransitioning = false;
+        
+        // Initialize engine
+        console.log('Initializing HybridEngine...');
+        try {
+            engine = new HybridEngine(canvas, {
+                particleCount: 2000,
+                speed: 1.0,
+                enableTriangulation: true,
+                enableJellyMesh: true,
+                triangulationMode: 'jelly'
+            });
+            
+            console.log('HybridEngine initialized successfully');
+            status.textContent = 'Engine ready. Please load two images.';
+        } catch (error) {
+            console.error('Failed to initialize engine:', error);
+            status.textContent = 'Error: Failed to initialize engine. ' + error.message;
+        }
+        
+        // Load default test images
+        function loadDefaultImages() {
+            // Try to load indrolend.png if available
+            const img1 = new Image();
+            img1.onload = () => {
+                image1 = img1;
+                updateStatus();
+            };
+            img1.onerror = () => {
+                console.log('Default image 1 not found');
+            };
+            img1.src = 'indrolend.png';
+        }
+        
+        // Load default images on start
+        loadDefaultImages();
+        
+        // Image 1 upload
+        image1Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image1 = new Image();
+                    image1.onload = () => {
+                        console.log(`Image 1 loaded: ${image1.width}x${image1.height}`);
+                        updateStatus();
+                    };
+                    image1.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Image 2 upload
+        image2Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image2 = new Image();
+                    image2.onload = () => {
+                        console.log(`Image 2 loaded: ${image2.width}x${image2.height}`);
+                        updateStatus();
+                    };
+                    image2.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Update status and create debug panel if both images loaded
+        function updateStatus() {
+            if (image1 && image2) {
+                status.textContent = 'Both images loaded! Click "Start Jelly Transition" to begin.';
+                transitionBtn.disabled = false;
+                
+                // Create debug panel if not already created
+                if (!debugPanel && engine) {
+                    createDebugPanel();
+                }
+            } else if (image1) {
+                status.textContent = 'Image 1 loaded. Please load Image 2.';
+            } else if (image2) {
+                status.textContent = 'Image 2 loaded. Please load Image 1.';
+            }
+        }
+        
+        // Create debug panel
+        function createDebugPanel() {
+            console.log('Creating debug panel...');
+            debugPanel = new HybridDebugPanel();
+            
+            // Set up callbacks
+            debugPanel.on('meshDetail', (value) => {
+                if (engine && engine.jellyTransition) {
+                    engine.updateJellyMeshConfig({ 
+                        detailLevel: value 
+                    });
+                }
+            });
+            
+            debugPanel.on('explosionIntensity', (value) => {
+                if (engine && engine.jellyTransition) {
+                    engine.updateJellyMeshConfig({ 
+                        explosionIntensity: value 
+                    });
+                }
+            });
+            
+            debugPanel.on('edgeBreakChance', (value) => {
+                if (engine && engine.jellyTransition) {
+                    engine.updateJellyMeshConfig({ 
+                        edgeBreakChance: value 
+                    });
+                }
+            });
+            
+            debugPanel.on('springStiffness', (value) => {
+                if (engine && engine.jellyTransition) {
+                    engine.updateJellyMeshConfig({ 
+                        springStiffness: value 
+                    });
+                }
+            });
+            
+            debugPanel.on('minVertexCount', (value) => {
+                if (engine && engine.jellyTransition) {
+                    engine.updateJellyMeshConfig({ 
+                        minVertexCount: value 
+                    });
+                }
+            });
+            
+            debugPanel.on('maxVertexCount', (value) => {
+                if (engine && engine.jellyTransition) {
+                    engine.updateJellyMeshConfig({ 
+                        maxVertexCount: value 
+                    });
+                }
+            });
+            
+            debugPanel.on('triggerTransition', () => {
+                startTransition();
+            });
+            
+            debugPanel.on('reset', () => {
+                resetEngine();
+            });
+            
+            debugPanel.on('updateStats', () => {
+                updateDebugStats();
+            });
+            
+            debugPanel.updateStatus('Ready', 'success');
+        }
+        
+        // Update debug stats
+        function updateDebugStats() {
+            if (!debugPanel || !engine) return;
+            
+            const state = engine.getJellyMeshState();
+            if (state) {
+                debugPanel.updateStats({
+                    fps: state.fps || 0,
+                    vertices: state.meshStats ? state.meshStats.totalSprings : 0,
+                    triangles: 0,
+                    brokenEdges: state.meshStats ? state.meshStats.brokenEdges : 0,
+                    pieces: state.meshStats ? state.meshStats.pieces : 0,
+                    detailLevel: state.detailLevel || 1.0
+                });
+            }
+        }
+        
+        // Start transition
+        function startTransition() {
+            if (!image1 || !image2) {
+                status.textContent = 'Please load both images first';
+                return;
+            }
+            
+            if (isTransitioning) {
+                status.textContent = 'Transition already in progress';
+                return;
+            }
+            
+            console.log('Starting jelly mesh transition...');
+            isTransitioning = true;
+            transitionBtn.disabled = true;
+            reverseBtn.disabled = true;
+            
+            // Start engine if not running
+            if (!engine.isRunning) {
+                engine.start();
+            }
+            
+            // Start jelly mesh transition
+            const success = engine.hybridTransition(image1, image2, {
+                explosionIntensity: 100,
+                edgeBreakChance: 0.3,
+                expansionDuration: 800,
+                contractionDuration: 1200,
+                morphDuration: 1000
+            });
+            
+            if (success) {
+                status.textContent = 'Jelly mesh transition in progress...';
+                if (debugPanel) {
+                    debugPanel.updateStatus('Transitioning...', 'info');
+                }
+                
+                // Calculate total duration and enable reverse button after completion
+                setTimeout(() => {
+                    isTransitioning = false;
+                    transitionBtn.disabled = false;
+                    reverseBtn.disabled = false;
+                    status.textContent = 'Transition complete! Click "Reverse" to go back.';
+                    if (debugPanel) {
+                        debugPanel.updateStatus('Transition complete', 'success');
+                    }
+                }, 3000); // Total transition duration
+            } else {
+                isTransitioning = false;
+                transitionBtn.disabled = false;
+                status.textContent = 'Failed to start transition. Check console for errors.';
+                if (debugPanel) {
+                    debugPanel.updateStatus('Transition failed', 'error');
+                }
+            }
+        }
+        
+        // Transition button
+        transitionBtn.addEventListener('click', startTransition);
+        
+        // Reverse button
+        reverseBtn.addEventListener('click', () => {
+            if (!image1 || !image2) {
+                return;
+            }
+            
+            // Swap images and start new transition
+            const temp = image1;
+            image1 = image2;
+            image2 = temp;
+            
+            startTransition();
+        });
+        
+        // Reset button
+        resetBtn.addEventListener('click', () => {
+            resetEngine();
+        });
+        
+        function resetEngine() {
+            if (engine && engine.jellyTransition) {
+                engine.jellyTransition.reset();
+            }
+            
+            isTransitioning = false;
+            transitionBtn.disabled = !image1 || !image2;
+            reverseBtn.disabled = true;
+            
+            // Clear canvas
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            status.textContent = 'Engine reset. Ready for new transition.';
+            if (debugPanel) {
+                debugPanel.updateStatus('Reset complete', 'success');
+            }
+        }
+    </script>
+</body>
+</html>
