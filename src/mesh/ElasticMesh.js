@@ -85,6 +85,12 @@ export class ElasticMesh {
 
         // Keep within bounds
         if (x < width && y < height) {
+          // CHECK ALPHA - Skip vertices on transparent pixels
+          const alpha = this.getAlpha(imageData, x, y);
+          if (alpha < this.config.alphaThreshold) {
+            continue; // Don't create vertex in transparent region
+          }
+          
           const vertex = {
             id: vertexIndex++,
             x: x,
@@ -252,9 +258,15 @@ export class ElasticMesh {
     // Update target positions based on new image
     // For now, keep same positions but update colors
     for (const vertex of this.vertices) {
+      // Store current color as source for morphing
+      vertex.sourceColor = { ...vertex.color };
+      
+      // Sample target color
+      vertex.targetColor = this.sampleColor(targetImage, vertex.initialX, vertex.initialY);
+      
+      // Keep target positions same (morph color only, not layout)
       vertex.targetX = vertex.initialX;
       vertex.targetY = vertex.initialY;
-      vertex.targetColor = this.sampleColor(targetImage, vertex.initialX, vertex.initialY);
     }
   }
 
