@@ -564,7 +564,7 @@ export class HybridEngine extends ParticleEngine {
           // Render textured mesh
           this.meshRenderer.render(this.elasticMesh, 0);
           
-          // Optionally render blobs on top for organic look
+          // Optionally render blobs on top for organic look (without clearing)
           if (this.blobConfig.enabled && this.blobRenderer) {
             const meshVerticesAsParticles = this.elasticMesh.vertices.map(v => ({
               x: v.x,
@@ -576,9 +576,18 @@ export class HybridEngine extends ParticleEngine {
               size: 1.0
             }));
             
-            this.blobRenderer.render(meshVerticesAsParticles, this.canvas.width, this.canvas.height);
+            // Render blobs without clearing the mesh underneath
+            this.renderBlobsWithoutClear(meshVerticesAsParticles);
           }
         }
+        return;
+      }
+    }
+    
+    // If alien transition just completed, show target image
+    if (this.alienController && this.alienController.state === 'complete') {
+      if (this.alienController.targetImage) {
+        this.renderStaticImageToWebGL(this.alienController.targetImage);
         return;
       }
     }
@@ -633,6 +642,7 @@ export class HybridEngine extends ParticleEngine {
    * @param {HTMLImageElement} image - The image to render
    */
   renderStaticImageToWebGL(image) {
+    console.log('[HybridEngine] Rendering static image to WebGL');
     // Load the image texture if not already loaded or if it's a different image
     if (!this.renderer.imageLoaded || this.lastRenderedStaticImage !== image) {
       this.renderer.loadImageTexture(image, this.particleSystem.config);
@@ -644,6 +654,27 @@ export class HybridEngine extends ParticleEngine {
     gl.clearColor(1.0, 1.0, 1.0, 1.0); // White background
     gl.clear(gl.COLOR_BUFFER_BIT);
     this.renderer.renderImage(1.0);
+  }
+  
+  /**
+   * Render blobs without clearing the canvas (for layering on top of mesh)
+   * @param {Array} particles - Particle data for blob rendering
+   */
+  renderBlobsWithoutClear(particles) {
+    if (!particles || particles.length === 0 || !this.blobRenderer) return;
+    
+    const gl = this.blobRenderer.gl;
+    
+    // Detect separate blobs
+    this.blobRenderer.blobs = this.blobRenderer.detectBlobs(particles);
+    
+    // Set viewport without clearing
+    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Render each blob separately (they will blend on top of the mesh)
+    for (const blob of this.blobRenderer.blobs) {
+      this.blobRenderer.renderBlob(blob, this.canvas.width, this.canvas.height);
+    }
   }
   
   /**
