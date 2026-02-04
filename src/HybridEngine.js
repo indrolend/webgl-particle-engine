@@ -8,6 +8,7 @@ import { TriangulationMorph } from './triangulation/TriangulationMorph.js';
 import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js';
 import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
 import { BlobRenderer, BlobPhysics } from './blob/index.js';
+import { ElasticMesh, MeshPhysics, MeshRenderer } from './mesh/index.js';
 
 // Constants
 const DEFAULT_STATIC_DISPLAY_DURATION = 500; // ms - how long to show static image before disintegration
@@ -43,13 +44,26 @@ export class HybridEngine extends ParticleEngine {
     // Triangulation-specific configuration
     this.triangulationConfig = {
       enabled: config.enableTriangulation !== false,
-      mode: config.triangulationMode || 'hybrid', // 'particles', 'triangulation', 'hybrid', or 'blob' (default: 'hybrid' for backward compatibility)
+      mode: config.triangulationMode || 'hybrid', // 'particles', 'triangulation', 'hybrid', 'blob', or 'mesh'
       keyPointMethod: config.keyPointMethod || 'grid', // 'grid' or 'feature'
       gridSize: config.gridSize || 8,
       featurePointCount: config.featurePointCount || 64,
       blendMode: config.blendMode || 'crossfade', // 'crossfade' or 'overlay'
       particleOpacity: config.particleOpacity !== undefined ? config.particleOpacity : 0.5,
       triangleOpacity: config.triangleOpacity !== undefined ? config.triangleOpacity : 0.5
+    };
+    
+    // Elastic mesh configuration
+    this.meshConfig = {
+      enabled: config.enableMesh || false,
+      gridDensity: config.meshGridDensity || 1.5, // vertices per 100px
+      springConstant: config.meshSpringConstant || 0.3,
+      damping: config.meshDamping || 0.95,
+      breakThreshold: config.meshBreakThreshold || 300,
+      alphaThreshold: config.meshAlphaThreshold || 0.5,
+      explosionStrength: config.meshExplosionStrength || 100,
+      showMesh: config.showMesh || false,
+      showVertices: config.showVertices || false
     };
     
     // Initialize triangulation components
@@ -69,6 +83,17 @@ export class HybridEngine extends ParticleEngine {
     // Initialize blob components
     this.blobRenderer = null;
     this.blobPhysics = null;
+    
+    // Initialize mesh components
+    this.elasticMesh = null;
+    this.meshPhysics = null;
+    this.meshRenderer = null;
+    this.meshTransition = {
+      isActive: false,
+      progress: 0,
+      duration: 0,
+      startTime: 0
+    };
     
     // Hybrid transition state for bidirectional support
     this.hybridTransitionState = null;
@@ -104,9 +129,14 @@ export class HybridEngine extends ParticleEngine {
       this.initializeBlobRendering();
     }
     
+    if (this.meshConfig.enabled || this.triangulationConfig.mode === 'mesh') {
+      this.initializeElasticMesh();
+    }
+    
     console.log('[HybridEngine] Hybrid engine initialized');
     console.log('[HybridEngine] Triangulation config:', this.triangulationConfig);
     console.log('[HybridEngine] Blob config:', this.blobConfig);
+    console.log('[HybridEngine] Mesh config:', this.meshConfig);
   }
 
   /**
@@ -165,12 +195,63 @@ export class HybridEngine extends ParticleEngine {
   }
 
   /**
+   * Initialize elastic mesh components
+   */
+  initializeElasticMesh() {
+    console.log('[HybridEngine] Initializing elastic mesh system...');
+    
+    try {
+      this.elasticMesh = new ElasticMesh({
+        width: this.canvas.width,
+        height: this.canvas.height,
+        gridDensity: this.meshConfig.gridDensity,
+        springConstant: this.meshConfig.springConstant,
+        damping: this.meshConfig.damping,
+        breakThreshold: this.meshConfig.breakThreshold,
+        alphaThreshold: this.meshConfig.alphaThreshold
+      });
+      
+      this.meshPhysics = new MeshPhysics(this.elasticMesh, {
+        springConstant: this.meshConfig.springConstant,
+        damping: this.meshConfig.damping,
+        breakThreshold: this.meshConfig.breakThreshold
+      });
+      
+      // Reuse WebGL context from renderer if available, otherwise create new one
+      let gl = this.renderer?.gl;
+      if (!gl) {
+        gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
+        if (!gl) {
+          throw new Error('WebGL not supported');
+        }
+      }
+      
+      this.meshRenderer = new MeshRenderer(gl, {
+        showMesh: this.meshConfig.showMesh,
+        showVertices: this.meshConfig.showVertices
+      });
+      
+      this.meshConfig.enabled = true;
+      console.log('[HybridEngine] Elastic mesh system initialized');
+    } catch (error) {
+      console.error('[HybridEngine] Failed to initialize elastic mesh:', error);
+      this.meshConfig.enabled = false;
+    }
+  }
+
+  /**
    * Set rendering mode
-   * @param {string} mode - 'particles', 'triangulation', 'hybrid', or 'blob'
+   * @param {string} mode - 'particles', 'triangulation', 'hybrid', 'blob', or 'mesh'
    */
   setRenderMode(mode) {
-    if (['particles', 'triangulation', 'hybrid', 'blob'].includes(mode)) {
+    if (['particles', 'triangulation', 'hybrid', 'blob', 'mesh'].includes(mode)) {
       this.triangulationConfig.mode = mode;
+      
+      // Initialize mesh system if switching to mesh mode
+      if (mode === 'mesh' && !this.meshConfig.enabled) {
+        this.initializeElasticMesh();
+      }
+      
       console.log(`[HybridEngine] Render mode set to: ${mode}`);
     } else {
       console.warn(`[HybridEngine] Invalid render mode: ${mode}`);
@@ -351,6 +432,11 @@ export class HybridEngine extends ParticleEngine {
       this.updateTriangulationTransition(currentTime);
     }
     
+    // Update mesh transition
+    if (this.meshTransition.isActive) {
+      this.updateMeshTransition(currentTime, deltaTime);
+    }
+    
     // Update particles (preset or default)
     if (this.presetManager.hasActivePreset()) {
       const particles = this.particleSystem.getParticles();
@@ -380,12 +466,101 @@ export class HybridEngine extends ParticleEngine {
   }
 
   /**
+   * Update mesh transition state
+   * @param {number} currentTime - Current timestamp
+   * @param {number} deltaTime - Time delta in seconds
+   */
+  updateMeshTransition(currentTime, deltaTime) {
+    if (!this.meshTransition.isActive) return;
+    
+    const { phase, phaseStart, phases, config } = this.meshTransition;
+    const elapsed = currentTime - phaseStart;
+    
+    // Handle different phases
+    switch (phase) {
+      case 'staticDisplay':
+        if (elapsed >= phases.staticDisplay) {
+          console.log('[HybridEngine] Mesh: Static display complete, starting explosion');
+          this.meshTransition.phase = 'explosion';
+          this.meshTransition.phaseStart = currentTime;
+          
+          // Trigger explosion
+          const intensity = config.explosionIntensity || this.meshConfig.explosionStrength || 100;
+          this.meshPhysics.applyExplosion(intensity, {
+            x: this.canvas.width / 2,
+            y: this.canvas.height / 2
+          });
+        }
+        break;
+        
+      case 'explosion':
+        // Update physics during explosion
+        this.meshPhysics.update(deltaTime);
+        
+        if (elapsed >= phases.explosion) {
+          console.log('[HybridEngine] Mesh: Explosion complete, settling');
+          this.meshTransition.phase = 'settle';
+          this.meshTransition.phaseStart = currentTime;
+        }
+        break;
+        
+      case 'settle':
+        // Continue physics, let springs stabilize
+        this.meshPhysics.update(deltaTime);
+        
+        if (elapsed >= phases.settle) {
+          console.log('[HybridEngine] Mesh: Settling complete, starting morph');
+          this.meshTransition.phase = 'morph';
+          this.meshTransition.phaseStart = currentTime;
+          
+          // Start morphing to target
+          this.meshPhysics.startMorphing(phases.morph);
+        }
+        break;
+        
+      case 'morph':
+        // Update physics with target attraction
+        this.meshPhysics.update(deltaTime);
+        
+        if (elapsed >= phases.morph) {
+          console.log('[HybridEngine] Mesh: Morphing complete, starting blend');
+          this.meshTransition.phase = 'blend';
+          this.meshTransition.phaseStart = currentTime;
+          this.meshPhysics.stopMorphing();
+        }
+        break;
+        
+      case 'blend':
+        // Continue physics and crossfade textures
+        this.meshPhysics.update(deltaTime);
+        this.meshTransition.progress = Math.min(elapsed / phases.blend, 1.0);
+        
+        if (elapsed >= phases.blend) {
+          console.log('[HybridEngine] Mesh: Transition complete');
+          this.meshTransition.isActive = false;
+          
+          if (this.meshTransition.onComplete) {
+            this.meshTransition.onComplete();
+          }
+        }
+        break;
+    }
+  }
+
+  /**
    * Hybrid rendering combining particles and triangulation
    */
   renderHybrid() {
     // If displaying static image, render it directly to WebGL canvas
     if (this.staticImageState.isDisplaying && this.staticImageState.image) {
       this.renderStaticImageToWebGL(this.staticImageState.image);
+      return;
+    }
+    
+    // If mesh transition is active, render mesh
+    if (this.meshTransition.isActive && this.elasticMesh && this.meshRenderer) {
+      const crossfadeProgress = this.meshTransition.phase === 'blend' ? this.meshTransition.progress : 0;
+      this.meshRenderer.render(this.elasticMesh, crossfadeProgress);
       return;
     }
     
@@ -553,6 +728,129 @@ export class HybridEngine extends ParticleEngine {
    */
   getTriangulationConfig() {
     return { ...this.triangulationConfig };
+  }
+
+  /**
+   * Main API method for hybrid mesh transitions
+   * Supports particle, blob, triangulation, and elastic mesh modes
+   * 
+   * @param {HTMLImageElement} source - Source image
+   * @param {HTMLImageElement} target - Target image
+   * @param {Object} options - Transition options
+   * @param {string} options.mode - Transition mode: 'particles', 'blob', 'triangulation', 'mesh', or 'hybrid'
+   * @param {number} options.explosionIntensity - Explosion strength (for particles and mesh)
+   * @param {number} options.recombinationDuration - Duration of recombination phase
+   * @param {number} options.blendDuration - Duration of final blend
+   * @param {Object} options.meshConfig - Mesh-specific configuration
+   * @returns {Promise<void>}
+   * 
+   * @example
+   * // Use elastic mesh transition
+   * await engine.hybridTransition(image1, image2, {
+   *   mode: 'mesh',
+   *   explosionIntensity: 150,
+   *   meshConfig: {
+   *     gridDensity: 2.0,
+   *     springConstant: 0.4,
+   *     showMesh: true
+   *   }
+   * });
+   */
+  async hybridTransition(source, target, options = {}) {
+    const mode = options.mode || this.triangulationConfig.mode || 'hybrid';
+    
+    console.log(`[HybridEngine] Starting hybrid transition in ${mode} mode`);
+    
+    // Handle mesh-specific transition
+    if (mode === 'mesh') {
+      return this.startMeshTransition(source, target, options);
+    }
+    
+    // Default to existing hybrid transition for other modes
+    return this.startHybridTransition(source, target, options);
+  }
+
+  /**
+   * Helper method to extract image data from an image
+   * @param {HTMLImageElement} image - Image to extract data from
+   * @returns {ImageData} - Image data
+   */
+  extractImageData(image) {
+    const canvas = document.createElement('canvas');
+    canvas.width = this.canvas.width;
+    canvas.height = this.canvas.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  }
+
+  /**
+   * Start elastic mesh transition
+   * @param {HTMLImageElement} sourceImage - Source image
+   * @param {HTMLImageElement} targetImage - Target image
+   * @param {Object} config - Transition configuration
+   * @returns {Promise<void>}
+   */
+  async startMeshTransition(sourceImage, targetImage, config = {}) {
+    console.log('[HybridEngine] Starting elastic mesh transition...');
+    
+    // Initialize mesh if not already initialized
+    if (!this.meshConfig.enabled) {
+      this.initializeElasticMesh();
+    }
+    
+    if (!this.elasticMesh || !this.meshPhysics || !this.meshRenderer) {
+      console.error('[HybridEngine] Mesh system not available');
+      return;
+    }
+    
+    // Apply mesh configuration overrides
+    if (config.meshConfig) {
+      this.meshConfig = { ...this.meshConfig, ...config.meshConfig };
+      this.elasticMesh.updateConfig(this.meshConfig);
+      this.meshPhysics.updateConfig(this.meshConfig);
+      this.meshRenderer.updateConfig(this.meshConfig);
+    }
+    
+    // Extract image data using helper method
+    const sourceImageData = this.extractImageData(sourceImage);
+    const targetImageData = this.extractImageData(targetImage);
+    
+    // Generate mesh from source image
+    const particleCount = config.particleCount || this.config.particleCount || 2000;
+    this.elasticMesh.generateMesh(sourceImageData, particleCount);
+    
+    // Set target positions from target image
+    this.elasticMesh.setTargetPositions(targetImageData);
+    
+    // Load textures for rendering
+    this.meshRenderer.loadTexture(sourceImage, 'source');
+    this.meshRenderer.loadTexture(targetImage, 'target');
+    
+    // Start mesh transition phases
+    const phases = {
+      staticDisplay: config.staticDisplayDuration || 500,
+      explosion: config.explosionTime || 800,
+      settle: config.settleDuration || 1000,
+      morph: config.recombinationDuration || 2500,
+      blend: config.blendDuration || 2000
+    };
+    
+    this.meshTransition = {
+      isActive: true,
+      progress: 0,
+      phase: 'staticDisplay',
+      phaseStart: performance.now(),
+      phases: phases,
+      config: config
+    };
+    
+    console.log('[HybridEngine] Mesh transition initialized, phases:', phases);
+    
+    // Return promise that resolves when transition completes
+    return new Promise(resolve => {
+      this.meshTransition.onComplete = resolve;
+    });
   }
 
   /**
