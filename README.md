@@ -4,7 +4,8 @@ A high-performance WebGL-based particle engine for creating seamless, animated t
 
 ## ✨ Core Features
 
-- **🕸️ Elastic Mesh Transitions (NEW!)**: Physics-driven spring mesh with alpha-aware connections that preserves image holes
+- **👽 Alien Transition System (NEW!)**: Unified liquid-like morphing with opacity masking, enhanced physics constraints, and ghost outlines
+- **🕸️ Elastic Mesh Transitions**: Physics-driven spring mesh with alpha-aware connections that preserves image holes
 - **🎨 Organic Blob Mesh Transitions**: Physics-driven blob meshes that split and merge like cell division/mitosis
 - **🧬 Metaball Rendering**: Smooth, organic surfaces generated from particle influence fields using marching squares
 - **💧 Surface Tension Physics**: Cohesion forces create liquid-like blob behavior with elasticity
@@ -55,7 +56,64 @@ http://localhost:8000/export-hybrid-video.html # Video export demo
 
 ## 📖 API Usage
 
-### Elastic Mesh Transitions (NEW!)
+### Alien Transition System (NEW!)
+
+The alien transition provides a unified, liquid-like morphing effect with advanced features perfect for text, icons, and images with transparency.
+
+```javascript
+import { HybridEngine } from './src/HybridEngine.js';
+
+// Create engine instance
+const canvas = document.getElementById('myCanvas');
+const engine = new HybridEngine(canvas, {
+    particleCount: 2000,
+    enableTriangulation: true,
+    enableBlobRendering: true
+});
+
+// Load source image
+await engine.setImage(sourceImage);
+engine.start();
+
+// Trigger alien transition
+await engine.alienTransition(sourceImage, targetImage, {
+    // Core alien parameters
+    alienIntensity: 0.7,              // Alien effect intensity (0-1)
+    opacityThreshold: 0.3,            // Alpha threshold for masking (0-1)
+    
+    // Physics
+    explosionIntensity: 120,          // Explosion force
+    explosionDirectional: true,       // Directional vs random explosion
+    liquidThickness: 0.5,             // Viscosity/chaos (0-1)
+    snapSpeed: 0.25,                  // Reformation speed (0.1-0.5)
+    
+    // Visual polish
+    ghostOutlineOpacity: 0.3,         // Ghost outline alpha (0-1)
+    preventBlackout: true,            // Scale blobs by alpha
+    
+    // Phase timing (ms)
+    staticDisplayDuration: 500,
+    disintegrateDuration: 1200,
+    alienMorphDuration: 2000,
+    reformDuration: 1800,
+    blendDuration: 1500
+});
+```
+
+**Key Features:**
+- **Opacity Masking**: Only creates particles/mesh for opaque regions (configurable threshold)
+- **Enhanced Physics**: Spring constraints prevent sharp spikes and folding artifacts
+- **Ghost Outline**: Faint source image overlay during morph preserves recognizability
+- **Liquid Motion**: Smooth, organic, alien-like deformation with wave effects
+- **Alpha-Aware Blobs**: Blob size scales with local alpha to prevent blackouts
+
+**Best Use Cases:**
+- Text logos with transparency
+- Icons and symbols with sharp edges
+- Photos with alpha channels
+- Any image where preserving shape is important
+
+### Elastic Mesh Transitions
 
 ```javascript
 import { HybridEngine } from './src/HybridEngine.js';
@@ -209,6 +267,23 @@ await engine.startHybridTransition(image1, image2, config);
 ```
 
 ### Parameter Guide
+
+#### Alien Transition Parameters
+
+| Parameter | Description | Range | Default |
+|-----------|-------------|-------|---------|
+| **alienIntensity** | Overall alien effect strength | 0-1 | 0.7 |
+| **opacityThreshold** | Alpha cutoff for particle creation | 0-1 | 0.3 |
+| **explosionIntensity** | Explosion force magnitude | 50-300 | 120 |
+| **explosionDirectional** | Use directional vs random explosion | boolean | true |
+| **liquidThickness** | Viscosity/chaos factor | 0-1 | 0.5 |
+| **snapSpeed** | Speed of reformation to target | 0.1-0.5 | 0.25 |
+| **ghostOutlineOpacity** | Ghost image overlay opacity | 0-1 | 0.3 |
+| **preventBlackout** | Scale blobs by local alpha | boolean | true |
+| **meshSpringLimit** | Max spring stretch before constraint | 1.5-4.0 | 2.5 |
+| **meshRestoringForce** | Spring restoration strength | 0.1-1.0 | 0.4 |
+
+#### Hybrid Transition Parameters
 
 | Parameter | Description | Range | Default |
 |-----------|-------------|-------|---------|
