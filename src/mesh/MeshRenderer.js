@@ -28,13 +28,52 @@ export class MeshRenderer {
     this.targetTexture = null;
     this.crossfadeProgress = 0;
     
-    // Cache 2D context for debug rendering (avoid repeated getContext calls)
+    // Create overlay canvas for debug rendering (separate from WebGL canvas)
+    this.overlayCanvas = null;
     this.ctx2d = null;
+    this.initDebugOverlay();
 
     this.initShaders();
     this.initBuffers();
     
     console.log('[MeshRenderer] Initialized');
+  }
+
+  /**
+   * Initialize debug overlay canvas
+   */
+  initDebugOverlay() {
+    const canvas = this.gl.canvas;
+    
+    // Create overlay canvas element
+    this.overlayCanvas = document.createElement('canvas');
+    this.overlayCanvas.width = canvas.width;
+    this.overlayCanvas.height = canvas.height;
+    this.overlayCanvas.style.position = 'absolute';
+    this.overlayCanvas.style.left = '0';
+    this.overlayCanvas.style.top = '0';
+    this.overlayCanvas.style.pointerEvents = 'none'; // Don't interfere with mouse events
+    this.overlayCanvas.style.zIndex = '1000';
+    
+    // Get 2D context for debug rendering
+    this.ctx2d = this.overlayCanvas.getContext('2d');
+    
+    // Wrap the WebGL canvas in a container if it's not already wrapped
+    let container = canvas.parentElement;
+    if (!container.classList.contains('canvas-container')) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'canvas-container';
+      wrapper.style.position = 'relative';
+      wrapper.style.display = 'inline-block';
+      canvas.parentNode.insertBefore(wrapper, canvas);
+      wrapper.appendChild(canvas);
+      container = wrapper;
+    }
+    
+    // Add overlay to the same container
+    container.appendChild(this.overlayCanvas);
+    
+    console.log('[MeshRenderer] Debug overlay canvas created');
   }
 
   /**
@@ -194,7 +233,12 @@ export class MeshRenderer {
       this.renderTexturedMesh(mesh);
     }
 
-    // Render debug overlays
+    // Clear overlay canvas before drawing debug overlays
+    if (this.config.showMesh || this.config.showVertices) {
+      this.ctx2d.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+    }
+
+    // Render debug overlays on separate canvas
     if (this.config.showMesh) {
       this.renderMeshLines(mesh);
     }
@@ -312,12 +356,6 @@ export class MeshRenderer {
    * @param {ElasticMesh} mesh - The mesh to render
    */
   renderMeshLines(mesh) {
-    // Use cached 2D context for debug rendering
-    if (!this.ctx2d) {
-      const canvas = this.gl.canvas;
-      this.ctx2d = canvas.getContext('2d', { willReadFrequently: true });
-    }
-    
     const ctx = this.ctx2d;
     
     ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
@@ -347,12 +385,6 @@ export class MeshRenderer {
    * @param {ElasticMesh} mesh - The mesh to render
    */
   renderVertices(mesh) {
-    // Use cached 2D context for debug rendering
-    if (!this.ctx2d) {
-      const canvas = this.gl.canvas;
-      this.ctx2d = canvas.getContext('2d', { willReadFrequently: true });
-    }
-    
     const ctx = this.ctx2d;
     
     ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
@@ -384,6 +416,11 @@ export class MeshRenderer {
     if (this.texCoordBuffer) gl.deleteBuffer(this.texCoordBuffer);
     if (this.colorBuffer) gl.deleteBuffer(this.colorBuffer);
     if (this.program) gl.deleteProgram(this.program);
+    
+    // Remove overlay canvas
+    if (this.overlayCanvas && this.overlayCanvas.parentNode) {
+      this.overlayCanvas.parentNode.removeChild(this.overlayCanvas);
+    }
     
     console.log('[MeshRenderer] Disposed');
   }
