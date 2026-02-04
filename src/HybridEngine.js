@@ -14,6 +14,7 @@ import { ElasticMesh, MeshPhysics, MeshRenderer } from './mesh/index.js';
 // Constants
 const DEFAULT_STATIC_DISPLAY_DURATION = 500; // ms - how long to show static image before disintegration
 const DEFAULT_DISINTEGRATION_DURATION = 1000; // ms - how long the disintegration effect takes
+const GHOST_EFFECT_MULTIPLIER = 0.5; // Further reduce alpha for subtle ghost outline
 
 export class HybridEngine extends ParticleEngine {
   constructor(canvas, config = {}) {
@@ -738,7 +739,7 @@ export class HybridEngine extends ParticleEngine {
       const gl = this.renderer.gl;
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      this.renderer.renderImage(alpha * 0.5); // Reduce further for ghost effect
+      this.renderer.renderImage(alpha * GHOST_EFFECT_MULTIPLIER); // Reduce for subtle ghost effect
       
       // Restore previous image if different
       if (previousImage !== image) {

@@ -18,6 +18,20 @@
  */
 import { Preset } from './Preset.js';
 
+// Physics constants
+const MIN_SPEED_MULTIPLIER = 0.5;
+const SPEED_RANDOMNESS = 0.5;
+const WAVE_PHASE_SCALE = 0.01;
+const ROTATION_SPEED_MULTIPLIER = 0.05;
+const WAVE_FREQUENCY_MULTIPLIER = 2;
+const WAVE_AMPLITUDE = 5;
+const VISCOSITY_DAMPING_FACTOR = 0.3;
+const COLOR_TRANSITION_SPEED = 0.1;
+const PARTICLE_FADE_RATE = 0.05;
+const DAMPING_DISINTEGRATE = 0.98;
+const DAMPING_REFORM = 0.92;
+const FINAL_SNAP_SPEED = 0.1;
+
 export class AlienTransitionPreset extends Preset {
   constructor(config = {}) {
     super(
@@ -188,9 +202,9 @@ export class AlienTransitionPreset extends Preset {
         const angle = Math.atan2(dy, dx);
         
         // Add some randomness but maintain general direction
-        const randomOffset = (Math.random() - 0.5) * 0.5;
+        const randomOffset = (Math.random() - 0.5) * SPEED_RANDOMNESS;
         const finalAngle = angle + randomOffset;
-        const speed = (0.5 + Math.random() * 0.5) * explosionIntensity * (particle.localAlpha || 1.0);
+        const speed = (MIN_SPEED_MULTIPLIER + Math.random() * SPEED_RANDOMNESS) * explosionIntensity * (particle.localAlpha || 1.0);
         
         particle.vx = Math.cos(finalAngle) * speed;
         particle.vy = Math.sin(finalAngle) * speed;
@@ -219,11 +233,11 @@ export class AlienTransitionPreset extends Preset {
       if (particle.masked) continue;
       
       // Add wave-like motion
-      const wavePhase = (particle.x + particle.y) * 0.01;
+      const wavePhase = (particle.x + particle.y) * WAVE_PHASE_SCALE;
       particle.waveOffset = wavePhase;
       
       // Add rotation tendency for alien effect
-      particle.rotationSpeed = (Math.random() - 0.5) * 0.05 * this.config.alienIntensity;
+      particle.rotationSpeed = (Math.random() - 0.5) * ROTATION_SPEED_MULTIPLIER * this.config.alienIntensity;
     }
   }
 
@@ -370,14 +384,12 @@ export class AlienTransitionPreset extends Preset {
    * Update particles during disintegration phase
    */
   updateDisintegrate(particles, deltaTime) {
-    const damping = 0.98;
-    
     for (const particle of particles) {
       if (particle.masked) continue;
       
       // Apply damping
-      particle.vx *= damping;
-      particle.vy *= damping;
+      particle.vx *= DAMPING_DISINTEGRATE;
+      particle.vy *= DAMPING_DISINTEGRATE;
       
       // Update positions
       particle.x += particle.vx * deltaTime * 60;
@@ -396,7 +408,7 @@ export class AlienTransitionPreset extends Preset {
       if (particle.masked) continue;
       
       // Wave motion for liquid effect
-      const wave = Math.sin(time * 2 + particle.waveOffset) * alienIntensity * 5;
+      const wave = Math.sin(time * WAVE_FREQUENCY_MULTIPLIER + particle.waveOffset) * alienIntensity * WAVE_AMPLITUDE;
       particle.vx += wave * deltaTime;
       
       // Rotation motion
@@ -409,7 +421,7 @@ export class AlienTransitionPreset extends Preset {
       }
       
       // Viscosity damping (liquid thickness)
-      const viscosity = 1.0 - liquidThickness * 0.3;
+      const viscosity = 1.0 - liquidThickness * VISCOSITY_DAMPING_FACTOR;
       particle.vx *= viscosity;
       particle.vy *= viscosity;
       
@@ -452,8 +464,8 @@ export class AlienTransitionPreset extends Preset {
       }
       
       // Damping
-      particle.vx *= 0.92;
-      particle.vy *= 0.92;
+      particle.vx *= DAMPING_REFORM;
+      particle.vy *= DAMPING_REFORM;
       
       // Update positions
       particle.x += particle.vx * deltaTime * 60;
@@ -461,10 +473,9 @@ export class AlienTransitionPreset extends Preset {
       
       // Color transition
       if (particle.targetR !== undefined) {
-        const colorSpeed = 0.1;
-        particle.r += (particle.targetR - particle.r) * colorSpeed;
-        particle.g += (particle.targetG - particle.g) * colorSpeed;
-        particle.b += (particle.targetB - particle.b) * colorSpeed;
+        particle.r += (particle.targetR - particle.r) * COLOR_TRANSITION_SPEED;
+        particle.g += (particle.targetG - particle.g) * COLOR_TRANSITION_SPEED;
+        particle.b += (particle.targetB - particle.b) * COLOR_TRANSITION_SPEED;
       }
     }
   }
@@ -473,8 +484,6 @@ export class AlienTransitionPreset extends Preset {
    * Update particles during blend phase
    */
   updateBlend(particles, deltaTime) {
-    const fadeRate = 0.05;
-    
     for (const particle of particles) {
       if (particle.masked) continue;
       
@@ -482,13 +491,13 @@ export class AlienTransitionPreset extends Preset {
       if (particle.targetX) {
         const dx = particle.targetX - particle.x;
         const dy = particle.targetY - particle.y;
-        particle.x += dx * 0.1;
-        particle.y += dy * 0.1;
+        particle.x += dx * FINAL_SNAP_SPEED;
+        particle.y += dy * FINAL_SNAP_SPEED;
       }
       
       // Fade out particle alpha for blend
       if (particle.alpha > 0) {
-        particle.alpha = Math.max(0, particle.alpha - fadeRate);
+        particle.alpha = Math.max(0, particle.alpha - PARTICLE_FADE_RATE);
       }
       
       // Final color convergence
