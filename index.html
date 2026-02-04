@@ -415,44 +415,10 @@
                 </div>
             </div>
 
-            <!-- Rendering Mode Selection -->
-            <div class="controls-section">
-                <h3>🎨 Rendering Mode</h3>
-                <div class="info-box">
-                    Choose how particles are rendered: as individual points, organic blob mesh, triangulation morphing, or hybrid combination.
-                </div>
-                <div class="button-group">
-                    <button id="modeParticles" class="mode-btn">Particles</button>
-                    <button id="modeBlob" class="mode-btn">Blob Mesh</button>
-                    <button id="modeTriangulation" class="mode-btn">Triangulation</button>
-                    <button id="modeHybrid" class="mode-btn active">Hybrid</button>
-                </div>
-                <div style="margin-top: 15px; padding: 15px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%); border-radius: 10px; border: 2px solid rgba(102, 126, 234, 0.3);">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                        <span style="font-size: 24px;">🧬</span>
-                        <strong style="color: #00d4ff; font-size: 16px;">Want to see organic blob rendering in action?</strong>
-                    </div>
-                    <p style="margin: 0 0 10px 34px; font-size: 14px; color: #ccc;">
-                        The Blob Mesh mode works with image transitions, but for the <strong>best demonstration</strong> of organic blob behavior, mitosis, and merging effects:
-                    </p>
-                    <a href="blob-demo.html" style="display: inline-block; margin-left: 34px; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); transition: all 0.3s ease;">
-                        🚀 Launch Interactive Blob Demo
-                    </a>
-                </div>
-            </div>
-
             <!-- Transition Controls -->
             <div class="controls-section">
-                <h3>⚙️ Hybrid Transition Parameters</h3>
+                <h3>🧬 Alien Transition Parameters</h3>
                 
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Total Duration (ms)</span>
-                        <span class="slider-value" id="totalDurationValue">6700</span>
-                    </div>
-                    <input type="range" id="totalDuration" min="3000" max="12000" step="100" value="6700">
-                </div>
-
                 <div class="slider-group">
                     <div class="slider-label">
                         <span>Particle Density</span>
@@ -463,7 +429,7 @@
 
                 <div class="slider-group">
                     <div class="slider-label">
-                        <span>Explosion Weight</span>
+                        <span>Explosion Intensity</span>
                         <span class="slider-value" id="explosionWeightValue">150</span>
                     </div>
                     <input type="range" id="explosionWeight" min="50" max="300" step="10" value="150">
@@ -471,34 +437,10 @@
 
                 <div class="slider-group">
                     <div class="slider-label">
-                        <span>Recombination Weight</span>
+                        <span>Snap-back Duration (ms)</span>
                         <span class="slider-value" id="recombinationWeightValue">2500</span>
                     </div>
                     <input type="range" id="recombinationWeight" min="1000" max="4000" step="100" value="2500">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Blend Weight</span>
-                        <span class="slider-value" id="blendWeightValue">2000</span>
-                    </div>
-                    <input type="range" id="blendWeight" min="500" max="3000" step="100" value="2000">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Liquid Thickness (Chaos)</span>
-                        <span class="slider-value" id="liquidThicknessValue">0.3</span>
-                    </div>
-                    <input type="range" id="liquidThickness" min="0" max="1" step="0.1" value="0.3">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Watercolor Intensity (Vacuum Strength)</span>
-                        <span class="slider-value" id="watercolorIntensityValue">0.15</span>
-                    </div>
-                    <input type="range" id="watercolorIntensity" min="0.05" max="0.5" step="0.05" value="0.15">
                 </div>
             </div>
         </div>
@@ -519,9 +461,6 @@
     <script type="module">
         import { HybridEngine } from './src/HybridEngine.js';
 
-        // Constants
-        const DEFAULT_MODE = 'hybrid';
-
         const canvas = document.getElementById('canvas');
         const status = document.getElementById('status');
         const image1Input = document.getElementById('image1Input');
@@ -532,132 +471,31 @@
         const transitionBtn = document.getElementById('transitionBtn');
         const exportBtn = document.getElementById('exportBtn');
 
-        // Mode buttons
-        const modeParticles = document.getElementById('modeParticles');
-        const modeBlob = document.getElementById('modeBlob');
-        const modeTriangulation = document.getElementById('modeTriangulation');
-        const modeHybrid = document.getElementById('modeHybrid');
-        
-        // Blob toggle button
-        const blobToggleBtn = document.getElementById('blobToggleBtn');
-
         // Sliders
-        const totalDuration = document.getElementById('totalDuration');
-        const totalDurationValue = document.getElementById('totalDurationValue');
         const particleDensity = document.getElementById('particleDensity');
         const particleDensityValue = document.getElementById('particleDensityValue');
         const explosionWeight = document.getElementById('explosionWeight');
         const explosionWeightValue = document.getElementById('explosionWeightValue');
         const recombinationWeight = document.getElementById('recombinationWeight');
         const recombinationWeightValue = document.getElementById('recombinationWeightValue');
-        const blendWeight = document.getElementById('blendWeight');
-        const blendWeightValue = document.getElementById('blendWeightValue');
-        const liquidThickness = document.getElementById('liquidThickness');
-        const liquidThicknessValue = document.getElementById('liquidThicknessValue');
-        const watercolorIntensity = document.getElementById('watercolorIntensity');
-        const watercolorIntensityValue = document.getElementById('watercolorIntensityValue');
 
         let engine = null;
         let image1 = null;
         let image2 = null;
-        let currentMode = DEFAULT_MODE; // Will be synced with engine after initialization
-        let previousMode = DEFAULT_MODE; // Track previous mode for toggling
-        let isBlobModeActive = false;
 
-        // Initialize engine
+        // Initialize engine with mesh enabled
         engine = new HybridEngine(canvas, {
             particleCount: 2000,
             speed: 1.0,
-            enableTriangulation: true,
-            triangulationMode: DEFAULT_MODE,  // Default mode for backward compatibility
-            gridSize: 8,
-            enableBlobRendering: true,    // Enable blob rendering capability
+            enableTriangulation: false,
+            enableBlobRendering: true,
             blobInfluenceRadius: 80,
             surfaceTension: 0.5,
-            mitosisFactor: 0.5
+            enableMesh: true,
+            meshGridDensity: 1.5
         });
-        
-        // Sync state with engine's initial mode
-        currentMode = DEFAULT_MODE; // Engine is initialized with DEFAULT_MODE
-        previousMode = DEFAULT_MODE;
-        isBlobModeActive = false;
-
-        // Mode switching handlers
-        function setRenderMode(mode) {
-            if (engine) {
-                try {
-                    engine.setRenderMode(mode);
-                    // Update currentMode only after successful mode change
-                    currentMode = mode;
-                    
-                    // Update button states
-                    [modeParticles, modeBlob, modeTriangulation, modeHybrid].forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    
-                    if (mode === 'particles') modeParticles.classList.add('active');
-                    else if (mode === 'blob') modeBlob.classList.add('active');
-                    else if (mode === 'triangulation') modeTriangulation.classList.add('active');
-                    else if (mode === 'hybrid') modeHybrid.classList.add('active');
-                    
-                    // Update blob toggle button state
-                    isBlobModeActive = (mode === 'blob');
-                    updateBlobToggleButton();
-                    
-                    // Provide specific feedback for blob mode
-                    if (mode === 'blob') {
-                        status.textContent = `✨ Blob Mesh mode activated! Watch particles form organic, liquid-like blobs.`;
-                    } else {
-                        status.textContent = `Rendering mode set to: ${mode}`;
-                    }
-                } catch (error) {
-                    console.error('Failed to set render mode:', error);
-                    status.textContent = `Error setting render mode: ${error.message}`;
-                }
-            }
-        }
-
-        function updateBlobToggleButton() {
-            if (isBlobModeActive) {
-                blobToggleBtn.classList.add('active');
-                blobToggleBtn.querySelector('.blob-text').textContent = 'Disable Blob Mesh';
-            } else {
-                blobToggleBtn.classList.remove('active');
-                blobToggleBtn.querySelector('.blob-text').textContent = 'Enable Blob Mesh';
-            }
-        }
-
-        // Blob toggle button handler
-        blobToggleBtn.addEventListener('click', () => {
-            if (engine) {
-                if (isBlobModeActive) {
-                    // Disable blob mode - return to previous mode
-                    setRenderMode(previousMode);
-                    status.textContent = `Blob Mesh disabled. Returned to ${previousMode} mode.`;
-                } else {
-                    // Enable blob mode - save current mode as previous (only if not already blob)
-                    if (currentMode !== 'blob') {
-                        previousMode = currentMode;
-                    }
-                    setRenderMode('blob');
-                    status.textContent = '🧬 Blob Mesh enabled! Particles now render as organic blobs.';
-                }
-            }
-        });
-
-        modeParticles.addEventListener('click', () => setRenderMode('particles'));
-        modeBlob.addEventListener('click', () => setRenderMode('blob'));
-        modeTriangulation.addEventListener('click', () => setRenderMode('triangulation'));
-        modeHybrid.addEventListener('click', () => setRenderMode('hybrid'));
-
-        // Set initial status message to show current mode
-        status.textContent = 'Rendering mode: Hybrid (default) - Upload two images to begin';
 
         // Slider event listeners
-        totalDuration.addEventListener('input', () => {
-            totalDurationValue.textContent = totalDuration.value;
-        });
-
         particleDensity.addEventListener('input', () => {
             particleDensityValue.textContent = particleDensity.value;
             if (engine) {
@@ -671,18 +509,6 @@
 
         recombinationWeight.addEventListener('input', () => {
             recombinationWeightValue.textContent = recombinationWeight.value;
-        });
-
-        blendWeight.addEventListener('input', () => {
-            blendWeightValue.textContent = blendWeight.value;
-        });
-
-        liquidThickness.addEventListener('input', () => {
-            liquidThicknessValue.textContent = liquidThickness.value;
-        });
-
-        watercolorIntensity.addEventListener('input', () => {
-            watercolorIntensityValue.textContent = watercolorIntensity.value;
         });
 
         // Image upload handlers
@@ -748,26 +574,24 @@
 
         // Transition button
         transitionBtn.addEventListener('click', async () => {
+            if (!image1 || !image2) {
+                status.textContent = '⚠️ Please upload both source and target images';
+                return;
+            }
+            
             try {
-                status.textContent = 'Starting hybrid transition...';
+                status.textContent = '🚀 Starting alien transition...';
                 transitionBtn.disabled = true;
                 
-                const config = {
-                    staticDisplayDuration: 500,
-                    disintegrationDuration: 1000,
-                    explosionTime: 800,
+                await engine.hybridTransition(image1, image2, {
                     explosionIntensity: parseInt(explosionWeight.value),
+                    explosionTime: 800,
                     recombinationDuration: parseInt(recombinationWeight.value),
-                    recombinationChaos: parseFloat(liquidThickness.value),
-                    vacuumStrength: parseFloat(watercolorIntensity.value),
-                    blendDuration: parseInt(blendWeight.value),
-                    finalStaticDuration: 500
-                };
-                
-                await engine.startHybridTransition(image1, image2, config);
+                    particleCount: parseInt(particleDensity.value)
+                });
                 
                 transitionBtn.disabled = false;
-                status.textContent = 'Transition complete! Click again to replay.';
+                status.textContent = '✅ Transition complete! Click again to replay.';
             } catch (error) {
                 console.error('Transition error:', error);
                 status.textContent = `Error: ${error.message}`;
