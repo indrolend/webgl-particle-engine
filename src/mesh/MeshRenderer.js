@@ -224,8 +224,8 @@ export class MeshRenderer {
     const gl = this.gl;
     this.crossfadeProgress = crossfadeProgress;
 
-    // Clear canvas
-    gl.clearColor(1, 1, 1, 1);
+    // Clear canvas to transparent black
+    gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Render textured triangles

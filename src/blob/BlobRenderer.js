@@ -195,6 +195,7 @@ export class BlobRenderer {
   calculateFieldValue(x, y, particles) {
     let fieldValue = 0;
     const radiusSq = this.config.influenceRadius * this.config.influenceRadius;
+    const maxFieldValue = 3.0; // PREVENT OVERSATURATION
     
     for (const particle of particles) {
       const dx = x - particle.x;
@@ -202,9 +203,14 @@ export class BlobRenderer {
       const distSq = dx * dx + dy * dy;
       
       if (distSq < radiusSq && distSq > 0.1) {
-        // Metaball formula: influence decreases with distance
+        // Metaball formula with clamping
         const influence = radiusSq / distSq;
         fieldValue += influence * (particle.size || 1.0);
+        
+        // CLAMP TO PREVENT BLACKOUT
+        if (fieldValue >= maxFieldValue) {
+          return maxFieldValue;
+        }
       }
     }
     
