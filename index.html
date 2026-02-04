@@ -501,6 +501,71 @@
                     <input type="range" id="watercolorIntensity" min="0.05" max="0.5" step="0.05" value="0.15">
                 </div>
             </div>
+
+            <!-- Alien Transition Controls -->
+            <div class="controls-section" id="alienTransitionSection" style="border: 3px solid rgba(138, 43, 226, 0.5); border-radius: 15px; padding: 20px; background: linear-gradient(135deg, rgba(138, 43, 226, 0.1) 0%, rgba(75, 0, 130, 0.1) 100%);">
+                <h3 style="color: #ba68c8; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">👽</span>
+                    Alien Transition (NEW!)
+                </h3>
+                <div class="info-box" style="background: rgba(138, 43, 226, 0.15); border-color: rgba(138, 43, 226, 0.4);">
+                    Liquid alien-like morphing with opacity masking, enhanced physics, and ghost outlines. Perfect for text, icons, and images with transparency.
+                </div>
+                
+                <div class="button-group" style="margin-bottom: 20px;">
+                    <button id="alienTransitionBtn" class="secondary" disabled style="background: linear-gradient(135deg, #ba68c8 0%, #8a2be2 100%); border-color: #ba68c8; font-size: 16px; padding: 14px 28px;">
+                        🚀 Start Alien Transition
+                    </button>
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>👽 Alien Intensity</span>
+                        <span class="slider-value" id="alienIntensityValue">0.7</span>
+                    </div>
+                    <input type="range" id="alienIntensity" min="0" max="1" step="0.1" value="0.7">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>🎭 Opacity Threshold</span>
+                        <span class="slider-value" id="opacityThresholdValue">0.3</span>
+                    </div>
+                    <input type="range" id="opacityThreshold" min="0" max="1" step="0.05" value="0.3">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>💥 Explosion Intensity</span>
+                        <span class="slider-value" id="alienExplosionValue">120</span>
+                    </div>
+                    <input type="range" id="alienExplosion" min="50" max="300" step="10" value="120">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>👻 Ghost Outline Opacity</span>
+                        <span class="slider-value" id="ghostOutlineValue">0.3</span>
+                    </div>
+                    <input type="range" id="ghostOutline" min="0" max="1" step="0.05" value="0.3">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>💧 Liquid Thickness</span>
+                        <span class="slider-value" id="alienLiquidValue">0.5</span>
+                    </div>
+                    <input type="range" id="alienLiquid" min="0" max="1" step="0.1" value="0.5">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>⚡ Snap Speed</span>
+                        <span class="slider-value" id="snapSpeedValue">0.25</span>
+                    </div>
+                    <input type="range" id="snapSpeed" min="0.1" max="0.5" step="0.05" value="0.25">
+                </div>
+            </div>
         </div>
 
         <div class="status" id="status">Upload two images to begin</div>
@@ -556,6 +621,21 @@
         const liquidThicknessValue = document.getElementById('liquidThicknessValue');
         const watercolorIntensity = document.getElementById('watercolorIntensity');
         const watercolorIntensityValue = document.getElementById('watercolorIntensityValue');
+
+        // Alien transition controls
+        const alienTransitionBtn = document.getElementById('alienTransitionBtn');
+        const alienIntensity = document.getElementById('alienIntensity');
+        const alienIntensityValue = document.getElementById('alienIntensityValue');
+        const opacityThreshold = document.getElementById('opacityThreshold');
+        const opacityThresholdValue = document.getElementById('opacityThresholdValue');
+        const alienExplosion = document.getElementById('alienExplosion');
+        const alienExplosionValue = document.getElementById('alienExplosionValue');
+        const ghostOutline = document.getElementById('ghostOutline');
+        const ghostOutlineValue = document.getElementById('ghostOutlineValue');
+        const alienLiquid = document.getElementById('alienLiquid');
+        const alienLiquidValue = document.getElementById('alienLiquidValue');
+        const snapSpeed = document.getElementById('snapSpeed');
+        const snapSpeedValue = document.getElementById('snapSpeedValue');
 
         let engine = null;
         let image1 = null;
@@ -685,6 +765,31 @@
             watercolorIntensityValue.textContent = watercolorIntensity.value;
         });
 
+        // Alien transition slider listeners
+        alienIntensity.addEventListener('input', () => {
+            alienIntensityValue.textContent = alienIntensity.value;
+        });
+
+        opacityThreshold.addEventListener('input', () => {
+            opacityThresholdValue.textContent = opacityThreshold.value;
+        });
+
+        alienExplosion.addEventListener('input', () => {
+            alienExplosionValue.textContent = alienExplosion.value;
+        });
+
+        ghostOutline.addEventListener('input', () => {
+            ghostOutlineValue.textContent = ghostOutline.value;
+        });
+
+        alienLiquid.addEventListener('input', () => {
+            alienLiquidValue.textContent = alienLiquid.value;
+        });
+
+        snapSpeed.addEventListener('input', () => {
+            snapSpeedValue.textContent = snapSpeed.value;
+        });
+
         // Image upload handlers
         image1Input.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -737,8 +842,9 @@
                 engine.start();
                 
                 transitionBtn.disabled = false;
+                alienTransitionBtn.disabled = false;
                 exportBtn.disabled = false;
-                status.textContent = 'Ready! Click Start Transition to begin the animation.';
+                status.textContent = 'Ready! Choose a transition type to begin the animation.';
             } catch (error) {
                 console.error('Initialization error:', error);
                 status.textContent = `Error: ${error.message}`;
@@ -771,6 +877,38 @@
             } catch (error) {
                 console.error('Transition error:', error);
                 status.textContent = `Error: ${error.message}`;
+                transitionBtn.disabled = false;
+            }
+        });
+
+        // Alien transition button
+        alienTransitionBtn.addEventListener('click', async () => {
+            try {
+                status.textContent = '👽 Starting alien transition...';
+                alienTransitionBtn.disabled = true;
+                transitionBtn.disabled = true;
+                
+                const config = {
+                    alienIntensity: parseFloat(alienIntensity.value),
+                    opacityThreshold: parseFloat(opacityThreshold.value),
+                    explosionIntensity: parseInt(alienExplosion.value),
+                    ghostOutlineOpacity: parseFloat(ghostOutline.value),
+                    liquidThickness: parseFloat(alienLiquid.value),
+                    snapSpeed: parseFloat(snapSpeed.value),
+                    explosionDirectional: true,
+                    preventBlackout: true
+                };
+                
+                console.log('[Demo] Starting alien transition with config:', config);
+                await engine.alienTransition(image1, image2, config);
+                
+                alienTransitionBtn.disabled = false;
+                transitionBtn.disabled = false;
+                status.textContent = '👽 Alien transition complete! Click again to replay.';
+            } catch (error) {
+                console.error('Alien transition error:', error);
+                status.textContent = `Error: ${error.message}`;
+                alienTransitionBtn.disabled = false;
                 transitionBtn.disabled = false;
             }
         });
