@@ -387,10 +387,9 @@ export class BlobRenderer {
     // Detect separate blobs
     this.blobs = this.detectBlobs(particles);
     
-    // Clear canvas
+    // Set viewport but don't clear - we share the WebGL context with main renderer
+    // The main renderer clears to white, we render on top of it
     this.gl.viewport(0, 0, canvasWidth, canvasHeight);
-    this.gl.clearColor(0, 0, 0, 0); // Transparent background
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     
     // Render each blob separately
     for (const blob of this.blobs) {

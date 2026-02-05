@@ -1,7 +1,9 @@
+# Cloudflare Pages configuration for static site deployment
 name = "webgl-particle-engine"
-compatibility_date = "2026-01-12"
+compatibility_date = "2026-02-05"
 
+# This is a static site - deploy all files from root as assets
 [assets]
 directory = "."
-# Exclude large demo files that exceed Cloudflare Workers asset size limits
-exclude = ["*.webm", "*.mp4", "cover art.jpeg", "node_modules", ".git", "archived", "*.backup", "*.old"]
+# Exclude git and config files
+exclude = [".git", ".github", "node_modules", "package-lock.json"]

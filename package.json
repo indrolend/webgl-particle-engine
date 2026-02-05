@@ -1,26 +1,25 @@
 {
-  "name": "webgl-particle-engine",
-  "version": "2.0.0",
-  "description": "High-performance WebGL engine for animated hybrid particle transitions between images and pages",
+  "name": "alien-jelly-mesh-transition",
+  "version": "3.0.0",
+  "description": "WebGL-based engine for organic, liquid-like transitions using elastic mesh physics and blob rendering",
   "type": "module",
-  "main": "src/HybridPageTransitionAPI.js",
+  "main": "src/AlienTransitionEngine.js",
   "scripts": {
-    "build": "echo 'Note: build.sh is deprecated for Cloudflare deployment. Deploy directly from root with: wrangler pages deploy .' && bash build.sh",
-    "serve": "python3 -m http.server 8000"
+    "serve": "python3 -m http.server 8000",
+    "deploy": "npx wrangler pages deploy . --project-name=webgl-particle-engine"
   },
   "keywords": [
     "webgl",
-    "particles",
+    "mesh",
     "transitions",
     "animation",
-    "hybrid",
-    "image-morphing",
-    "page-transitions"
+    "elastic",
+    "jelly",
+    "blob",
+    "liquid",
+    "organic"
   ],
-  "dependencies": {
-    "proton-engine": "^5.0.3",
-    "html2canvas": "^1.4.1"
-  },
+  "dependencies": {},
   "devDependencies": {},
   "repository": {
     "type": "git",

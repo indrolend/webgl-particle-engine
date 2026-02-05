@@ -1,12 +1,22 @@
-# Cloudflare Pages Headers Configuration
-# Enable Cross-Origin Isolation for FFmpeg.wasm support
-# Required for SharedArrayBuffer which FFmpeg.wasm needs for MP4 conversion
-
-/export-hybrid-video.html
-  Cross-Origin-Embedder-Policy: require-corp
-  Cross-Origin-Opener-Policy: same-origin
-
-# Also apply to the root export page if accessed directly
-/export-hybrid-video
-  Cross-Origin-Embedder-Policy: require-corp
-  Cross-Origin-Opener-Policy: same-origin
+# Headers for static assets
+/*
+  # Enable CORS for WebGL resources
+  Access-Control-Allow-Origin: *
+  
+# JavaScript modules need correct MIME type
+/*.js
+  Content-Type: application/javascript; charset=utf-8
+  
+# Allow ES modules
+/src/*.js
+  Content-Type: application/javascript; charset=utf-8
+  
+# Cache static assets
+/*.png
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.jpeg
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
