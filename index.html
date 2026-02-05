@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebGL Hybrid Particle Transition Engine</title>
+    <title>Alien Jelly Mesh Transition Engine</title>
     <style>
         * {
             margin: 0;
@@ -12,7 +12,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: #ffffff;
             min-height: 100vh;
@@ -25,7 +25,6 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            max-width: 900px;
         }
 
         h1 {
@@ -40,14 +39,13 @@
         .tagline {
             font-size: 1.1rem;
             color: #aaa;
-            margin-bottom: 20px;
         }
 
         .main-container {
             background: rgba(30, 30, 45, 0.9);
             border-radius: 20px;
             padding: 30px;
-            max-width: 1200px;
+            max-width: 1000px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
         }
@@ -58,37 +56,72 @@
             display: block;
             margin: 0 auto 30px;
             background: #000;
+            width: 800px;
+            height: 600px;
         }
 
-        .controls-panel {
+        .controls {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 20px;
         }
 
-        .controls-section {
-            margin-bottom: 25px;
+        .control-group {
+            margin-bottom: 20px;
         }
 
-        .controls-section h3 {
+        .control-group h3 {
             color: #00d4ff;
             margin-bottom: 15px;
             font-size: 1.2rem;
-            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
-            padding-bottom: 8px;
         }
 
-        .button-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
+        .file-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
-        button, .file-button {
-            padding: 12px 24px;
-            font-size: 14px;
+        .file-input-wrapper {
+            position: relative;
+        }
+
+        .file-input-wrapper label {
+            display: block;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.2);
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-wrapper label:hover {
+            background: rgba(102, 126, 234, 0.3);
+            border-color: #764ba2;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+
+        .file-preview {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .file-preview.loaded {
+            color: #00ff88;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
             font-weight: 600;
             border: 2px solid #667eea;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -97,833 +130,282 @@
             cursor: pointer;
             transition: all 0.3s ease;
             outline: none;
+            width: 100%;
         }
 
-        button:hover:not(:disabled), .file-button:hover {
+        button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
         }
 
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
-        button.secondary {
-            background: linear-gradient(135deg, #20bf6b 0%, #01a3a4 100%);
-            border-color: #20bf6b;
-        }
-
-        button.warning {
-            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-            border-color: #f39c12;
-        }
-
-        button.mode-btn {
-            background: rgba(102, 126, 234, 0.2);
-            border-color: #667eea;
-            padding: 10px 20px;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-
-        button.mode-btn:hover {
-            background: rgba(102, 126, 234, 0.4);
-            transform: translateY(-1px);
-        }
-
-        button.mode-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-color: #667eea;
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
-            font-weight: 600;
-            transform: scale(1.05);
-        }
-
-        .blob-toggle-btn {
-            padding: 18px 40px;
-            font-size: 18px;
-            font-weight: 700;
-            border: 3px solid #00d4ff;
-            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
-            color: white;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .blob-toggle-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 35px rgba(0, 212, 255, 0.5);
-            background: linear-gradient(135deg, #00e5ff 0%, #00b0dd 100%);
-        }
-
-        .blob-toggle-btn.active {
-            background: linear-gradient(135deg, #20bf6b 0%, #01a3a4 100%);
-            border-color: #20bf6b;
-            box-shadow: 0 8px 25px rgba(32, 191, 107, 0.4);
-        }
-
-        .blob-toggle-btn.active:hover {
-            background: linear-gradient(135deg, #26d97f 0%, #01b5b8 100%);
-            box-shadow: 0 12px 35px rgba(32, 191, 107, 0.6);
-        }
-
-        .blob-icon {
-            font-size: 24px;
-            animation: blob-pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes blob-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        .blob-text {
-            letter-spacing: 0.5px;
-        }
-
-        .blob-toggle-container {
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .file-button {
-            display: inline-block;
-            position: relative;
-            overflow: hidden;
-        }
-
-        input[type="file"] {
-            position: absolute;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-            left: 0;
-            top: 0;
-        }
-
-        .slider-group {
-            margin-bottom: 20px;
-        }
-
-        .slider-label {
+        .debug-toggle {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #ccc;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
         }
 
-        .slider-value {
-            color: #667eea;
-            font-weight: bold;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: rgba(255, 255, 255, 0.1);
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .debug-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
             cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         }
 
-        input[type="range"]::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        .debug-info {
+            display: none;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .debug-info.visible {
+            display: block;
+        }
+
+        .stat-line {
+            margin: 5px 0;
+            color: #00ff88;
         }
 
         .status {
             text-align: center;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
             border-radius: 8px;
-            font-size: 14px;
-            color: #aaa;
-            font-family: monospace;
-        }
-
-        .info-box {
-            background: rgba(0, 212, 255, 0.1);
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .preview-images {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
             margin-top: 15px;
-        }
-
-        .preview-box {
-            text-align: center;
-        }
-
-        .preview-box img {
-            max-width: 120px;
-            max-height: 120px;
-            border: 2px solid #667eea;
-            border-radius: 8px;
-            background: #000;
-            object-fit: contain;
-        }
-
-        .preview-box label {
-            display: block;
-            margin-top: 8px;
-            font-size: 12px;
-            color: #aaa;
-        }
-
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-        }
-
-        .footer a {
-            color: #00d4ff;
-            text-decoration: none;
             font-weight: 600;
         }
 
-        .footer a:hover {
-            text-decoration: underline;
+        .status.idle {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
         }
 
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .main-container {
-                padding: 20px;
-            }
-            
-            #canvas {
-                width: 100%;
-                height: auto;
-            }
+        .status.active {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .status.error {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff4444;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🎨 WebGL Hybrid Particle Transition Engine</h1>
-        <p class="tagline">High-performance animated transitions between images using WebGL particles</p>
-    </div>
-
-    <!-- Elastic Mesh Demo Banner -->
-    <div style="max-width: 1200px; width: 100%; margin: 0 auto 20px; padding: 15px 30px; background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%); border-radius: 15px; box-shadow: 0 10px 30px rgba(118, 75, 162, 0.3);">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
-            <div style="flex: 1; min-width: 250px;">
-                <h3 style="margin: 0 0 5px 0; color: white; font-size: 1.2rem;">🕸️ New: Elastic Mesh Physics Transitions!</h3>
-                <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 0.95rem;">Spring-based mesh with alpha-aware connections that preserve image holes</p>
-            </div>
-            <a href="test-mesh.html" style="padding: 12px 30px; background: white; color: #764ba2; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s; display: inline-block;">
-                Try Mesh Demo →
-            </a>
-        </div>
-    </div>
-
-    <!-- Blob Demo Banner -->
-    <div style="max-width: 1200px; width: 100%; margin: 0 auto 20px; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
-            <div style="flex: 1; min-width: 250px;">
-                <h3 style="margin: 0 0 5px 0; color: white; font-size: 1.2rem;">🧬 Organic Blob Mesh Rendering!</h3>
-                <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 0.95rem;">Watch particles form liquid-like blobs that split and merge organically</p>
-            </div>
-            <a href="blob-demo.html" style="padding: 12px 30px; background: white; color: #667eea; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s; display: inline-block;">
-                Try Blob Demo →
-            </a>
-        </div>
+        <h1>🧬 Alien Jelly Mesh Transition</h1>
+        <p class="tagline">Organic liquid-like transitions with elastic mesh physics</p>
     </div>
 
     <div class="main-container">
         <canvas id="canvas" width="800" height="600"></canvas>
 
-        <!-- Prominent Blob Mesh Toggle -->
-        <div class="blob-toggle-container">
-            <button id="blobToggleBtn" class="blob-toggle-btn" aria-label="Toggle Blob Mesh rendering mode">
-                <span class="blob-icon" aria-hidden="true">🧬</span>
-                <span class="blob-text">Enable Blob Mesh</span>
-            </button>
-        </div>
-
-        <div class="controls-panel">
-            <!-- Image Upload Section -->
-            <div class="controls-section">
-                <h3>📸 Images</h3>
-                <div class="info-box">
-                    Upload two images to create a seamless particle transition animation. The engine converts images to particles, applies physics-based effects, and smoothly morphs between states.
-                </div>
-                <div class="button-group">
-                    <label class="file-button">
-                        Choose Source Image
-                        <input type="file" id="image1Input" accept="image/*">
-                    </label>
-                    <label class="file-button">
-                        Choose Target Image
-                        <input type="file" id="image2Input" accept="image/*">
-                    </label>
-                </div>
-                <div class="preview-images">
-                    <div class="preview-box">
-                        <div id="preview1"></div>
-                        <label>Source Image</label>
+        <div class="controls">
+            <div class="control-group">
+                <h3>📷 Load Images</h3>
+                <div class="file-inputs">
+                    <div class="file-input-wrapper">
+                        <label for="sourceImage">
+                            📁 Select Source Image<br>
+                            <span class="file-preview" id="sourcePreview">No file selected</span>
+                        </label>
+                        <input type="file" id="sourceImage" accept="image/*">
                     </div>
-                    <div class="preview-box">
-                        <div id="preview2"></div>
-                        <label>Target Image</label>
+                    <div class="file-input-wrapper">
+                        <label for="targetImage">
+                            📁 Select Target Image<br>
+                            <span class="file-preview" id="targetPreview">No file selected</span>
+                        </label>
+                        <input type="file" id="targetImage" accept="image/*">
                     </div>
                 </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="controls-section">
-                <h3>🎬 Actions</h3>
-                <div class="button-group">
-                    <button id="initBtn" disabled>Initialize</button>
-                    <button id="transitionBtn" class="secondary" disabled>Start Transition</button>
-                    <button id="exportBtn" class="warning" disabled>Export Video</button>
-                </div>
+            <div class="control-group">
+                <h3>▶️ Transition</h3>
+                <button id="playBtn" disabled>Play Transition</button>
+                <div class="status idle" id="status">Load both images to begin</div>
             </div>
 
-            <!-- Rendering Mode Selection -->
-            <div class="controls-section">
-                <h3>🎨 Rendering Mode</h3>
-                <div class="info-box">
-                    Choose how particles are rendered: as individual points, organic blob mesh, triangulation morphing, or hybrid combination.
-                </div>
-                <div class="button-group">
-                    <button id="modeParticles" class="mode-btn">Particles</button>
-                    <button id="modeBlob" class="mode-btn">Blob Mesh</button>
-                    <button id="modeTriangulation" class="mode-btn">Triangulation</button>
-                    <button id="modeHybrid" class="mode-btn active">Hybrid</button>
-                </div>
-                <div style="margin-top: 15px; padding: 15px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%); border-radius: 10px; border: 2px solid rgba(102, 126, 234, 0.3);">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                        <span style="font-size: 24px;">🧬</span>
-                        <strong style="color: #00d4ff; font-size: 16px;">Want to see organic blob rendering in action?</strong>
-                    </div>
-                    <p style="margin: 0 0 10px 34px; font-size: 14px; color: #ccc;">
-                        The Blob Mesh mode works with image transitions, but for the <strong>best demonstration</strong> of organic blob behavior, mitosis, and merging effects:
-                    </p>
-                    <a href="blob-demo.html" style="display: inline-block; margin-left: 34px; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); transition: all 0.3s ease;">
-                        🚀 Launch Interactive Blob Demo
-                    </a>
-                </div>
+            <div class="debug-toggle">
+                <input type="checkbox" id="debugToggle">
+                <label for="debugToggle">Show FPS / Debug Info</label>
             </div>
 
-            <!-- Transition Controls -->
-            <div class="controls-section">
-                <h3>⚙️ Hybrid Transition Parameters</h3>
-                
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Total Duration (ms)</span>
-                        <span class="slider-value" id="totalDurationValue">6700</span>
-                    </div>
-                    <input type="range" id="totalDuration" min="3000" max="12000" step="100" value="6700">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Particle Density</span>
-                        <span class="slider-value" id="particleDensityValue">2000</span>
-                    </div>
-                    <input type="range" id="particleDensity" min="500" max="5000" step="100" value="2000">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Explosion Weight</span>
-                        <span class="slider-value" id="explosionWeightValue">150</span>
-                    </div>
-                    <input type="range" id="explosionWeight" min="50" max="300" step="10" value="150">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Recombination Weight</span>
-                        <span class="slider-value" id="recombinationWeightValue">2500</span>
-                    </div>
-                    <input type="range" id="recombinationWeight" min="1000" max="4000" step="100" value="2500">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Blend Weight</span>
-                        <span class="slider-value" id="blendWeightValue">2000</span>
-                    </div>
-                    <input type="range" id="blendWeight" min="500" max="3000" step="100" value="2000">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Liquid Thickness (Chaos)</span>
-                        <span class="slider-value" id="liquidThicknessValue">0.3</span>
-                    </div>
-                    <input type="range" id="liquidThickness" min="0" max="1" step="0.1" value="0.3">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Watercolor Intensity (Vacuum Strength)</span>
-                        <span class="slider-value" id="watercolorIntensityValue">0.15</span>
-                    </div>
-                    <input type="range" id="watercolorIntensity" min="0.05" max="0.5" step="0.05" value="0.15">
-                </div>
-            </div>
-
-            <!-- Alien Transition Controls -->
-            <div class="controls-section" id="alienTransitionSection" style="border: 3px solid rgba(138, 43, 226, 0.5); border-radius: 15px; padding: 20px; background: linear-gradient(135deg, rgba(138, 43, 226, 0.1) 0%, rgba(75, 0, 130, 0.1) 100%);">
-                <h3 style="color: #ba68c8; display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 1.5rem;">👽</span>
-                    Alien Transition (NEW!)
-                </h3>
-                <div class="info-box" style="background: rgba(138, 43, 226, 0.15); border-color: rgba(138, 43, 226, 0.4);">
-                    Liquid alien-like morphing with opacity masking, enhanced physics, and ghost outlines. Perfect for text, icons, and images with transparency.
-                </div>
-                
-                <div class="button-group" style="margin-bottom: 20px;">
-                    <button id="alienTransitionBtn" class="secondary" disabled style="background: linear-gradient(135deg, #ba68c8 0%, #8a2be2 100%); border-color: #ba68c8; font-size: 16px; padding: 14px 28px;">
-                        🚀 Start Alien Transition
-                    </button>
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>👽 Alien Intensity</span>
-                        <span class="slider-value" id="alienIntensityValue">0.7</span>
-                    </div>
-                    <input type="range" id="alienIntensity" min="0" max="1" step="0.1" value="0.7">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>🎭 Opacity Threshold</span>
-                        <span class="slider-value" id="opacityThresholdValue">0.3</span>
-                    </div>
-                    <input type="range" id="opacityThreshold" min="0" max="1" step="0.05" value="0.3">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>💥 Explosion Intensity</span>
-                        <span class="slider-value" id="alienExplosionValue">120</span>
-                    </div>
-                    <input type="range" id="alienExplosion" min="50" max="300" step="10" value="120">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>👻 Ghost Outline Opacity</span>
-                        <span class="slider-value" id="ghostOutlineValue">0.3</span>
-                    </div>
-                    <input type="range" id="ghostOutline" min="0" max="1" step="0.05" value="0.3">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>💧 Liquid Thickness</span>
-                        <span class="slider-value" id="alienLiquidValue">0.5</span>
-                    </div>
-                    <input type="range" id="alienLiquid" min="0" max="1" step="0.1" value="0.5">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>⚡ Snap Speed</span>
-                        <span class="slider-value" id="snapSpeedValue">0.25</span>
-                    </div>
-                    <input type="range" id="snapSpeed" min="0.1" max="0.5" step="0.05" value="0.25">
-                </div>
+            <div class="debug-info" id="debugInfo">
+                <div class="stat-line" id="fps">FPS: --</div>
+                <div class="stat-line" id="phase">Phase: idle</div>
+                <div class="stat-line" id="vertices">Vertices: --</div>
+                <div class="stat-line" id="springs">Springs: --</div>
+                <div class="stat-line" id="blobs">Blobs: --</div>
             </div>
         </div>
-
-        <div class="status" id="status">Upload two images to begin</div>
-    </div>
-
-    <div class="footer">
-        <p>
-            <a href="test-mesh.html">🕸️ Elastic Mesh Demo</a> | 
-            <a href="blob-demo.html">🧬 Blob Mesh Demo</a> | 
-            <a href="export-hybrid-video.html">📹 Export Video Demo</a> | 
-            <a href="https://github.com/indrolend/webgl-particle-engine" target="_blank">⭐ View on GitHub</a> |
-            <a href="API.md">📖 API Documentation</a>
-        </p>
     </div>
 
     <script type="module">
-        import { HybridEngine } from './src/HybridEngine.js';
-
-        // Constants
-        const DEFAULT_MODE = 'hybrid';
+        import { AlienTransitionEngine } from './src/AlienTransitionEngine.js';
 
         const canvas = document.getElementById('canvas');
+        const sourceInput = document.getElementById('sourceImage');
+        const targetInput = document.getElementById('targetImage');
+        const playBtn = document.getElementById('playBtn');
         const status = document.getElementById('status');
-        const image1Input = document.getElementById('image1Input');
-        const image2Input = document.getElementById('image2Input');
-        const preview1 = document.getElementById('preview1');
-        const preview2 = document.getElementById('preview2');
-        const initBtn = document.getElementById('initBtn');
-        const transitionBtn = document.getElementById('transitionBtn');
-        const exportBtn = document.getElementById('exportBtn');
-
-        // Mode buttons
-        const modeParticles = document.getElementById('modeParticles');
-        const modeBlob = document.getElementById('modeBlob');
-        const modeTriangulation = document.getElementById('modeTriangulation');
-        const modeHybrid = document.getElementById('modeHybrid');
-        
-        // Blob toggle button
-        const blobToggleBtn = document.getElementById('blobToggleBtn');
-
-        // Sliders
-        const totalDuration = document.getElementById('totalDuration');
-        const totalDurationValue = document.getElementById('totalDurationValue');
-        const particleDensity = document.getElementById('particleDensity');
-        const particleDensityValue = document.getElementById('particleDensityValue');
-        const explosionWeight = document.getElementById('explosionWeight');
-        const explosionWeightValue = document.getElementById('explosionWeightValue');
-        const recombinationWeight = document.getElementById('recombinationWeight');
-        const recombinationWeightValue = document.getElementById('recombinationWeightValue');
-        const blendWeight = document.getElementById('blendWeight');
-        const blendWeightValue = document.getElementById('blendWeightValue');
-        const liquidThickness = document.getElementById('liquidThickness');
-        const liquidThicknessValue = document.getElementById('liquidThicknessValue');
-        const watercolorIntensity = document.getElementById('watercolorIntensity');
-        const watercolorIntensityValue = document.getElementById('watercolorIntensityValue');
-
-        // Alien transition controls
-        const alienTransitionBtn = document.getElementById('alienTransitionBtn');
-        const alienIntensity = document.getElementById('alienIntensity');
-        const alienIntensityValue = document.getElementById('alienIntensityValue');
-        const opacityThreshold = document.getElementById('opacityThreshold');
-        const opacityThresholdValue = document.getElementById('opacityThresholdValue');
-        const alienExplosion = document.getElementById('alienExplosion');
-        const alienExplosionValue = document.getElementById('alienExplosionValue');
-        const ghostOutline = document.getElementById('ghostOutline');
-        const ghostOutlineValue = document.getElementById('ghostOutlineValue');
-        const alienLiquid = document.getElementById('alienLiquid');
-        const alienLiquidValue = document.getElementById('alienLiquidValue');
-        const snapSpeed = document.getElementById('snapSpeed');
-        const snapSpeedValue = document.getElementById('snapSpeedValue');
+        const debugToggle = document.getElementById('debugToggle');
+        const debugInfo = document.getElementById('debugInfo');
 
         let engine = null;
-        let image1 = null;
-        let image2 = null;
-        let currentMode = DEFAULT_MODE; // Will be synced with engine after initialization
-        let previousMode = DEFAULT_MODE; // Track previous mode for toggling
-        let isBlobModeActive = false;
+        let sourceImage = null;
+        let targetImage = null;
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
 
         // Initialize engine
-        engine = new HybridEngine(canvas, {
-            particleCount: 2000,
-            speed: 1.0,
-            enableTriangulation: true,
-            triangulationMode: DEFAULT_MODE,  // Default mode for backward compatibility
-            gridSize: 8,
-            enableBlobRendering: true,    // Enable blob rendering capability
-            blobInfluenceRadius: 80,
-            surfaceTension: 0.5,
-            mitosisFactor: 0.5
-        });
-        
-        // Sync state with engine's initial mode
-        currentMode = DEFAULT_MODE; // Engine is initialized with DEFAULT_MODE
-        previousMode = DEFAULT_MODE;
-        isBlobModeActive = false;
-
-        // Mode switching handlers
-        function setRenderMode(mode) {
-            if (engine) {
-                try {
-                    engine.setRenderMode(mode);
-                    // Update currentMode only after successful mode change
-                    currentMode = mode;
-                    
-                    // Update button states
-                    [modeParticles, modeBlob, modeTriangulation, modeHybrid].forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    
-                    if (mode === 'particles') modeParticles.classList.add('active');
-                    else if (mode === 'blob') modeBlob.classList.add('active');
-                    else if (mode === 'triangulation') modeTriangulation.classList.add('active');
-                    else if (mode === 'hybrid') modeHybrid.classList.add('active');
-                    
-                    // Update blob toggle button state
-                    isBlobModeActive = (mode === 'blob');
-                    updateBlobToggleButton();
-                    
-                    // Provide specific feedback for blob mode
-                    if (mode === 'blob') {
-                        status.textContent = `✨ Blob Mesh mode activated! Watch particles form organic, liquid-like blobs.`;
-                    } else {
-                        status.textContent = `Rendering mode set to: ${mode}`;
-                    }
-                } catch (error) {
-                    console.error('Failed to set render mode:', error);
-                    status.textContent = `Error setting render mode: ${error.message}`;
-                }
-            }
+        try {
+            engine = new AlienTransitionEngine(canvas, {
+                gridDensity: 1.5,
+                explosionIntensity: 120,
+                snapSpeed: 0.25
+            });
+            console.log('Engine initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize engine:', error);
+            updateStatus('Failed to initialize engine: ' + error.message, 'error');
         }
 
-        function updateBlobToggleButton() {
-            if (isBlobModeActive) {
-                blobToggleBtn.classList.add('active');
-                blobToggleBtn.querySelector('.blob-text').textContent = 'Disable Blob Mesh';
-            } else {
-                blobToggleBtn.classList.remove('active');
-                blobToggleBtn.querySelector('.blob-text').textContent = 'Enable Blob Mesh';
-            }
-        }
-
-        // Blob toggle button handler
-        blobToggleBtn.addEventListener('click', () => {
-            if (engine) {
-                if (isBlobModeActive) {
-                    // Disable blob mode - return to previous mode
-                    setRenderMode(previousMode);
-                    status.textContent = `Blob Mesh disabled. Returned to ${previousMode} mode.`;
-                } else {
-                    // Enable blob mode - save current mode as previous (only if not already blob)
-                    if (currentMode !== 'blob') {
-                        previousMode = currentMode;
-                    }
-                    setRenderMode('blob');
-                    status.textContent = '🧬 Blob Mesh enabled! Particles now render as organic blobs.';
-                }
-            }
-        });
-
-        modeParticles.addEventListener('click', () => setRenderMode('particles'));
-        modeBlob.addEventListener('click', () => setRenderMode('blob'));
-        modeTriangulation.addEventListener('click', () => setRenderMode('triangulation'));
-        modeHybrid.addEventListener('click', () => setRenderMode('hybrid'));
-
-        // Set initial status message to show current mode
-        status.textContent = 'Rendering mode: Hybrid (default) - Upload two images to begin';
-
-        // Slider event listeners
-        totalDuration.addEventListener('input', () => {
-            totalDurationValue.textContent = totalDuration.value;
-        });
-
-        particleDensity.addEventListener('input', () => {
-            particleDensityValue.textContent = particleDensity.value;
-            if (engine) {
-                engine.config.particleCount = parseInt(particleDensity.value);
-            }
-        });
-
-        explosionWeight.addEventListener('input', () => {
-            explosionWeightValue.textContent = explosionWeight.value;
-        });
-
-        recombinationWeight.addEventListener('input', () => {
-            recombinationWeightValue.textContent = recombinationWeight.value;
-        });
-
-        blendWeight.addEventListener('input', () => {
-            blendWeightValue.textContent = blendWeight.value;
-        });
-
-        liquidThickness.addEventListener('input', () => {
-            liquidThicknessValue.textContent = liquidThickness.value;
-        });
-
-        watercolorIntensity.addEventListener('input', () => {
-            watercolorIntensityValue.textContent = watercolorIntensity.value;
-        });
-
-        // Alien transition slider listeners
-        alienIntensity.addEventListener('input', () => {
-            alienIntensityValue.textContent = alienIntensity.value;
-        });
-
-        opacityThreshold.addEventListener('input', () => {
-            opacityThresholdValue.textContent = opacityThreshold.value;
-        });
-
-        alienExplosion.addEventListener('input', () => {
-            alienExplosionValue.textContent = alienExplosion.value;
-        });
-
-        ghostOutline.addEventListener('input', () => {
-            ghostOutlineValue.textContent = ghostOutline.value;
-        });
-
-        alienLiquid.addEventListener('input', () => {
-            alienLiquidValue.textContent = alienLiquid.value;
-        });
-
-        snapSpeed.addEventListener('input', () => {
-            snapSpeedValue.textContent = snapSpeed.value;
-        });
-
-        // Image upload handlers
-        image1Input.addEventListener('change', (e) => {
+        // Handle source image upload
+        sourceInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    image1 = new Image();
-                    image1.onload = () => {
-                        preview1.innerHTML = `<img src="${image1.src}" alt="Source">`;
-                        status.textContent = `Source image loaded: ${image1.width}x${image1.height}`;
-                        checkImagesLoaded();
-                    };
-                    image1.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
+                sourceImage = await loadImage(file);
+                document.getElementById('sourcePreview').textContent = file.name;
+                document.getElementById('sourcePreview').classList.add('loaded');
+                checkReady();
             }
         });
 
-        image2Input.addEventListener('change', (e) => {
+        // Handle target image upload
+        targetInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    image2 = new Image();
-                    image2.onload = () => {
-                        preview2.innerHTML = `<img src="${image2.src}" alt="Target">`;
-                        status.textContent = `Target image loaded: ${image2.width}x${image2.height}`;
-                        checkImagesLoaded();
-                    };
-                    image2.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
+                targetImage = await loadImage(file);
+                document.getElementById('targetPreview').textContent = file.name;
+                document.getElementById('targetPreview').classList.add('loaded');
+                checkReady();
             }
         });
 
-        function checkImagesLoaded() {
-            if (image1 && image2) {
-                initBtn.disabled = false;
-                status.textContent = 'Both images loaded! Click Initialize to begin.';
+        // Load image from file
+        function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Check if both images are loaded
+        function checkReady() {
+            if (sourceImage && targetImage) {
+                playBtn.disabled = false;
+                updateStatus('Ready to play transition', 'idle');
             }
         }
 
-        // Initialize button
-        initBtn.addEventListener('click', async () => {
-            try {
-                status.textContent = 'Initializing engine with source image...';
-                initBtn.disabled = true;
-                
-                await engine.setImage(image1);
-                engine.start();
-                
-                transitionBtn.disabled = false;
-                alienTransitionBtn.disabled = false;
-                exportBtn.disabled = false;
-                status.textContent = 'Ready! Choose a transition type to begin the animation.';
-            } catch (error) {
-                console.error('Initialization error:', error);
-                status.textContent = `Error: ${error.message}`;
-                initBtn.disabled = false;
+        // Play transition
+        playBtn.addEventListener('click', async () => {
+            if (!sourceImage || !targetImage || !engine) {
+                return;
             }
-        });
 
-        // Transition button
-        transitionBtn.addEventListener('click', async () => {
+            playBtn.disabled = true;
+            updateStatus('Playing transition...', 'active');
+
             try {
-                status.textContent = 'Starting hybrid transition...';
-                transitionBtn.disabled = true;
+                await engine.transition(sourceImage, targetImage, {
+                    staticDuration: 500,
+                    explodeDuration: 800,
+                    snapBackDuration: 2000,
+                    blendDuration: 1500,
+                    finalDuration: 500
+                });
                 
-                const config = {
-                    staticDisplayDuration: 500,
-                    disintegrationDuration: 1000,
-                    explosionTime: 800,
-                    explosionIntensity: parseInt(explosionWeight.value),
-                    recombinationDuration: parseInt(recombinationWeight.value),
-                    recombinationChaos: parseFloat(liquidThickness.value),
-                    vacuumStrength: parseFloat(watercolorIntensity.value),
-                    blendDuration: parseInt(blendWeight.value),
-                    finalStaticDuration: 500
-                };
-                
-                await engine.startHybridTransition(image1, image2, config);
-                
-                transitionBtn.disabled = false;
-                status.textContent = 'Transition complete! Click again to replay.';
+                updateStatus('Transition complete', 'idle');
+                playBtn.disabled = false;
             } catch (error) {
                 console.error('Transition error:', error);
-                status.textContent = `Error: ${error.message}`;
-                transitionBtn.disabled = false;
+                updateStatus('Transition failed: ' + error.message, 'error');
+                playBtn.disabled = false;
             }
         });
 
-        // Alien transition button
-        alienTransitionBtn.addEventListener('click', async () => {
-            try {
-                status.textContent = '👽 Starting alien transition...';
-                alienTransitionBtn.disabled = true;
-                transitionBtn.disabled = true;
-                
-                const config = {
-                    alienIntensity: parseFloat(alienIntensity.value),
-                    opacityThreshold: parseFloat(opacityThreshold.value),
-                    explosionIntensity: parseInt(alienExplosion.value),
-                    ghostOutlineOpacity: parseFloat(ghostOutline.value),
-                    liquidThickness: parseFloat(alienLiquid.value),
-                    snapSpeed: parseFloat(snapSpeed.value),
-                    explosionDirectional: true,
-                    preventBlackout: true
-                };
-                
-                console.log('[Demo] Starting alien transition with config:', config);
-                await engine.alienTransition(image1, image2, config);
-                
-                alienTransitionBtn.disabled = false;
-                transitionBtn.disabled = false;
-                status.textContent = '👽 Alien transition complete! Click again to replay.';
-            } catch (error) {
-                console.error('Alien transition error:', error);
-                status.textContent = `Error: ${error.message}`;
-                alienTransitionBtn.disabled = false;
-                transitionBtn.disabled = false;
+        // Debug toggle
+        debugToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                debugInfo.classList.add('visible');
+                startDebugLoop();
+            } else {
+                debugInfo.classList.remove('visible');
             }
         });
 
-        // Export button
-        exportBtn.addEventListener('click', () => {
-            window.location.href = 'export-hybrid-video.html';
-        });
+        // Update debug info
+        function startDebugLoop() {
+            function update() {
+                if (!debugToggle.checked) return;
 
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            const containerWidth = canvas.parentElement.clientWidth;
-            if (containerWidth < 800) {
-                canvas.style.width = '100%';
-                canvas.style.height = 'auto';
+                // Calculate FPS
+                frameCount++;
+                const now = performance.now();
+                if (now - lastFrameTime >= 1000) {
+                    const fps = Math.round((frameCount * 1000) / (now - lastFrameTime));
+                    document.getElementById('fps').textContent = `FPS: ${fps}`;
+                    frameCount = 0;
+                    lastFrameTime = now;
+                }
+
+                // Update stats
+                if (engine) {
+                    const stats = engine.getStats();
+                    document.getElementById('phase').textContent = `Phase: ${stats.phase}`;
+                    document.getElementById('vertices').textContent = `Vertices: ${stats.mesh.vertexCount}`;
+                    document.getElementById('springs').textContent = `Springs: ${stats.mesh.activeSpringCount} / ${stats.mesh.springCount}`;
+                    document.getElementById('blobs').textContent = `Blobs: ${stats.blobs}`;
+                }
+
+                requestAnimationFrame(update);
+            }
+            update();
+        }
+
+        // Update status display
+        function updateStatus(message, type = 'idle') {
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (engine) {
+                engine.destroy();
             }
         });
     </script>
