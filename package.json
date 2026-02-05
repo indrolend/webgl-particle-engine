@@ -5,7 +5,8 @@
   "type": "module",
   "main": "src/AlienTransitionEngine.js",
   "scripts": {
-    "serve": "python3 -m http.server 8000"
+    "serve": "python3 -m http.server 8000",
+    "deploy": "npx wrangler pages deploy . --project-name=webgl-particle-engine"
   },
   "keywords": [
     "webgl",

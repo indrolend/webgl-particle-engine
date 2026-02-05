@@ -226,6 +226,42 @@ For higher quality on powerful devices:
 - **Chaotic Explosion**: High `explosionIntensity` (200+)
 - **Smooth Morph**: Low `explosionIntensity` (60), high `snapSpeed` (0.4)
 
+## 🚀 Deployment
+
+This is a static site that can be deployed to any static hosting service.
+
+### Cloudflare Pages
+
+The repository is configured for automatic deployment to Cloudflare Pages:
+
+1. **Automatic Deployment**: Push to `main` branch triggers automatic deployment via GitHub Actions
+2. **Manual Deployment**: Use `npm run deploy` for manual deployment
+
+#### Configuration
+
+The project includes:
+- `wrangler.toml` - Cloudflare Pages configuration
+- `_headers` - HTTP headers for proper MIME types and caching
+
+#### Manual Deploy
+
+```bash
+# Install wrangler (if needed)
+npm install -g wrangler
+
+# Deploy to Cloudflare Pages
+npm run deploy
+```
+
+### Other Static Hosts
+
+This site works with any static hosting service:
+
+- **GitHub Pages**: Deploy from the root directory
+- **Netlify**: Deploy root directory with no build command
+- **Vercel**: Deploy as a static site
+- **Any CDN/Web Server**: Serve the root directory
+
 ## 🌐 Browser Support
 
 - **Chrome/Edge**: Full support

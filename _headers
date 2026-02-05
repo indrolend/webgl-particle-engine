@@ -1,0 +1,22 @@
+# Headers for static assets
+/*
+  # Enable CORS for WebGL resources
+  Access-Control-Allow-Origin: *
+  
+# JavaScript modules need correct MIME type
+/*.js
+  Content-Type: application/javascript; charset=utf-8
+  
+# Allow ES modules
+/src/*.js
+  Content-Type: application/javascript; charset=utf-8
+  
+# Cache static assets
+/*.png
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.jpeg
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
