@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alien Jelly Mesh Transition Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: 1.1rem;
+            color: #aaa;
+        }
+
+        .main-container {
+            background: rgba(30, 30, 45, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 1000px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        #canvas {
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto 30px;
+            background: #000;
+            width: 800px;
+            height: 600px;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .file-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+        }
+
+        .file-input-wrapper label {
+            display: block;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.2);
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-wrapper label:hover {
+            background: rgba(102, 126, 234, 0.3);
+            border-color: #764ba2;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+
+        .file-preview {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .file-preview.loaded {
+            color: #00ff88;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border: 2px solid #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .debug-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .debug-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .debug-info {
+            display: none;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .debug-info.visible {
+            display: block;
+        }
+
+        .stat-line {
+            margin: 5px 0;
+            color: #00ff88;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+
+        .status.idle {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+        }
+
+        .status.active {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .status.error {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧬 Alien Jelly Mesh Transition</h1>
+        <p class="tagline">Organic liquid-like transitions with elastic mesh physics</p>
+    </div>
+
+    <div class="main-container">
+        <canvas id="canvas" width="800" height="600"></canvas>
+
+        <div class="controls">
+            <div class="control-group">
+                <h3>📷 Load Images</h3>
+                <div class="file-inputs">
+                    <div class="file-input-wrapper">
+                        <label for="sourceImage">
+                            📁 Select Source Image<br>
+                            <span class="file-preview" id="sourcePreview">No file selected</span>
+                        </label>
+                        <input type="file" id="sourceImage" accept="image/*">
+                    </div>
+                    <div class="file-input-wrapper">
+                        <label for="targetImage">
+                            📁 Select Target Image<br>
+                            <span class="file-preview" id="targetPreview">No file selected</span>
+                        </label>
+                        <input type="file" id="targetImage" accept="image/*">
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>▶️ Transition</h3>
+                <button id="playBtn" disabled>Play Transition</button>
+                <div class="status idle" id="status">Load both images to begin</div>
+            </div>
+
+            <div class="debug-toggle">
+                <input type="checkbox" id="debugToggle">
+                <label for="debugToggle">Show FPS / Debug Info</label>
+            </div>
+
+            <div class="debug-info" id="debugInfo">
+                <div class="stat-line" id="fps">FPS: --</div>
+                <div class="stat-line" id="phase">Phase: idle</div>
+                <div class="stat-line" id="vertices">Vertices: --</div>
+                <div class="stat-line" id="springs">Springs: --</div>
+                <div class="stat-line" id="blobs">Blobs: --</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { AlienTransitionEngine } from './src/AlienTransitionEngine.js';
+
+        const canvas = document.getElementById('canvas');
+        const sourceInput = document.getElementById('sourceImage');
+        const targetInput = document.getElementById('targetImage');
+        const playBtn = document.getElementById('playBtn');
+        const status = document.getElementById('status');
+        const debugToggle = document.getElementById('debugToggle');
+        const debugInfo = document.getElementById('debugInfo');
+
+        let engine = null;
+        let sourceImage = null;
+        let targetImage = null;
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+
+        // Initialize engine
+        try {
+            engine = new AlienTransitionEngine(canvas, {
+                gridDensity: 1.5,
+                explosionIntensity: 120,
+                snapSpeed: 0.25
+            });
+            console.log('Engine initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize engine:', error);
+            updateStatus('Failed to initialize engine: ' + error.message, 'error');
+        }
+
+        // Handle source image upload
+        sourceInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                sourceImage = await loadImage(file);
+                document.getElementById('sourcePreview').textContent = file.name;
+                document.getElementById('sourcePreview').classList.add('loaded');
+                checkReady();
+            }
+        });
+
+        // Handle target image upload
+        targetInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                targetImage = await loadImage(file);
+                document.getElementById('targetPreview').textContent = file.name;
+                document.getElementById('targetPreview').classList.add('loaded');
+                checkReady();
+            }
+        });
+
+        // Load image from file
+        function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Check if both images are loaded
+        function checkReady() {
+            if (sourceImage && targetImage) {
+                playBtn.disabled = false;
+                updateStatus('Ready to play transition', 'idle');
+            }
+        }
+
+        // Play transition
+        playBtn.addEventListener('click', async () => {
+            if (!sourceImage || !targetImage || !engine) {
+                return;
+            }
+
+            playBtn.disabled = true;
+            updateStatus('Playing transition...', 'active');
+
+            try {
+                await engine.transition(sourceImage, targetImage, {
+                    staticDuration: 500,
+                    explodeDuration: 800,
+                    snapBackDuration: 2000,
+                    blendDuration: 1500,
+                    finalDuration: 500
+                });
+                
+                updateStatus('Transition complete', 'idle');
+                playBtn.disabled = false;
+            } catch (error) {
+                console.error('Transition error:', error);
+                updateStatus('Transition failed: ' + error.message, 'error');
+                playBtn.disabled = false;
+            }
+        });
+
+        // Debug toggle
+        debugToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                debugInfo.classList.add('visible');
+                startDebugLoop();
+            } else {
+                debugInfo.classList.remove('visible');
+            }
+        });
+
+        // Update debug info
+        function startDebugLoop() {
+            function update() {
+                if (!debugToggle.checked) return;
+
+                // Calculate FPS
+                frameCount++;
+                const now = performance.now();
+                if (now - lastFrameTime >= 1000) {
+                    const fps = Math.round((frameCount * 1000) / (now - lastFrameTime));
+                    document.getElementById('fps').textContent = `FPS: ${fps}`;
+                    frameCount = 0;
+                    lastFrameTime = now;
+                }
+
+                // Update stats
+                if (engine) {
+                    const stats = engine.getStats();
+                    document.getElementById('phase').textContent = `Phase: ${stats.phase}`;
+                    document.getElementById('vertices').textContent = `Vertices: ${stats.mesh.vertexCount}`;
+                    document.getElementById('springs').textContent = `Springs: ${stats.mesh.activeSpringCount} / ${stats.mesh.springCount}`;
+                    document.getElementById('blobs').textContent = `Blobs: ${stats.blobs}`;
+                }
+
+                requestAnimationFrame(update);
+            }
+            update();
+        }
+
+        // Update status display
+        function updateStatus(message, type = 'idle') {
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (engine) {
+                engine.destroy();
+            }
+        });
+    </script>
+</body>
+</html>
