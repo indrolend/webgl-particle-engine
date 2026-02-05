@@ -7,12 +7,14 @@ import { ParticleEngine } from './ParticleEngine.js';
 import { TriangulationMorph } from './triangulation/TriangulationMorph.js';
 import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js';
 import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
+import { AlienTransitionPreset } from './presets/AlienTransitionPreset.js';
 import { BlobRenderer, BlobPhysics } from './blob/index.js';
 import { ElasticMesh, MeshPhysics, MeshRenderer } from './mesh/index.js';
 
 // Constants
 const DEFAULT_STATIC_DISPLAY_DURATION = 500; // ms - how long to show static image before disintegration
 const DEFAULT_DISINTEGRATION_DURATION = 1000; // ms - how long the disintegration effect takes
+const GHOST_EFFECT_MULTIPLIER = 0.5; // Further reduce alpha for subtle ghost outline
 
 export class HybridEngine extends ParticleEngine {
   constructor(canvas, config = {}) {
@@ -557,10 +559,24 @@ export class HybridEngine extends ParticleEngine {
       return;
     }
     
+    // Check for alien transition ghost outline rendering
+    let ghostOutline = null;
+    if (this.presetManager.hasActivePreset()) {
+      const activePreset = this.presetManager.getActivePreset();
+      if (activePreset && typeof activePreset.getGhostOutline === 'function') {
+        ghostOutline = activePreset.getGhostOutline();
+      }
+    }
+    
     // If mesh transition is active, render mesh
     if (this.meshTransition.isActive && this.elasticMesh && this.meshRenderer) {
       const crossfadeProgress = this.meshTransition.phase === 'blend' ? this.meshTransition.progress : 0;
       this.meshRenderer.render(this.elasticMesh, crossfadeProgress);
+      
+      // Render ghost outline if available
+      if (ghostOutline && ghostOutline.alpha > 0) {
+        this.renderGhostOutline(ghostOutline.image, ghostOutline.alpha);
+      }
       return;
     }
     
@@ -594,7 +610,7 @@ export class HybridEngine extends ParticleEngine {
     const mode = this.triangulationConfig.mode;
     const particles = this.particleSystem.getParticles();
     
-    // Check if HybridTransitionPreset is active and in blend phase
+    // Check if HybridTransitionPreset or AlienTransitionPreset is active and in blend phase
     let dynamicTriangleOpacity = this.triangulationConfig.triangleOpacity;
     let dynamicParticleOpacity = this.triangulationConfig.particleOpacity;
     
@@ -608,6 +624,19 @@ export class HybridEngine extends ParticleEngine {
           dynamicParticleOpacity = Math.max(0.1, 1.0 - blendProgress * 0.7);
         }
       }
+      // For alien transition, use phase progress for blend
+      if (activePreset && typeof activePreset.getPhaseInfo === 'function') {
+        const phaseInfo = activePreset.getPhaseInfo();
+        if (phaseInfo.phase === 'blend') {
+          dynamicTriangleOpacity = phaseInfo.phaseProgress;
+          dynamicParticleOpacity = Math.max(0.1, 1.0 - phaseInfo.phaseProgress * 0.7);
+        }
+      }
+    }
+    
+    // Render ghost outline before other elements if available
+    if (ghostOutline && ghostOutline.alpha > 0) {
+      this.renderGhostOutline(ghostOutline.image, ghostOutline.alpha);
     }
     
     // Render triangulation (if enabled and active)
@@ -684,6 +713,39 @@ export class HybridEngine extends ParticleEngine {
     gl.clearColor(1.0, 1.0, 1.0, 1.0); // White background
     gl.clear(gl.COLOR_BUFFER_BIT);
     this.renderer.renderImage(1.0);
+  }
+
+  /**
+   * Render ghost outline of an image with specified opacity
+   * Used during alien transition to show faint source image
+   * @param {HTMLImageElement} image - The image to render as ghost
+   * @param {number} alpha - Opacity (0-1)
+   */
+  renderGhostOutline(image, alpha) {
+    if (!image || alpha <= 0) return;
+    
+    // Use the renderer's image rendering capability
+    if (this.renderer && typeof this.renderer.renderImage === 'function') {
+      // Save current image state
+      const previousImage = this.lastRenderedStaticImage;
+      
+      // Load ghost image texture
+      if (this.lastRenderedStaticImage !== image) {
+        this.renderer.loadImageTexture(image, this.particleSystem.config);
+        this.lastRenderedStaticImage = image;
+      }
+      
+      // Render with specified alpha
+      const gl = this.renderer.gl;
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      this.renderer.renderImage(alpha * GHOST_EFFECT_MULTIPLIER); // Reduce for subtle ghost effect
+      
+      // Restore previous image if different
+      if (previousImage !== image) {
+        this.lastRenderedStaticImage = previousImage;
+      }
+    }
   }
   
   /**
@@ -997,6 +1059,116 @@ export class HybridEngine extends ParticleEngine {
     this.startHybridTransition(sourceImage, targetImage, mergedConfig);
     
     console.log('[HybridEngine] Reverse hybrid transition started');
+  }
+
+  /**
+   * Start an alien transition with unified mesh/blob/particle effects
+   * Implements opacity masking, enhanced physics, and liquid-like morphing
+   * 
+   * @param {HTMLImageElement} sourceImage - Source image
+   * @param {HTMLImageElement} targetImage - Target image
+   * @param {Object} config - Alien transition configuration
+   * @returns {Promise} Resolves when transition is complete
+   * 
+   * @example
+   * await engine.alienTransition(image1, image2, {
+   *   alienIntensity: 0.8,
+   *   opacityThreshold: 0.3,
+   *   explosionIntensity: 120,
+   *   ghostOutlineOpacity: 0.3
+   * });
+   */
+  async alienTransition(sourceImage, targetImage, config = {}) {
+    console.log('[HybridEngine] Starting alien transition...');
+    
+    return new Promise((resolve) => {
+      this.startAlienTransition(sourceImage, targetImage, {
+        ...config,
+        onComplete: resolve
+      });
+    });
+  }
+
+  /**
+   * Start an alien transition (non-async version)
+   * @param {HTMLImageElement} sourceImage - Source image
+   * @param {HTMLImageElement} targetImage - Target image
+   * @param {Object} config - Alien transition configuration
+   */
+  startAlienTransition(sourceImage, targetImage, config = {}) {
+    console.log('[HybridEngine] Starting alien transition with unified effects...');
+    
+    // Store images for reference
+    this.triangulationImages.source = sourceImage;
+    this.triangulationImages.target = targetImage;
+    this.hybridTransitionState = {
+      sourceImage: sourceImage,
+      targetImage: targetImage,
+      config: config,
+      isAlienTransition: true
+    };
+    
+    // Create alien transition preset
+    const preset = new AlienTransitionPreset(config);
+    
+    // Register and activate preset
+    this.registerPreset('alienTransition', preset);
+    
+    // Initialize triangulation for blend phase
+    if (this.triangulationMorph) {
+      this.triangulationMorph.setImages(sourceImage, targetImage);
+      this.triangulationRenderer.createTexture(sourceImage, 'source');
+      this.triangulationRenderer.createTexture(targetImage, 'target');
+      
+      // Start triangulation transition
+      const totalDuration = preset.config.staticDisplayDuration +
+                           preset.config.disintegrateDuration +
+                           preset.config.alienMorphDuration +
+                           preset.config.reformDuration +
+                           preset.config.blendDuration;
+      
+      this.triangulationTransition = {
+        isActive: true,
+        progress: 0,
+        duration: preset.config.blendDuration,
+        startTime: performance.now() + totalDuration - preset.config.blendDuration
+      };
+    }
+    
+    // Extract target positions from target image
+    const imageData = this.particleSystem.extractImageData(targetImage, this.particleSystem.getParticles().length);
+    const targets = this.particleSystem.imageDataToTargets(imageData);
+    
+    // Activate preset with images and target data
+    const particles = this.particleSystem.getParticles();
+    const dimensions = { 
+      width: this.canvas.width, 
+      height: this.canvas.height,
+      mesh: this.elasticMesh // Pass mesh for constraint application
+    };
+    
+    this.activatePreset('alienTransition', {
+      sourceImage: sourceImage,
+      targetImage: targetImage
+    });
+    
+    // Set targets for reform phase
+    preset.targets = targets;
+    
+    console.log('[HybridEngine] Alien transition preset activated');
+    
+    // Set up completion callback
+    if (config.onComplete) {
+      const checkComplete = () => {
+        const phaseInfo = preset.getPhaseInfo();
+        if (phaseInfo.phase === 'complete') {
+          config.onComplete();
+        } else {
+          setTimeout(checkComplete, 100);
+        }
+      };
+      setTimeout(checkComplete, 100);
+    }
   }
 
   /**
