@@ -33,7 +33,31 @@ Navigate to `http://localhost:8000/` and use the interface to:
 
 1. **Load Source Image**: Select your starting image
 2. **Load Target Image**: Select your destination image
-3. **Play Transition**: Watch the jelly-like morphing effect
+3. **Adjust Parameters**: Use the sliders to customize the transition
+   - **Physics**: Control explosion intensity, snap speed, grid density, damping
+   - **Timing**: Adjust duration of each phase (milliseconds)
+   - **Visual**: Modify blob influence radius and fill opacity
+4. **Play Transition**: Watch the jelly-like morphing effect with your custom settings
+
+### Interactive Parameters
+
+The web interface provides real-time control over 10 key parameters:
+
+**Physics Controls:**
+- Explosion Intensity (50-300) - Strength of the explosion phase
+- Snap Speed (0.1-0.5) - Speed of morphing to target shape
+- Grid Density (0.5-3.0) - Number of mesh vertices
+- Spring Damping (0.85-0.99) - Velocity dampening for smooth motion
+
+**Timing Controls (milliseconds):**
+- Explosion Duration (200-2000) - Length of explosion phase
+- Snap Back Duration (500-4000) - Duration of morphing phase
+- Blend Duration (500-3000) - Length of color blend phase
+- Static Duration (0-2000) - Initial display time before transition
+
+**Visual Controls:**
+- Blob Influence Radius (40-150) - Size of metaball influence
+- Fill Opacity (0.5-1.0) - Transparency of blob fill
 
 ## 📖 Usage
 
