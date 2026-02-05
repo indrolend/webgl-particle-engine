@@ -4,7 +4,8 @@ A high-performance WebGL-based particle engine for creating seamless, animated t
 
 ## ✨ Core Features
 
-- **👽 Alien Transition System (NEW!)**: Unified liquid-like morphing with opacity masking, enhanced physics constraints, and ghost outlines
+- **🌊 Wave Mesh Transitions (NEW!)**: Immersive page transitions with wavy mesh distortion effects inspired by CodePen demos
+- **👽 Alien Transition System**: Unified liquid-like morphing with opacity masking, enhanced physics constraints, and ghost outlines
 - **🕸️ Elastic Mesh Transitions**: Physics-driven spring mesh with alpha-aware connections that preserves image holes
 - **🎨 Organic Blob Mesh Transitions**: Physics-driven blob meshes that split and merge like cell division/mitosis
 - **🧬 Metaball Rendering**: Smooth, organic surfaces generated from particle influence fields using marching squares
@@ -44,11 +45,14 @@ php -S localhost:8000
 
 3. **Open in browser**:
 ```
-http://localhost:8000/                         # Main hybrid transition demo
-http://localhost:8000/blob-demo.html           # Blob mesh rendering demo
-http://localhost:8000/test-mesh.html           # Elastic mesh transition demo (NEW!)
-http://localhost:8000/export-hybrid-video.html # Video export demo
+http://localhost:8000/                           # Main hybrid transition demo
+http://localhost:8000/examples/wave-mesh-demo.html # Wave mesh transition demo (NEW!)
+http://localhost:8000/blob-demo.html             # Blob mesh rendering demo
+http://localhost:8000/test-mesh.html             # Elastic mesh transition demo
+http://localhost:8000/export-hybrid-video.html   # Video export demo
 ```
+
+> **🌊 Try the Wave Mesh Demo!** Experience immersive page transitions with wavy mesh distortion effects. Watch images ripple and morph like viewing through water!
 
 > **🕸️ Try the Elastic Mesh Demo!** Experience physics-driven spring mesh with alpha-aware connections. Watch the mesh explode, break, reconnect, and morph with organic sloshing motion!
 
@@ -56,7 +60,39 @@ http://localhost:8000/export-hybrid-video.html # Video export demo
 
 ## 📖 API Usage
 
-### Alien Transition System (NEW!)
+### Wave Mesh Transition (NEW!)
+
+Create immersive page transitions with wavy mesh distortion effects:
+
+```javascript
+import { HybridPageTransitionAPI } from './src/HybridPageTransitionAPI.js';
+
+// Initialize API
+const api = new HybridPageTransitionAPI({
+  canvasId: 'transition-canvas',
+  particleCount: 2000
+});
+
+await api.initialize();
+
+// Perform wave mesh transition
+await api.waveMeshPageTransition(
+  document.getElementById('page1'),
+  document.getElementById('page2'),
+  {
+    amplitude: 20,        // Wave height in pixels
+    frequency: 0.05,      // Wave density
+    speed: 2.0,           // Animation speed
+    gridRows: 20,         // Mesh grid rows
+    gridCols: 20,         // Mesh grid columns
+    morphDuration: 1500   // Morph phase duration
+  }
+);
+```
+
+See [Wave Mesh Transition Documentation](docs/WAVE_MESH_TRANSITION.md) for complete guide.
+
+### Alien Transition System
 
 The alien transition provides a unified, liquid-like morphing effect with advanced features perfect for text, icons, and images with transparency.
 

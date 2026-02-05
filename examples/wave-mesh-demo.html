@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wave Mesh Transition Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 40px;
+      font-size: 1.1em;
+    }
+
+    .demo-area {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .image-box {
+      position: relative;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      aspect-ratio: 4/3;
+      background: #f5f5f5;
+    }
+
+    .image-box:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .image-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-label {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      font-weight: 600;
+    }
+
+    .controls {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+
+    .control-group {
+      margin-bottom: 20px;
+    }
+
+    .control-group label {
+      display: block;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      font-size: 0.95em;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: #ddd;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #667eea;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #667eea;
+      cursor: pointer;
+      border: none;
+    }
+
+    .value-display {
+      min-width: 60px;
+      text-align: right;
+      font-weight: 600;
+      color: #667eea;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    button {
+      flex: 1;
+      padding: 15px 30px;
+      font-size: 1em;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: white;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+    }
+
+    .btn-tertiary {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .btn-tertiary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(79, 172, 254, 0.4);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .phase-indicator {
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .phase-indicator h3 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.2em;
+    }
+
+    .phase-bar {
+      display: flex;
+      gap: 5px;
+      height: 40px;
+      margin-bottom: 10px;
+    }
+
+    .phase-step {
+      flex: 1;
+      background: #e0e0e0;
+      border-radius: 5px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8em;
+      font-weight: 600;
+      color: #666;
+      transition: all 0.3s ease;
+    }
+
+    .phase-step.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      transform: scale(1.05);
+    }
+
+    .phase-step.completed {
+      background: #4caf50;
+      color: white;
+    }
+
+    .metrics {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+    }
+
+    .metric {
+      text-align: center;
+    }
+
+    .metric-label {
+      font-size: 0.85em;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .metric-value {
+      font-size: 1.5em;
+      font-weight: 700;
+      color: #667eea;
+    }
+
+    .code-example {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 30px;
+      overflow-x: auto;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.9em;
+      line-height: 1.6;
+    }
+
+    .code-example pre {
+      margin: 0;
+    }
+
+    #canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 9999;
+      pointer-events: none;
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .demo-area {
+        grid-template-columns: 1fr;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+
+      h1 {
+        font-size: 2em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div class="container">
+    <h1>🌊 Wave Mesh Transition Demo</h1>
+    <p class="subtitle">Immersive page transitions with wavy mesh distortion effects</p>
+
+    <div class="demo-area">
+      <div class="image-box" id="image1-box">
+        <div class="image-label">Source Image</div>
+        <img id="image1" src="data:image/svg+xml,%3Csvg width='800' height='600' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='grad1' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='800' height='600' fill='url(%23grad1)' /%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='48' fill='white' text-anchor='middle' dominant-baseline='middle'%3ESource%3C/text%3E%3C/svg%3E" alt="Source Image">
+      </div>
+      <div class="image-box" id="image2-box">
+        <div class="image-label">Target Image</div>
+        <img id="image2" src="data:image/svg+xml,%3Csvg width='800' height='600' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='grad2' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23f093fb;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23f5576c;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='800' height='600' fill='url(%23grad2)' /%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='48' fill='white' text-anchor='middle' dominant-baseline='middle'%3ETarget%3C/text%3E%3C/svg%3E" alt="Target Image">
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button id="btn-transition" class="btn-primary">▶️ Start Wave Transition</button>
+      <button id="btn-preset-subtle" class="btn-secondary">✨ Subtle Preset</button>
+      <button id="btn-preset-dramatic" class="btn-tertiary">🎭 Dramatic Preset</button>
+    </div>
+
+    <div class="phase-indicator">
+      <h3>Transition Phase</h3>
+      <div class="phase-bar">
+        <div class="phase-step" data-phase="static">Static</div>
+        <div class="phase-step" data-phase="waveIn">Wave In</div>
+        <div class="phase-step" data-phase="morph">Morph</div>
+        <div class="phase-step" data-phase="waveOut">Wave Out</div>
+        <div class="phase-step" data-phase="staticTarget">Final</div>
+      </div>
+      <div id="phase-status">Idle - Click "Start Wave Transition" to begin</div>
+    </div>
+
+    <div class="controls">
+      <h3 style="margin-bottom: 20px; color: #333;">Wave Parameters</h3>
+      
+      <div class="control-group">
+        <label for="amplitude">Wave Amplitude (pixels)</label>
+        <div class="control-row">
+          <input type="range" id="amplitude" min="5" max="80" value="20" step="1">
+          <span class="value-display" id="amplitude-value">20</span>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label for="frequency">Wave Frequency</label>
+        <div class="control-row">
+          <input type="range" id="frequency" min="0.01" max="0.15" value="0.05" step="0.01">
+          <span class="value-display" id="frequency-value">0.05</span>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label for="speed">Animation Speed</label>
+        <div class="control-row">
+          <input type="range" id="speed" min="0.5" max="5" value="2" step="0.1">
+          <span class="value-display" id="speed-value">2.0</span>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label for="gridSize">Mesh Grid Size (rows/cols)</label>
+        <div class="control-row">
+          <input type="range" id="gridSize" min="10" max="40" value="20" step="5">
+          <span class="value-display" id="gridSize-value">20x20</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Transitions</div>
+        <div class="metric-value" id="transition-count">0</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Avg Duration</div>
+        <div class="metric-value" id="avg-duration">0ms</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Last FPS</div>
+        <div class="metric-value" id="fps-display">-</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Triangles</div>
+        <div class="metric-value" id="triangle-count">800</div>
+      </div>
+    </div>
+
+    <div class="code-example">
+      <pre><code>// Basic usage
+import { HybridEngine } from './src/HybridEngine.js';
+
+const canvas = document.getElementById('canvas');
+const engine = new HybridEngine(canvas);
+
+await engine.startWaveMeshTransition(sourceImage, targetImage, {
+  amplitude: 20,
+  frequency: 0.05,
+  speed: 2.0,
+  gridRows: 20,
+  gridCols: 20
+});</code></pre>
+    </div>
+  </div>
+
+  <script type="module">
+    import { HybridEngine } from '../src/HybridEngine.js';
+
+    // Initialize
+    const canvas = document.getElementById('canvas');
+    const engine = new HybridEngine(canvas, {
+      particleCount: 2000,
+      enableWaveMesh: true
+    });
+
+    const image1 = document.getElementById('image1');
+    const image2 = document.getElementById('image2');
+    
+    // Track metrics
+    let transitionCount = 0;
+    let totalDuration = 0;
+    let isTransitioning = false;
+    
+    // Control elements
+    const amplitudeSlider = document.getElementById('amplitude');
+    const frequencySlider = document.getElementById('frequency');
+    const speedSlider = document.getElementById('speed');
+    const gridSizeSlider = document.getElementById('gridSize');
+    
+    const amplitudeValue = document.getElementById('amplitude-value');
+    const frequencyValue = document.getElementById('frequency-value');
+    const speedValue = document.getElementById('speed-value');
+    const gridSizeValue = document.getElementById('gridSize-value');
+    
+    // Update value displays
+    amplitudeSlider.oninput = () => {
+      amplitudeValue.textContent = amplitudeSlider.value;
+    };
+    
+    frequencySlider.oninput = () => {
+      frequencyValue.textContent = frequencySlider.value;
+    };
+    
+    speedSlider.oninput = () => {
+      speedValue.textContent = parseFloat(speedSlider.value).toFixed(1);
+    };
+    
+    gridSizeSlider.oninput = () => {
+      const size = gridSizeSlider.value;
+      gridSizeValue.textContent = `${size}x${size}`;
+      const triangles = (size - 1) * (size - 1) * 2;
+      document.getElementById('triangle-count').textContent = triangles;
+    };
+    
+    // Get current config
+    function getConfig() {
+      const gridSize = parseInt(gridSizeSlider.value);
+      return {
+        amplitude: parseFloat(amplitudeSlider.value),
+        frequency: parseFloat(frequencySlider.value),
+        speed: parseFloat(speedSlider.value),
+        gridRows: gridSize,
+        gridCols: gridSize
+      };
+    }
+    
+    // Update phase indicator
+    function updatePhaseIndicator(phase) {
+      const steps = document.querySelectorAll('.phase-step');
+      const phaseOrder = ['static', 'waveIn', 'morph', 'waveOut', 'staticTarget'];
+      const currentIndex = phaseOrder.indexOf(phase);
+      
+      steps.forEach((step, index) => {
+        step.classList.remove('active', 'completed');
+        if (index < currentIndex) {
+          step.classList.add('completed');
+        } else if (index === currentIndex) {
+          step.classList.add('active');
+        }
+      });
+      
+      const statusMessages = {
+        idle: 'Idle - Click "Start Wave Transition" to begin',
+        static: 'Phase 1: Displaying static source image',
+        waveIn: 'Phase 2: Applying wave distortion',
+        morph: 'Phase 3: Morphing textures with waves',
+        waveOut: 'Phase 4: Removing wave distortion',
+        staticTarget: 'Phase 5: Displaying static target image'
+      };
+      
+      document.getElementById('phase-status').textContent = statusMessages[phase] || 'Transitioning...';
+    }
+    
+    // Monitor transition phases
+    function monitorTransition() {
+      if (!isTransitioning) return;
+      
+      const preset = engine.presetManager.getActivePreset();
+      if (preset && preset.constructor.name === 'WaveMeshTransitionPreset') {
+        const phase = preset.getCurrentPhase();
+        updatePhaseIndicator(phase);
+        
+        if (phase === 'idle') {
+          isTransitioning = false;
+          enableButtons();
+        } else {
+          requestAnimationFrame(monitorTransition);
+        }
+      }
+    }
+    
+    // Disable buttons during transition
+    function disableButtons() {
+      document.getElementById('btn-transition').disabled = true;
+      document.getElementById('btn-preset-subtle').disabled = true;
+      document.getElementById('btn-preset-dramatic').disabled = true;
+    }
+    
+    function enableButtons() {
+      document.getElementById('btn-transition').disabled = false;
+      document.getElementById('btn-preset-subtle').disabled = false;
+      document.getElementById('btn-preset-dramatic').disabled = false;
+    }
+    
+    // Start transition
+    async function startTransition(config = {}) {
+      if (isTransitioning) return;
+      
+      isTransitioning = true;
+      disableButtons();
+      
+      const startTime = performance.now();
+      canvas.style.display = 'block';
+      
+      try {
+        await engine.startWaveMeshTransition(image1, image2, {
+          ...getConfig(),
+          ...config
+        });
+        
+        const duration = performance.now() - startTime;
+        transitionCount++;
+        totalDuration += duration;
+        
+        // Update metrics
+        document.getElementById('transition-count').textContent = transitionCount;
+        document.getElementById('avg-duration').textContent = 
+          Math.round(totalDuration / transitionCount) + 'ms';
+        
+      } catch (error) {
+        console.error('Transition failed:', error);
+      }
+      
+      canvas.style.display = 'none';
+      isTransitioning = false;
+      updatePhaseIndicator('idle');
+      enableButtons();
+    }
+    
+    // Button handlers
+    document.getElementById('btn-transition').onclick = () => {
+      monitorTransition();
+      startTransition();
+    };
+    
+    document.getElementById('btn-preset-subtle').onclick = () => {
+      // Apply subtle preset
+      amplitudeSlider.value = 10;
+      frequencySlider.value = 0.08;
+      speedSlider.value = 1.5;
+      gridSizeSlider.value = 20;
+      
+      // Trigger input events to update displays
+      amplitudeSlider.oninput();
+      frequencySlider.oninput();
+      speedSlider.oninput();
+      gridSizeSlider.oninput();
+      
+      monitorTransition();
+      startTransition({ morphDuration: 2000 });
+    };
+    
+    document.getElementById('btn-preset-dramatic').onclick = () => {
+      // Apply dramatic preset
+      amplitudeSlider.value = 40;
+      frequencySlider.value = 0.03;
+      speedSlider.value = 3;
+      gridSizeSlider.value = 30;
+      
+      // Trigger input events to update displays
+      amplitudeSlider.oninput();
+      frequencySlider.oninput();
+      speedSlider.oninput();
+      gridSizeSlider.oninput();
+      
+      monitorTransition();
+      startTransition({ morphDuration: 1800 });
+    };
+    
+    // FPS monitoring
+    let frameCount = 0;
+    let lastFpsUpdate = performance.now();
+    
+    function updateFPS() {
+      frameCount++;
+      const now = performance.now();
+      if (now - lastFpsUpdate >= 1000) {
+        const fps = Math.round((frameCount * 1000) / (now - lastFpsUpdate));
+        document.getElementById('fps-display').textContent = isTransitioning ? fps : '-';
+        frameCount = 0;
+        lastFpsUpdate = now;
+      }
+      requestAnimationFrame(updateFPS);
+    }
+    
+    updateFPS();
+    
+    console.log('Wave Mesh Demo initialized!');
+    console.log('Click "Start Wave Transition" to see the effect');
+  </script>
+</body>
+</html>
