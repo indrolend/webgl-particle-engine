@@ -6,9 +6,7 @@
 import { ParticleEngine } from './ParticleEngine.js';
 import { TriangulationMorph } from './triangulation/TriangulationMorph.js';
 import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js';
-import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
-import { AlienTransitionPreset } from './presets/AlienTransitionPreset.js';
-import { WaveMeshTransitionPreset } from './presets/WaveMeshTransitionPreset.js';
+import { HybridTransitionPreset, AlienTransitionPreset, WaveMeshTransitionPreset } from './presets/index.js';
 import { BlobRenderer, BlobPhysics } from './blob/index.js';
 import { ElasticMesh, MeshPhysics, MeshRenderer } from './mesh/index.js';
 
