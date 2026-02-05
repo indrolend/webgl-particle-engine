@@ -202,6 +202,89 @@
             background: rgba(255, 0, 0, 0.2);
             color: #ff4444;
         }
+
+        /* Parameter controls */
+        .parameter-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .param-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .param-item label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .param-value {
+            color: #00d4ff;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(102, 126, 234, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.8);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.8);
+        }
+
+        .param-category {
+            grid-column: 1 / -1;
+            color: #764ba2;
+            font-weight: 600;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .param-category:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
     </style>
 </head>
 <body>
@@ -230,6 +313,97 @@
                             <span class="file-preview" id="targetPreview">No file selected</span>
                         </label>
                         <input type="file" id="targetImage" accept="image/*">
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>🎛️ Parameters</h3>
+                <div class="parameter-controls">
+                    <div class="param-category">Physics</div>
+                    
+                    <div class="param-item">
+                        <label>
+                            <span>Explosion Intensity</span>
+                            <span class="param-value" id="explosionIntensityValue">120</span>
+                        </label>
+                        <input type="range" id="explosionIntensity" min="50" max="300" value="120" step="10">
+                    </div>
+
+                    <div class="param-item">
+                        <label>
+                            <span>Snap Speed</span>
+                            <span class="param-value" id="snapSpeedValue">0.25</span>
+                        </label>
+                        <input type="range" id="snapSpeed" min="0.1" max="0.5" value="0.25" step="0.05">
+                    </div>
+
+                    <div class="param-item">
+                        <label>
+                            <span>Grid Density</span>
+                            <span class="param-value" id="gridDensityValue">1.5</span>
+                        </label>
+                        <input type="range" id="gridDensity" min="0.5" max="3.0" value="1.5" step="0.1">
+                    </div>
+
+                    <div class="param-item">
+                        <label>
+                            <span>Spring Damping</span>
+                            <span class="param-value" id="dampingValue">0.95</span>
+                        </label>
+                        <input type="range" id="damping" min="0.85" max="0.99" value="0.95" step="0.01">
+                    </div>
+
+                    <div class="param-category">Timing (milliseconds)</div>
+
+                    <div class="param-item">
+                        <label>
+                            <span>Explosion Duration</span>
+                            <span class="param-value" id="explodeDurationValue">800</span>
+                        </label>
+                        <input type="range" id="explodeDuration" min="200" max="2000" value="800" step="100">
+                    </div>
+
+                    <div class="param-item">
+                        <label>
+                            <span>Snap Back Duration</span>
+                            <span class="param-value" id="snapBackDurationValue">2000</span>
+                        </label>
+                        <input type="range" id="snapBackDuration" min="500" max="4000" value="2000" step="100">
+                    </div>
+
+                    <div class="param-item">
+                        <label>
+                            <span>Blend Duration</span>
+                            <span class="param-value" id="blendDurationValue">1500</span>
+                        </label>
+                        <input type="range" id="blendDuration" min="500" max="3000" value="1500" step="100">
+                    </div>
+
+                    <div class="param-item">
+                        <label>
+                            <span>Static Duration</span>
+                            <span class="param-value" id="staticDurationValue">500</span>
+                        </label>
+                        <input type="range" id="staticDuration" min="0" max="2000" value="500" step="100">
+                    </div>
+
+                    <div class="param-category">Visual</div>
+
+                    <div class="param-item">
+                        <label>
+                            <span>Blob Influence Radius</span>
+                            <span class="param-value" id="blobInfluenceRadiusValue">80</span>
+                        </label>
+                        <input type="range" id="blobInfluenceRadius" min="40" max="150" value="80" step="5">
+                    </div>
+
+                    <div class="param-item">
+                        <label>
+                            <span>Fill Opacity</span>
+                            <span class="param-value" id="fillOpacityValue">0.85</span>
+                        </label>
+                        <input type="range" id="fillOpacity" min="0.5" max="1.0" value="0.85" step="0.05">
                     </div>
                 </div>
             </div>
@@ -272,17 +446,70 @@
         let lastFrameTime = performance.now();
         let frameCount = 0;
 
+        // Current parameter values
+        let params = {
+            explosionIntensity: 120,
+            snapSpeed: 0.25,
+            gridDensity: 1.5,
+            damping: 0.95,
+            explodeDuration: 800,
+            snapBackDuration: 2000,
+            blendDuration: 1500,
+            staticDuration: 500,
+            blobInfluenceRadius: 80,
+            fillOpacity: 0.85
+        };
+
         // Initialize engine
         try {
-            engine = new AlienTransitionEngine(canvas, {
-                gridDensity: 1.5,
-                explosionIntensity: 120,
-                snapSpeed: 0.25
-            });
+            engine = new AlienTransitionEngine(canvas, params);
             console.log('Engine initialized successfully');
         } catch (error) {
             console.error('Failed to initialize engine:', error);
             updateStatus('Failed to initialize engine: ' + error.message, 'error');
+        }
+
+        // Setup parameter controls
+        setupParameterControls();
+
+        function setupParameterControls() {
+            const paramIds = [
+                'explosionIntensity', 'snapSpeed', 'gridDensity', 'damping',
+                'explodeDuration', 'snapBackDuration', 'blendDuration', 'staticDuration',
+                'blobInfluenceRadius', 'fillOpacity'
+            ];
+
+            paramIds.forEach(id => {
+                const slider = document.getElementById(id);
+                const valueDisplay = document.getElementById(id + 'Value');
+                
+                if (slider && valueDisplay) {
+                    slider.addEventListener('input', (e) => {
+                        const value = parseFloat(e.target.value);
+                        params[id] = value;
+                        valueDisplay.textContent = value;
+                        
+                        // Update engine configuration
+                        updateEngineConfig();
+                    });
+                }
+            });
+        }
+
+        function updateEngineConfig() {
+            if (!engine) return;
+
+            // Recreate engine with new parameters
+            const hadImages = sourceImage && targetImage;
+            engine.destroy();
+            engine = new AlienTransitionEngine(canvas, params);
+            console.log('Engine updated with new parameters:', params);
+
+            // Re-enable play button if images were loaded
+            if (hadImages) {
+                playBtn.disabled = false;
+                updateStatus('Parameters updated - ready to play', 'idle');
+            }
         }
 
         // Handle source image upload
@@ -341,11 +568,12 @@
 
             try {
                 await engine.transition(sourceImage, targetImage, {
-                    staticDuration: 500,
-                    explodeDuration: 800,
-                    snapBackDuration: 2000,
-                    blendDuration: 1500,
-                    finalDuration: 500
+                    staticDuration: params.staticDuration,
+                    explodeDuration: params.explodeDuration,
+                    snapBackDuration: params.snapBackDuration,
+                    blendDuration: params.blendDuration,
+                    explosionIntensity: params.explosionIntensity,
+                    snapSpeed: params.snapSpeed
                 });
                 
                 updateStatus('Transition complete', 'idle');
