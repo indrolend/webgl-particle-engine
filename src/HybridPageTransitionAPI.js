@@ -733,6 +733,101 @@ export class HybridPageTransitionAPI {
   }
 
   /**
+   * Wave mesh page transition with CodePen-style wavy effect
+   * Perfect for immersive page transitions
+   * 
+   * @param {HTMLElement|string} fromElement - Source page element or selector
+   * @param {HTMLElement|string} toElement - Target page element or selector
+   * @param {Object} options - Transition configuration
+   * @param {number} options.staticDuration - Static display duration (default: 500)
+   * @param {number} options.waveInDuration - Wave in duration (default: 800)
+   * @param {number} options.morphDuration - Morph duration (default: 1500)
+   * @param {number} options.waveOutDuration - Wave out duration (default: 800)
+   * @param {number} options.staticTargetDuration - Static target duration (default: 500)
+   * @param {number} options.amplitude - Wave height in pixels (default: 20)
+   * @param {number} options.frequency - Wave density (default: 0.05)
+   * @param {number} options.speed - Animation speed multiplier (default: 2.0)
+   * @param {number} options.gridRows - Mesh grid rows (default: 20)
+   * @param {number} options.gridCols - Mesh grid columns (default: 20)
+   * @param {number} options.waveDirectionX - Horizontal wave direction (default: 1.0)
+   * @param {number} options.waveDirectionY - Vertical wave direction (default: 0.5)
+   * @returns {Promise<void>}
+   */
+  async waveMeshPageTransition(fromElement, toElement, options = {}) {
+    if (this.isTransitioning) {
+      console.warn('[HybridPageTransitionAPI] Transition already in progress');
+      return;
+    }
+    
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+    
+    console.log('[HybridPageTransitionAPI] Starting wave mesh page transition...');
+    this.isTransitioning = true;
+    
+    // Resolve elements
+    const from = typeof fromElement === 'string' 
+      ? document.querySelector(fromElement) 
+      : fromElement;
+    const to = typeof toElement === 'string' 
+      ? document.querySelector(toElement) 
+      : toElement;
+    
+    if (!from || !to) {
+      console.error('[HybridPageTransitionAPI] Invalid elements provided');
+      this.isTransitioning = false;
+      return;
+    }
+    
+    // Use fallback if WebGL not available
+    if (this.config.enableFallback && !this.engine) {
+      await this.fallbackTransition(from, to);
+      this.isTransitioning = false;
+      return;
+    }
+    
+    try {
+      // Capture both pages as textures
+      console.log('[HybridPageTransitionAPI] Capturing pages for wave mesh transition...');
+      const [fromTexture, toTexture] = await Promise.all([
+        this.captureDOMAsTexture(from),
+        this.captureDOMAsTexture(to)
+      ]);
+      
+      // Convert canvases to images
+      const fromImage = await this.canvasToImage(fromTexture);
+      const toImage = await this.canvasToImage(toTexture);
+      
+      // Show canvas
+      this.canvas.style.display = 'block';
+      
+      // Hide page elements during transition
+      from.style.display = 'none';
+      to.style.display = 'none';
+      
+      // Start wave mesh transition
+      await this.engine.startWaveMeshTransition(fromImage, toImage, options);
+      
+      // Hide canvas and show target page
+      this.canvas.style.display = 'none';
+      to.style.display = '';
+      
+      console.log('[HybridPageTransitionAPI] Wave mesh transition complete');
+      
+    } catch (error) {
+      console.error('[HybridPageTransitionAPI] Wave mesh transition failed:', error);
+      
+      // Fallback to instant transition
+      from.style.display = 'none';
+      to.style.display = '';
+      this.canvas.style.display = 'none';
+    }
+    
+    this.isTransitioning = false;
+  }
+
+  /**
    * Update debug status
    * @param {string} status - Status message
    */
