@@ -308,8 +308,52 @@ export class AlienTransitionEngine {
         this.renderStaticImage(this.transitionState.targetImage);
       }
     } else {
-      // Render blob mesh from vertices during transition phases
+      // During transition phases, render background image so users can see what's transitioning
+      this.renderTransitionBackground();
+      
+      // Then render blob mesh on top for the jelly effect
       this.renderMeshAsBlobs();
+    }
+  }
+  
+  /**
+   * Render background image during transition phases
+   */
+  renderTransitionBackground() {
+    const { phase } = this.transitionState;
+    
+    if (phase === 'explode') {
+      // Show source image during explosion
+      if (this.transitionState.sourceImage) {
+        this.renderStaticImage(this.transitionState.sourceImage);
+      }
+    } else if (phase === 'snapback') {
+      // Crossfade from source to target during snapback
+      const elapsed = performance.now() - this.transitionState.phaseStartTime;
+      const progress = Math.min(elapsed / this.config.snapBackDuration, 1.0);
+      
+      // Render source image first
+      if (this.transitionState.sourceImage && progress < 1.0) {
+        if (!this.renderer.imageLoaded || this.renderer.lastLoadedImage !== this.transitionState.sourceImage) {
+          this.renderer.loadImageTexture(this.transitionState.sourceImage);
+          this.renderer.lastLoadedImage = this.transitionState.sourceImage;
+        }
+        this.renderer.renderImage(1.0 - progress);
+      }
+      
+      // Render target image on top with increasing opacity
+      if (this.transitionState.targetImage && progress > 0) {
+        if (!this.renderer.imageLoaded || this.renderer.lastLoadedImage !== this.transitionState.targetImage) {
+          this.renderer.loadImageTexture(this.transitionState.targetImage);
+          this.renderer.lastLoadedImage = this.transitionState.targetImage;
+        }
+        this.renderer.renderImage(progress);
+      }
+    } else if (phase === 'blend') {
+      // Show target image during blend phase
+      if (this.transitionState.targetImage) {
+        this.renderStaticImage(this.transitionState.targetImage);
+      }
     }
   }
   

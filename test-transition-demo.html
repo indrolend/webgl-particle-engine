@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transition Demo - Auto Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        h1 { text-align: center; }
+        canvas {
+            border: 2px solid #667eea;
+            background: #000;
+        }
+        .info {
+            text-align: center;
+            font-size: 18px;
+            color: #00ff88;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧬 Transition Demo - Auto Play</h1>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <div class="info" id="status">Loading...</div>
+
+    <script type="module">
+        import { AlienTransitionEngine } from './src/AlienTransitionEngine.js';
+
+        const canvas = document.getElementById('canvas');
+        const status = document.getElementById('status');
+
+        async function loadImage(url) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            return new Promise((resolve, reject) => {
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = url;
+            });
+        }
+
+        async function runDemo() {
+            try {
+                status.textContent = 'Initializing engine...';
+                const engine = new AlienTransitionEngine(canvas, {
+                    gridDensity: 1.5,
+                    explosionIntensity: 120,
+                    snapSpeed: 0.25
+                });
+
+                status.textContent = 'Loading images...';
+                const sourceImg = await loadImage('indrolend.png');
+                const targetImg = await loadImage('cover art.jpeg');
+                
+                status.textContent = 'Images loaded! Starting transition in 2 seconds...';
+                await new Promise(r => setTimeout(r, 2000));
+                
+                status.textContent = 'Transition in progress...';
+                await engine.transition(sourceImg, targetImg, {
+                    staticDuration: 1000,
+                    explodeDuration: 1000,
+                    snapBackDuration: 2500,
+                    blendDuration: 1500,
+                    finalDuration: 1000
+                });
+                
+                status.textContent = 'Transition complete! ✓';
+            } catch (error) {
+                console.error('Demo error:', error);
+                status.textContent = 'Error: ' + error.message;
+                status.style.color = '#ff4444';
+            }
+        }
+
+        runDemo();
+    </script>
+</body>
+</html>
