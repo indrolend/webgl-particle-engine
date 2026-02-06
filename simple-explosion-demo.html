@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Explosion Transition Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        canvas {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto 20px;
+            background: #000;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .info h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .info ul {
+            list-style-position: inside;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .status {
+            text-align: center;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎆 Simple Explosion Transition</h1>
+        <p class="subtitle">Clean particle explosion and reconstruction between images</p>
+
+        <div id="status" class="status">Ready - Click "Start Transition" to begin</div>
+
+        <canvas id="canvas" width="800" height="600"></canvas>
+
+        <div class="controls">
+            <button id="startBtn">▶️ Start Transition</button>
+            <button id="loadImage1Btn" class="secondary">📷 Load Image 1</button>
+            <button id="loadImage2Btn" class="secondary">📷 Load Image 2</button>
+        </div>
+
+        <div class="info">
+            <h3>✨ What's New</h3>
+            <ul>
+                <li><strong>Simple 2-Phase Transition:</strong> Explosion → Reconstruction</li>
+                <li><strong>No Triangulation Blend:</strong> Pure particle animation</li>
+                <li><strong>Smooth Physics:</strong> Natural particle movement with friction</li>
+                <li><strong>Color Morphing:</strong> Particles smoothly change color during reconstruction</li>
+                <li><strong>Configurable:</strong> Adjust explosion intensity, duration, and attraction strength</li>
+            </ul>
+        </div>
+    </div>
+
+    <input type="file" id="image1Input" accept="image/*" style="display: none;">
+    <input type="file" id="image2Input" accept="image/*" style="display: none;">
+
+    <script type="module">
+        import { HybridEngine } from './src/HybridEngine.js';
+
+        const canvas = document.getElementById('canvas');
+        const status = document.getElementById('status');
+        const startBtn = document.getElementById('startBtn');
+        const loadImage1Btn = document.getElementById('loadImage1Btn');
+        const loadImage2Btn = document.getElementById('loadImage2Btn');
+        const image1Input = document.getElementById('image1Input');
+        const image2Input = document.getElementById('image2Input');
+
+        // Initialize engine
+        const engine = new HybridEngine(canvas, {
+            particleCount: 2000,
+            enableTriangulation: false,  // Disable triangulation for simple effect
+            triangulationMode: 'particles'
+        });
+
+        // Load default images
+        let image1 = new Image();
+        let image2 = new Image();
+        let imagesLoaded = 0;
+
+        function checkImagesLoaded() {
+            imagesLoaded++;
+            if (imagesLoaded === 2) {
+                status.textContent = '✓ Images loaded - Ready to transition';
+                startBtn.disabled = false;
+            }
+        }
+
+        // Create simple gradient images as defaults
+        function createGradientImage(color1, color2) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 800;
+            tempCanvas.height = 600;
+            const ctx = tempCanvas.getContext('2d');
+            
+            const gradient = ctx.createLinearGradient(0, 0, 800, 600);
+            gradient.addColorStop(0, color1);
+            gradient.addColorStop(1, color2);
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 800, 600);
+            
+            // Add some text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 60px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 10;
+            ctx.fillText(color1 === '#667eea' ? 'IMAGE 1' : 'IMAGE 2', 400, 300);
+            
+            const img = new Image();
+            img.src = tempCanvas.toDataURL();
+            return img;
+        }
+
+        image1 = createGradientImage('#667eea', '#764ba2');
+        image2 = createGradientImage('#f093fb', '#f5576c');
+
+        image1.onload = checkImagesLoaded;
+        image2.onload = checkImagesLoaded;
+
+        // Start transition
+        startBtn.addEventListener('click', async () => {
+            if (!image1.complete || !image2.complete) {
+                status.textContent = '⚠️ Please wait for images to load';
+                return;
+            }
+
+            startBtn.disabled = true;
+            status.textContent = '🎆 Explosion phase...';
+
+            try {
+                // Use custom configuration for more dramatic effect
+                await engine.startHybridTransition(image1, image2, {
+                    staticDisplayDuration: 500,
+                    disintegrationDuration: 800,
+                    explosionIntensity: 250,
+                    explosionDuration: 1200,
+                    reconstructionDuration: 1800,
+                    attractionStrength: 0.25
+                });
+
+                status.textContent = '✓ Transition complete!';
+                
+                // Wait a bit then allow restarting
+                setTimeout(() => {
+                    status.textContent = 'Ready - Click "Start Transition" again';
+                    startBtn.disabled = false;
+                }, 2000);
+
+            } catch (error) {
+                console.error('Transition error:', error);
+                status.textContent = '❌ Error: ' + error.message;
+                startBtn.disabled = false;
+            }
+        });
+
+        // Image loading handlers
+        loadImage1Btn.addEventListener('click', () => {
+            image1Input.click();
+        });
+
+        loadImage2Btn.addEventListener('click', () => {
+            image2Input.click();
+        });
+
+        image1Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image1 = new Image();
+                    image1.onload = () => {
+                        status.textContent = '✓ Image 1 loaded';
+                    };
+                    image1.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        image2Input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image2 = new Image();
+                    image2.onload = () => {
+                        status.textContent = '✓ Image 2 loaded';
+                    };
+                    image2.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        console.log('Simple Explosion Transition Demo initialized');
+    </script>
+</body>
+</html>
