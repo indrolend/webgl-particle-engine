@@ -4,7 +4,9 @@ A high-performance WebGL-based particle engine for creating seamless, animated t
 
 ## ✨ Core Features
 
-- **👽 Alien Transition System (NEW!)**: Unified liquid-like morphing with opacity masking, enhanced physics constraints, and ghost outlines
+- **🎆 Simple Explosion Transition (NEW!)**: Clean two-phase particle explosion and reconstruction effect - Image 1 explodes, particles reconstruct into Image 2
+- **🌊 Wave Mesh Transitions**: Immersive page transitions with wavy mesh distortion effects inspired by CodePen demos
+- **👽 Alien Transition System**: Unified liquid-like morphing with opacity masking, enhanced physics constraints, and ghost outlines
 - **🕸️ Elastic Mesh Transitions**: Physics-driven spring mesh with alpha-aware connections that preserves image holes
 - **🎨 Organic Blob Mesh Transitions**: Physics-driven blob meshes that split and merge like cell division/mitosis
 - **🧬 Metaball Rendering**: Smooth, organic surfaces generated from particle influence fields using marching squares
@@ -44,11 +46,17 @@ php -S localhost:8000
 
 3. **Open in browser**:
 ```
-http://localhost:8000/                         # Main hybrid transition demo
-http://localhost:8000/blob-demo.html           # Blob mesh rendering demo
-http://localhost:8000/test-mesh.html           # Elastic mesh transition demo (NEW!)
-http://localhost:8000/export-hybrid-video.html # Video export demo
+http://localhost:8000/                           # Main hybrid transition demo
+http://localhost:8000/simple-explosion-demo.html # Simple explosion transition (NEW!)
+http://localhost:8000/examples/wave-mesh-demo.html # Wave mesh transition demo
+http://localhost:8000/blob-demo.html             # Blob mesh rendering demo
+http://localhost:8000/test-mesh.html             # Elastic mesh transition demo
+http://localhost:8000/export-hybrid-video.html   # Video export demo
 ```
+
+> **🎆 Try the Simple Explosion Demo!** Experience clean particle explosion and reconstruction. Watch Image 1 explode into particles that smoothly reconstruct into Image 2!
+
+> **🌊 Try the Wave Mesh Demo!** Experience immersive page transitions with wavy mesh distortion effects. Watch images ripple and morph like viewing through water!
 
 > **🕸️ Try the Elastic Mesh Demo!** Experience physics-driven spring mesh with alpha-aware connections. Watch the mesh explode, break, reconnect, and morph with organic sloshing motion!
 
@@ -56,7 +64,72 @@ http://localhost:8000/export-hybrid-video.html # Video export demo
 
 ## 📖 API Usage
 
-### Alien Transition System (NEW!)
+### Simple Explosion Transition (NEW!)
+
+The default transition effect - clean particle explosion and reconstruction:
+
+```javascript
+import { HybridEngine } from './src/HybridEngine.js';
+
+// Initialize engine
+const engine = new HybridEngine(canvas, {
+  particleCount: 2000
+});
+
+// Start simple explosion transition
+await engine.startHybridTransition(image1, image2, {
+  explosionIntensity: 250,       // Explosion force (default: 200)
+  explosionDuration: 1200,       // Explosion phase duration in ms (default: 1000)
+  reconstructionDuration: 1800,  // Reconstruction phase duration in ms (default: 1500)
+  attractionStrength: 0.25,      // Particle attraction force (default: 0.2)
+  particleFriction: 0.95,        // Velocity damping (default: 0.95)
+  colorTransitionSpeed: 0.15     // Color change rate (default: 0.15)
+});
+```
+
+**Two-Phase System:**
+1. **Explosion**: Particles explode outward from image center with random velocities
+2. **Reconstruction**: Particles are attracted to target positions, smoothly reconstructing into Image 2
+
+**Key Features:**
+- No triangulation blending - pure particle animation
+- Smooth color morphing during reconstruction
+- Physics-based movement with velocity and friction
+- Configurable easing functions (easeOutQuad, easeOutCubic, easeInOutCubic)
+
+### Wave Mesh Transition
+
+Create immersive page transitions with wavy mesh distortion effects:
+
+```javascript
+import { HybridPageTransitionAPI } from './src/HybridPageTransitionAPI.js';
+
+// Initialize API
+const api = new HybridPageTransitionAPI({
+  canvasId: 'transition-canvas',
+  particleCount: 2000
+});
+
+await api.initialize();
+
+// Perform wave mesh transition
+await api.waveMeshPageTransition(
+  document.getElementById('page1'),
+  document.getElementById('page2'),
+  {
+    amplitude: 20,        // Wave height in pixels
+    frequency: 0.05,      // Wave density
+    speed: 2.0,           // Animation speed
+    gridRows: 20,         // Mesh grid rows
+    gridCols: 20,         // Mesh grid columns
+    morphDuration: 1500   // Morph phase duration
+  }
+);
+```
+
+See [Wave Mesh Transition Documentation](docs/WAVE_MESH_TRANSITION.md) for complete guide.
+
+### Alien Transition System
 
 The alien transition provides a unified, liquid-like morphing effect with advanced features perfect for text, icons, and images with transparency.
 

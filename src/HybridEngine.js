@@ -6,8 +6,7 @@
 import { ParticleEngine } from './ParticleEngine.js';
 import { TriangulationMorph } from './triangulation/TriangulationMorph.js';
 import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js';
-import { HybridTransitionPreset } from './presets/HybridTransitionPreset.js';
-import { AlienTransitionPreset } from './presets/AlienTransitionPreset.js';
+import { HybridTransitionPreset, AlienTransitionPreset, WaveMeshTransitionPreset, SimpleExplosionPreset } from './presets/index.js';
 import { BlobRenderer, BlobPhysics } from './blob/index.js';
 import { ElasticMesh, MeshPhysics, MeshRenderer } from './mesh/index.js';
 
@@ -66,6 +65,14 @@ export class HybridEngine extends ParticleEngine {
       explosionStrength: config.meshExplosionStrength || 100,
       showMesh: config.showMesh || false,
       showVertices: config.showVertices || false
+    };
+    
+    // Wave mesh configuration
+    this.waveMeshConfig = {
+      enabled: config.enableWaveMesh !== false,
+      amplitude: config.waveAmplitude || 20,
+      frequency: config.waveFrequency || 0.05,
+      speed: config.waveSpeed || 2.0
     };
     
     // Initialize triangulation components
@@ -559,10 +566,16 @@ export class HybridEngine extends ParticleEngine {
       return;
     }
     
+    // Check for wave mesh rendering
+    const activePreset = this.presetManager.getActivePreset();
+    if (activePreset && activePreset.constructor.name === 'WaveMeshTransitionPreset') {
+      this.renderWaveMesh();
+      return; // Skip other rendering when wave mesh is active
+    }
+    
     // Check for alien transition ghost outline rendering
     let ghostOutline = null;
     if (this.presetManager.hasActivePreset()) {
-      const activePreset = this.presetManager.getActivePreset();
       if (activePreset && typeof activePreset.getGhostOutline === 'function') {
         ghostOutline = activePreset.getGhostOutline();
       }
@@ -995,25 +1008,11 @@ export class HybridEngine extends ParticleEngine {
   startParticleTransition(sourceImage, targetImage, config) {
     console.log('[HybridEngine] Starting particle transition phase...');
     
-    const preset = new HybridTransitionPreset(config);
+    // Use SimpleExplosionPreset for clean explosion/reconstruction effect
+    const preset = new SimpleExplosionPreset(config);
     
     // Register and activate preset
     this.registerPreset('hybridTransition', preset);
-    
-    // Initialize triangulation morph for blend phase
-    if (this.triangulationMorph) {
-      this.triangulationMorph.setImages(sourceImage, targetImage);
-      this.triangulationRenderer.createTexture(sourceImage, 'source');
-      this.triangulationRenderer.createTexture(targetImage, 'target');
-      
-      // Start triangulation transition for blend phase
-      this.triangulationTransition = {
-        isActive: true,
-        progress: 0,
-        duration: config.blendDuration || 1500,
-        startTime: performance.now()
-      };
-    }
     
     // Extract target positions from target image
     const imageData = this.particleSystem.extractImageData(targetImage, this.particleSystem.getParticles().length);
@@ -1027,10 +1026,10 @@ export class HybridEngine extends ParticleEngine {
       targetImage: targetImage
     });
     
-    // Set targets for recombination phase
-    preset.targets = targets;
+    // Set targets for reconstruction phase
+    preset.setTargets(targets);
     
-    console.log('[HybridEngine] Hybrid transition preset activated - particles will now explode');
+    console.log('[HybridEngine] Simple explosion preset activated - particles will explode and reconstruct');
   }
 
   /**
@@ -1169,6 +1168,191 @@ export class HybridEngine extends ParticleEngine {
       };
       setTimeout(checkComplete, 100);
     }
+  }
+
+  /**
+   * Start wave mesh transition with wavy distortion effects
+   * @param {HTMLImageElement} sourceImage - Source image
+   * @param {HTMLImageElement} targetImage - Target image
+   * @param {Object} config - Wave mesh configuration
+   * @returns {Promise<void>}
+   */
+  async startWaveMeshTransition(sourceImage, targetImage, config = {}) {
+    console.log('[WaveMeshTransition] Starting wave mesh transition...');
+    
+    // Initialize wave mesh preset
+    const preset = new WaveMeshTransitionPreset(config);
+    
+    // Register and activate preset
+    this.registerPreset('waveMeshTransition', preset);
+    
+    // Set up textures in TriangulationRenderer
+    if (this.triangulationRenderer) {
+      this.triangulationRenderer.createTexture(sourceImage, 'source');
+      this.triangulationRenderer.createTexture(targetImage, 'target');
+    }
+    
+    // Activate preset with source and target images
+    const particles = this.particleSystem.getParticles();
+    const dimensions = { width: this.canvas.width, height: this.canvas.height };
+    this.activatePreset('waveMeshTransition', {
+      sourceImage: sourceImage,
+      targetImage: targetImage
+    });
+    
+    console.log('[WaveMeshTransition] Wave mesh preset activated');
+    
+    // Return promise that resolves when transition completes
+    return new Promise((resolve) => {
+      const checkComplete = () => {
+        if (preset.isComplete()) {
+          console.log('[WaveMeshTransition] Transition complete');
+          resolve();
+        } else {
+          setTimeout(checkComplete, 50);
+        }
+      };
+      setTimeout(checkComplete, 50);
+    });
+  }
+  
+  /**
+   * Render wave mesh when WaveMeshTransitionPreset is active
+   */
+  renderWaveMesh() {
+    const activePreset = this.presetManager.getActivePreset();
+    if (!activePreset || activePreset.constructor.name !== 'WaveMeshTransitionPreset') {
+      return;
+    }
+    
+    // Get mesh data from preset
+    const meshGrid = activePreset.getMeshGrid();
+    const triangles = activePreset.getTriangles();
+    const morphProgress = activePreset.getMorphProgress();
+    
+    if (!meshGrid || !triangles) {
+      console.warn('[WaveMeshTransition] Mesh data not available');
+      return;
+    }
+    
+    // Render wave mesh with texture
+    this.renderWaveMeshWithTexture(meshGrid, triangles, morphProgress);
+  }
+  
+  /**
+   * Render wave mesh with texture crossfading
+   * @param {Array} meshGrid - Array of vertex data with currentX/Y positions
+   * @param {Array} triangles - Array of triangle indices
+   * @param {number} morphProgress - Crossfade progress (0 to 1)
+   */
+  renderWaveMeshWithTexture(meshGrid, triangles, morphProgress) {
+    if (!this.triangulationRenderer) {
+      console.warn('[WaveMeshTransition] TriangulationRenderer not available');
+      return;
+    }
+    
+    const gl = this.triangulationRenderer.gl;
+    const gridCols = this.presetManager.getActivePreset().config.gridCols;
+    
+    // Clear canvas
+    this.triangulationRenderer.clear(0, 0, 0, 0);
+    
+    // Render source texture layer (fading out)
+    const sourceAlpha = 1.0 - morphProgress;
+    if (sourceAlpha > 0) {
+      this.renderWaveMeshLayer(meshGrid, triangles, 'source', sourceAlpha, gridCols);
+    }
+    
+    // Render target texture layer (fading in)
+    const targetAlpha = morphProgress;
+    if (targetAlpha > 0) {
+      this.renderWaveMeshLayer(meshGrid, triangles, 'target', targetAlpha, gridCols);
+    }
+  }
+  
+  /**
+   * Render a single wave mesh layer with texture
+   * @param {Array} meshGrid - Array of vertex data
+   * @param {Array} triangles - Array of triangle indices
+   * @param {string} textureId - Texture ID ('source' or 'target')
+   * @param {number} alpha - Layer opacity (0 to 1)
+   * @param {number} gridCols - Number of columns in grid
+   */
+  renderWaveMeshLayer(meshGrid, triangles, textureId, alpha, gridCols) {
+    if (!this.triangulationRenderer) return;
+    
+    const gl = this.triangulationRenderer.gl;
+    const program = this.triangulationRenderer.program;
+    
+    // Use the shader program
+    gl.useProgram(program);
+    
+    // Bind texture
+    const texture = this.triangulationRenderer.textures[textureId];
+    if (!texture) {
+      console.warn(`[WaveMeshTransition] Texture '${textureId}' not found`);
+      return;
+    }
+    
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(gl.getUniformLocation(program, 'u_texture'), 0);
+    
+    // Set alpha uniform
+    gl.uniform1f(gl.getUniformLocation(program, 'u_alpha'), alpha);
+    
+    // Set resolution uniform
+    gl.uniform2f(
+      gl.getUniformLocation(program, 'u_resolution'),
+      this.canvas.width,
+      this.canvas.height
+    );
+    
+    // Set identity matrix
+    const matrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    gl.uniformMatrix3fv(gl.getUniformLocation(program, 'u_matrix'), false, matrix);
+    
+    // Build vertex position data (with wave distortion)
+    const positions = [];
+    for (let i = 0; i < triangles.length; i++) {
+      const vertexIndex = triangles[i];
+      const vertex = meshGrid[vertexIndex];
+      positions.push(vertex.currentX, vertex.currentY);
+    }
+    
+    // Build texture coordinate data (normalized from original positions)
+    const texCoords = [];
+    const canvasWidth = this.canvas.width;
+    const canvasHeight = this.canvas.height;
+    for (let i = 0; i < triangles.length; i++) {
+      const vertexIndex = triangles[i];
+      const vertex = meshGrid[vertexIndex];
+      texCoords.push(
+        vertex.originalX / canvasWidth,
+        vertex.originalY / canvasHeight
+      );
+    }
+    
+    // Upload position data
+    const positionBuffer = this.triangulationRenderer.buffers.position;
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
+    
+    const positionLocation = gl.getAttribLocation(program, 'a_position');
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    
+    // Upload texture coordinate data
+    const texCoordBuffer = this.triangulationRenderer.buffers.texCoord;
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.DYNAMIC_DRAW);
+    
+    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord');
+    gl.enableVertexAttribArray(texCoordLocation);
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+    
+    // Draw triangles
+    gl.drawArrays(gl.TRIANGLES, 0, triangles.length);
   }
 
   /**
