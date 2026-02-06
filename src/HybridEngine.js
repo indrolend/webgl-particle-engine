@@ -6,7 +6,7 @@
 import { ParticleEngine } from './ParticleEngine.js';
 import { TriangulationMorph } from './triangulation/TriangulationMorph.js';
 import { TriangulationRenderer } from './triangulation/TriangulationRenderer.js';
-import { HybridTransitionPreset, AlienTransitionPreset, WaveMeshTransitionPreset } from './presets/index.js';
+import { HybridTransitionPreset, AlienTransitionPreset, WaveMeshTransitionPreset, SimpleExplosionPreset } from './presets/index.js';
 import { BlobRenderer, BlobPhysics } from './blob/index.js';
 import { ElasticMesh, MeshPhysics, MeshRenderer } from './mesh/index.js';
 
@@ -1008,25 +1008,11 @@ export class HybridEngine extends ParticleEngine {
   startParticleTransition(sourceImage, targetImage, config) {
     console.log('[HybridEngine] Starting particle transition phase...');
     
-    const preset = new HybridTransitionPreset(config);
+    // Use SimpleExplosionPreset for clean explosion/reconstruction effect
+    const preset = new SimpleExplosionPreset(config);
     
     // Register and activate preset
     this.registerPreset('hybridTransition', preset);
-    
-    // Initialize triangulation morph for blend phase
-    if (this.triangulationMorph) {
-      this.triangulationMorph.setImages(sourceImage, targetImage);
-      this.triangulationRenderer.createTexture(sourceImage, 'source');
-      this.triangulationRenderer.createTexture(targetImage, 'target');
-      
-      // Start triangulation transition for blend phase
-      this.triangulationTransition = {
-        isActive: true,
-        progress: 0,
-        duration: config.blendDuration || 1500,
-        startTime: performance.now()
-      };
-    }
     
     // Extract target positions from target image
     const imageData = this.particleSystem.extractImageData(targetImage, this.particleSystem.getParticles().length);
@@ -1040,10 +1026,10 @@ export class HybridEngine extends ParticleEngine {
       targetImage: targetImage
     });
     
-    // Set targets for recombination phase
-    preset.targets = targets;
+    // Set targets for reconstruction phase
+    preset.setTargets(targets);
     
-    console.log('[HybridEngine] Hybrid transition preset activated - particles will now explode');
+    console.log('[HybridEngine] Simple explosion preset activated - particles will explode and reconstruct');
   }
 
   /**

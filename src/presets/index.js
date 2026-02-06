@@ -9,3 +9,4 @@ export { HybridTransitionPreset } from './HybridTransitionPreset.js';
 export { AlienTransitionPreset } from './AlienTransitionPreset.js';
 export { BlobTransitionPreset } from './BlobTransitionPreset.js';
 export { WaveMeshTransitionPreset } from './WaveMeshTransitionPreset.js';
+export { SimpleExplosionPreset } from './SimpleExplosionPreset.js';
