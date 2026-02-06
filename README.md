@@ -4,7 +4,8 @@ A high-performance WebGL-based particle engine for creating seamless, animated t
 
 ## ✨ Core Features
 
-- **🌊 Wave Mesh Transitions (NEW!)**: Immersive page transitions with wavy mesh distortion effects inspired by CodePen demos
+- **🎆 Simple Explosion Transition (NEW!)**: Clean two-phase particle explosion and reconstruction effect - Image 1 explodes, particles reconstruct into Image 2
+- **🌊 Wave Mesh Transitions**: Immersive page transitions with wavy mesh distortion effects inspired by CodePen demos
 - **👽 Alien Transition System**: Unified liquid-like morphing with opacity masking, enhanced physics constraints, and ghost outlines
 - **🕸️ Elastic Mesh Transitions**: Physics-driven spring mesh with alpha-aware connections that preserves image holes
 - **🎨 Organic Blob Mesh Transitions**: Physics-driven blob meshes that split and merge like cell division/mitosis
@@ -46,11 +47,14 @@ php -S localhost:8000
 3. **Open in browser**:
 ```
 http://localhost:8000/                           # Main hybrid transition demo
-http://localhost:8000/examples/wave-mesh-demo.html # Wave mesh transition demo (NEW!)
+http://localhost:8000/simple-explosion-demo.html # Simple explosion transition (NEW!)
+http://localhost:8000/examples/wave-mesh-demo.html # Wave mesh transition demo
 http://localhost:8000/blob-demo.html             # Blob mesh rendering demo
 http://localhost:8000/test-mesh.html             # Elastic mesh transition demo
 http://localhost:8000/export-hybrid-video.html   # Video export demo
 ```
+
+> **🎆 Try the Simple Explosion Demo!** Experience clean particle explosion and reconstruction. Watch Image 1 explode into particles that smoothly reconstruct into Image 2!
 
 > **🌊 Try the Wave Mesh Demo!** Experience immersive page transitions with wavy mesh distortion effects. Watch images ripple and morph like viewing through water!
 
@@ -60,7 +64,40 @@ http://localhost:8000/export-hybrid-video.html   # Video export demo
 
 ## 📖 API Usage
 
-### Wave Mesh Transition (NEW!)
+### Simple Explosion Transition (NEW!)
+
+The default transition effect - clean particle explosion and reconstruction:
+
+```javascript
+import { HybridEngine } from './src/HybridEngine.js';
+
+// Initialize engine
+const engine = new HybridEngine(canvas, {
+  particleCount: 2000
+});
+
+// Start simple explosion transition
+await engine.startHybridTransition(image1, image2, {
+  explosionIntensity: 250,       // Explosion force (default: 200)
+  explosionDuration: 1200,       // Explosion phase duration in ms (default: 1000)
+  reconstructionDuration: 1800,  // Reconstruction phase duration in ms (default: 1500)
+  attractionStrength: 0.25,      // Particle attraction force (default: 0.2)
+  particleFriction: 0.95,        // Velocity damping (default: 0.95)
+  colorTransitionSpeed: 0.15     // Color change rate (default: 0.15)
+});
+```
+
+**Two-Phase System:**
+1. **Explosion**: Particles explode outward from image center with random velocities
+2. **Reconstruction**: Particles are attracted to target positions, smoothly reconstructing into Image 2
+
+**Key Features:**
+- No triangulation blending - pure particle animation
+- Smooth color morphing during reconstruction
+- Physics-based movement with velocity and friction
+- Configurable easing functions (easeOutQuad, easeOutCubic, easeInOutCubic)
+
+### Wave Mesh Transition
 
 Create immersive page transitions with wavy mesh distortion effects:
 
