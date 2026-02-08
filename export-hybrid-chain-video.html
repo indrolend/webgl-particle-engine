@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Hybrid Chain Transition Video</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #2c3e50;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            text-align: center;
+            color: #ecf0f1;
+            margin-bottom: 20px;
+            max-width: 600px;
+        }
+        
+        #canvas {
+            border: 2px solid #3498db;
+            display: block;
+            margin: 20px auto;
+            background: white;
+        }
+        
+        .info-box {
+            background: rgba(241, 196, 15, 0.1);
+            border: 2px solid #f1c40f;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 14px;
+            max-width: 600px;
+        }
+        
+        .info-box h3 {
+            margin-top: 0;
+            color: #f1c40f;
+        }
+        
+        .info-box ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .info-box li {
+            margin: 5px 0;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            min-width: 300px;
+        }
+        
+        button:hover:not(:disabled) {
+            background: #2980b9;
+        }
+        
+        button:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+        }
+        
+        button.success {
+            background: #27ae60;
+        }
+        
+        button.success:hover:not(:disabled) {
+            background: #229954;
+        }
+        
+        .status {
+            text-align: center;
+            margin: 10px;
+            font-size: 16px;
+            color: #ecf0f1;
+            min-height: 24px;
+        }
+        
+        .status.success {
+            color: #2ecc71;
+        }
+        
+        .status.error {
+            color: #e74c3c;
+        }
+        
+        .status.recording {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        
+        .status.info {
+            color: #3498db;
+        }
+        
+        .progress-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            border: 2px solid #3498db;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Export Hybrid Chain Transition Video</h1>
+    <p class="description">
+        This demo creates a chained transition between 4 images and exports the result as a 1080×1920 vertical video.
+    </p>
+    
+    <div class="info-box">
+        <h3>Video Configuration</h3>
+        <ul>
+            <li><strong>Resolution:</strong> 1080×1920 (9:16 vertical format)</li>
+            <li><strong>Transition Chain:</strong> IMG_1027 → IMG_1026 → IMG_1029 → IMG_1032</li>
+            <li><strong>Total Transitions:</strong> 3</li>
+            <li><strong>Output Format:</strong> WebM (VP9 codec, 5 Mbps, 30 FPS)</li>
+            <li><strong>Particle Count:</strong> 3000</li>
+            <li><strong>Triangulation:</strong> Hybrid mode enabled</li>
+        </ul>
+    </div>
+    
+    <canvas id="canvas" width="1080" height="1920"></canvas>
+    
+    <div class="status" id="status">Ready to start chain transition</div>
+    
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill">0%</div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button id="startBtn">Start Chain Transition & Export</button>
+        <button id="downloadBtn" class="success" disabled>Download Video</button>
+    </div>
+    
+    <script type="module">
+        import { HybridEngine } from './src/HybridEngine.js';
+        
+        const canvas = document.getElementById('canvas');
+        const status = document.getElementById('status');
+        const progressFill = document.getElementById('progressFill');
+        const startBtn = document.getElementById('startBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        let engine = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let videoBlob = null;
+        
+        // Image paths
+        const imagePaths = [
+            'IMG_1027.jpeg',
+            'IMG_1026.jpeg',
+            'IMG_1029.jpeg',
+            'IMG_1032.jpeg'
+        ];
+        
+        // Transition configuration
+        const transitionConfig = {
+            staticDisplayDuration: 500,
+            disintegrationDuration: 800,
+            explosionDuration: 700,
+            explosionIntensity: 180,
+            recombinationDuration: 2000,
+            blendDuration: 1500,
+            finalStaticDuration: 500
+        };
+        
+        // Calculate total duration for one transition
+        function getTransitionDuration() {
+            return transitionConfig.staticDisplayDuration +
+                   transitionConfig.disintegrationDuration +
+                   transitionConfig.explosionDuration +
+                   transitionConfig.recombinationDuration +
+                   transitionConfig.blendDuration +
+                   transitionConfig.finalStaticDuration;
+        }
+        
+        // Update status message
+        function updateStatus(message, type = '') {
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+        
+        // Update progress bar
+        function updateProgress(percentage) {
+            progressFill.style.width = percentage + '%';
+            progressFill.textContent = Math.round(percentage) + '%';
+        }
+        
+        // Load all images
+        async function loadImages() {
+            updateStatus('Loading images...', 'info');
+            
+            const images = [];
+            
+            for (let i = 0; i < imagePaths.length; i++) {
+                const path = imagePaths[i];
+                try {
+                    updateStatus(`Loading image ${i + 1}/${imagePaths.length}: ${path}...`, 'info');
+                    
+                    const img = await new Promise((resolve, reject) => {
+                        const image = new Image();
+                        image.crossOrigin = 'anonymous';
+                        
+                        image.onload = () => resolve(image);
+                        image.onerror = () => reject(new Error(`Failed to load ${path}`));
+                        
+                        image.src = path;
+                    });
+                    
+                    images.push(img);
+                    console.log(`Loaded image ${i + 1}: ${path}`);
+                    
+                } catch (error) {
+                    console.error(`Error loading ${path}:`, error);
+                    throw new Error(`Failed to load image: ${path}`);
+                }
+            }
+            
+            updateStatus('All images loaded successfully', 'success');
+            return images;
+        }
+        
+        // Initialize HybridEngine
+        function initializeEngine() {
+            updateStatus('Initializing particle engine...', 'info');
+            
+            engine = new HybridEngine(canvas, {
+                particleCount: 3000,
+                speed: 1.0,
+                enableTriangulation: true,
+                triangulationMode: 'hybrid',
+                gridSize: 8
+            });
+            
+            updateStatus('Engine initialized', 'success');
+        }
+        
+        // Setup MediaRecorder
+        function setupRecorder() {
+            updateStatus('Setting up video recorder...', 'info');
+            
+            const stream = canvas.captureStream(30); // 30 FPS as specified
+            
+            // Try different codec options in order of preference
+            const codecOptions = [
+                { mimeType: 'video/webm;codecs=vp9', name: 'WebM (VP9)' },
+                { mimeType: 'video/webm;codecs=vp8', name: 'WebM (VP8)' },
+                { mimeType: 'video/webm', name: 'WebM' }
+            ];
+            
+            let selectedCodec = null;
+            for (const codec of codecOptions) {
+                if (MediaRecorder.isTypeSupported(codec.mimeType)) {
+                    selectedCodec = codec;
+                    console.log(`Using codec: ${codec.name} (${codec.mimeType})`);
+                    break;
+                }
+            }
+            
+            if (!selectedCodec) {
+                throw new Error('No supported video codec found. Please try a different browser.');
+            }
+            
+            const options = {
+                mimeType: selectedCodec.mimeType,
+                videoBitsPerSecond: 5000000 // 5 Mbps as specified
+            };
+            
+            mediaRecorder = new MediaRecorder(stream, options);
+            recordedChunks = [];
+            
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+            
+            mediaRecorder.onstop = () => {
+                videoBlob = new Blob(recordedChunks, { type: selectedCodec.mimeType });
+                updateStatus('Video ready! Click download to save.', 'success');
+                updateProgress(100);
+                downloadBtn.disabled = false;
+            };
+            
+            updateStatus(`Recorder ready (${selectedCodec.name})`, 'success');
+        }
+        
+        // Execute single transition
+        async function executeTransition(sourceImage, targetImage, transitionNumber, totalTransitions) {
+            const statusPrefix = `Transition ${transitionNumber}/${totalTransitions}`;
+            updateStatus(`${statusPrefix}: Starting...`, 'recording');
+            
+            // Configure transition with explosionTime (maps to explosionDuration)
+            const config = {
+                staticDisplayDuration: transitionConfig.staticDisplayDuration,
+                disintegrationDuration: transitionConfig.disintegrationDuration,
+                explosionTime: transitionConfig.explosionDuration,
+                explosionIntensity: transitionConfig.explosionIntensity,
+                recombinationDuration: transitionConfig.recombinationDuration,
+                blendDuration: transitionConfig.blendDuration,
+                recombinationChaos: 0.3,
+                vacuumStrength: 0.15,
+                particleFadeRate: 0.7,
+                finalStaticDuration: transitionConfig.finalStaticDuration
+            };
+            
+            // Set render mode and start transition
+            engine.setRenderMode('hybrid');
+            engine.startHybridTransition(sourceImage, targetImage, config);
+            
+            const totalDuration = getTransitionDuration();
+            
+            updateStatus(`${statusPrefix}: In progress (${Math.round(totalDuration / 1000)}s)...`, 'recording');
+            
+            // Wait for transition to complete
+            await new Promise(resolve => setTimeout(resolve, totalDuration));
+            
+            updateStatus(`${statusPrefix}: Complete`, 'success');
+        }
+        
+        // Execute chain of transitions
+        async function executeChainTransitions(images) {
+            const totalTransitions = images.length - 1;
+            
+            // Initialize engine with first image
+            updateStatus('Initializing with first image...', 'info');
+            engine.initializeFromImage(images[0]);
+            engine.start();
+            
+            // Wait a bit for the engine to be fully ready
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            const totalDuration = getTransitionDuration() * totalTransitions;
+            
+            // Execute each transition in sequence
+            for (let i = 0; i < totalTransitions; i++) {
+                const sourceImage = images[i];
+                const targetImage = images[i + 1];
+                
+                console.log(`Starting transition ${i + 1}/${totalTransitions}: ${imagePaths[i]} → ${imagePaths[i + 1]}`);
+                
+                await executeTransition(sourceImage, targetImage, i + 1, totalTransitions);
+                
+                // Update progress
+                const progressPercentage = ((i + 1) / totalTransitions) * 100;
+                updateProgress(progressPercentage);
+            }
+            
+            updateStatus('All transitions complete, finalizing video...', 'recording');
+            
+            // Give extra time to ensure everything is captured
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        // Download video
+        function downloadVideo() {
+            if (!videoBlob) {
+                updateStatus('No video to download', 'error');
+                return;
+            }
+            
+            const url = URL.createObjectURL(videoBlob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            
+            // Create filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            a.download = `hybrid-chain-transition-${timestamp}.webm`;
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            }, 100);
+            
+            updateStatus('Video downloaded successfully!', 'success');
+        }
+        
+        // Main workflow
+        async function startChainTransitionAndExport() {
+            try {
+                startBtn.disabled = true;
+                downloadBtn.disabled = true;
+                updateProgress(0);
+                
+                // Load all images
+                const images = await loadImages();
+                
+                // Initialize engine
+                initializeEngine();
+                
+                // Setup recorder
+                setupRecorder();
+                
+                // Start recording
+                mediaRecorder.start();
+                updateStatus('Recording started...', 'recording');
+                
+                // Execute chain of transitions
+                await executeChainTransitions(images);
+                
+                // Stop recording
+                mediaRecorder.stop();
+                
+            } catch (error) {
+                console.error('Error during chain transition:', error);
+                updateStatus(`Error: ${error.message}`, 'error');
+                startBtn.disabled = false;
+                updateProgress(0);
+            }
+        }
+        
+        // Event listeners
+        startBtn.addEventListener('click', startChainTransitionAndExport);
+        downloadBtn.addEventListener('click', downloadVideo);
+        
+    </script>
+</body>
+</html>
