@@ -48,6 +48,7 @@ http://localhost:8000/                         # Main hybrid transition demo
 http://localhost:8000/blob-demo.html           # Blob mesh rendering demo
 http://localhost:8000/test-mesh.html           # Elastic mesh transition demo (NEW!)
 http://localhost:8000/export-hybrid-video.html # Video export demo
+http://localhost:8000/export-hybrid-chain-video.html # Chain video export demo (NEW!)
 ```
 
 > **🕸️ Try the Elastic Mesh Demo!** Experience physics-driven spring mesh with alpha-aware connections. Watch the mesh explode, break, reconnect, and morph with organic sloshing motion!
@@ -308,6 +309,25 @@ The engine includes built-in video recording capabilities:
 
 Visit `/export-hybrid-video.html` for a ready-to-use video export interface.
 
+### Chain Video Export (NEW!)
+
+Export multiple sequential transitions as a single video:
+
+```bash
+# Open the chain video export demo
+http://localhost:8000/export-hybrid-chain-video.html
+```
+
+**Features:**
+- **Sequential Transitions**: Automatically chains multiple image transitions into one video
+- **1080×1920 (9:16) Format**: Optimized for vertical/portrait video
+- **Pre-configured Chain**: Transitions through IMG_1027 → IMG_1026 → IMG_1029 → IMG_1032
+- **Real-time Progress**: Visual progress bar showing completion percentage
+- **MP4 Export**: 30 FPS, H.264 codec, 5 Mbps bitrate (converted from WebM)
+- **One-Click Export**: Start the chain and export with a single button
+
+Visit `/export-hybrid-chain-video.html` for the chain video export interface.
+
 ## 🧬 Blob Mesh Demo
 
 Experience organic blob rendering with the dedicated demo page:
@@ -346,6 +366,7 @@ webgl-particle-engine/
 │       └── DevicePerformance.js     # Performance optimization
 ├── index.html                       # Main demo
 ├── export-hybrid-video.html         # Video export demo
+├── export-hybrid-chain-video.html   # Chain video export demo (NEW!)
 ├── test-hybrid.html                 # Development/testing demo
 └── HYBRID_PAGE_TRANSITION_API.md    # Detailed API documentation
 
