@@ -281,6 +281,24 @@
             }
         }
         
+        // Load FFmpeg with timeout
+        async function loadFFmpegWithTimeout(timeoutMs = 10000) {
+            try {
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('FFmpeg loading timed out')), timeoutMs)
+                );
+                
+                await Promise.race([loadFFmpeg(), timeoutPromise]);
+                return true;
+            } catch (error) {
+                console.error('FFmpeg loading failed or timed out:', error);
+                console.log('Continuing without MP4 conversion. Videos will be saved as WebM.');
+                updateStatus('MP4 converter unavailable - will save as WebM', 'info');
+                ffmpegLoaded = false;
+                return false;
+            }
+        }
+        
         // Convert WebM to MP4
         async function convertToMP4(inputBlob) {
             if (!ffmpegLoaded) {
@@ -555,8 +573,9 @@
                 downloadBtn.disabled = true;
                 updateProgress(0);
                 
-                // Load FFmpeg for MP4 conversion
-                await loadFFmpeg();
+                // Try to load FFmpeg for MP4 conversion (with timeout)
+                // Continue even if it fails - will save as WebM instead
+                await loadFFmpegWithTimeout(10000);
                 
                 // Load all images
                 const images = await loadImages();
