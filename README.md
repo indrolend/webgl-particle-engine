@@ -323,7 +323,7 @@ http://localhost:8000/export-hybrid-chain-video.html
 - **1080×1920 (9:16) Format**: Optimized for vertical/portrait video
 - **Pre-configured Chain**: Transitions through IMG_1027 → IMG_1026 → IMG_1029 → IMG_1032
 - **Real-time Progress**: Visual progress bar showing completion percentage
-- **WebM Export**: 30 FPS, VP9 codec, 5 Mbps bitrate
+- **MP4 Export**: 30 FPS, H.264 codec, 5 Mbps bitrate (converted from WebM)
 - **One-Click Export**: Start the chain and export with a single button
 
 Visit `/export-hybrid-chain-video.html` for the chain video export interface.

@@ -161,7 +161,7 @@
             <li><strong>Resolution:</strong> 1080×1920 (9:16 vertical format)</li>
             <li><strong>Transition Chain:</strong> IMG_1027 &rarr; IMG_1026 &rarr; IMG_1029 &rarr; IMG_1032</li>
             <li><strong>Total Transitions:</strong> 3</li>
-            <li><strong>Output Format:</strong> WebM (VP9 codec, 5 Mbps, 30 FPS)</li>
+            <li><strong>Output Format:</strong> MP4 (H.264 codec, 5 Mbps, 30 FPS) - Converted from WebM</li>
             <li><strong>Particle Count:</strong> 3000</li>
             <li><strong>Triangulation:</strong> Hybrid mode enabled</li>
         </ul>
@@ -195,6 +195,13 @@
         let mediaRecorder = null;
         let recordedChunks = [];
         let videoBlob = null;
+        
+        // FFmpeg variables for MP4 conversion
+        let ffmpeg = null;
+        let ffmpegLoaded = false;
+        let FFmpeg = null;
+        let fetchFile = null;
+        let toBlobURL = null;
         
         // Image paths
         const imagePaths = [
@@ -235,6 +242,93 @@
         function updateProgress(percentage) {
             progressFill.style.width = percentage + '%';
             progressFill.textContent = Math.round(percentage) + '%';
+        }
+        
+        // Initialize FFmpeg
+        async function loadFFmpeg() {
+            if (ffmpegLoaded) return true;
+            
+            try {
+                updateStatus('Loading video converter (MP4 support)...', 'info');
+                
+                // Dynamically import FFmpeg modules
+                const ffmpegModule = await import('https://esm.sh/@ffmpeg/ffmpeg@0.12.10');
+                const utilModule = await import('https://esm.sh/@ffmpeg/util@0.12.1');
+                
+                FFmpeg = ffmpegModule.FFmpeg;
+                fetchFile = utilModule.fetchFile;
+                toBlobURL = utilModule.toBlobURL;
+                
+                ffmpeg = new FFmpeg();
+                
+                // Load FFmpeg core
+                const baseURL = 'https://esm.sh/@ffmpeg/core@0.12.6/dist/esm';
+                await ffmpeg.load({
+                    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+                });
+                
+                ffmpegLoaded = true;
+                console.log('FFmpeg loaded successfully - MP4 export available');
+                updateStatus('Video converter loaded - MP4 export enabled', 'success');
+                return true;
+            } catch (error) {
+                console.error('Failed to load FFmpeg:', error);
+                console.log('Videos will be saved as WebM format. You can convert them to MP4 using online tools or FFmpeg command line.');
+                updateStatus('Warning: MP4 converter failed to load. Videos will be saved as WebM.', 'error');
+                ffmpegLoaded = false;
+                return false;
+            }
+        }
+        
+        // Convert WebM to MP4
+        async function convertToMP4(inputBlob) {
+            if (!ffmpegLoaded) {
+                console.warn('FFmpeg not loaded, returning original blob');
+                return inputBlob;
+            }
+            
+            // If input is already MP4, no conversion needed
+            if (inputBlob.type.includes('mp4')) {
+                console.log('Input is already MP4, skipping conversion');
+                return inputBlob;
+            }
+            
+            try {
+                updateStatus('Converting to MP4 format (this may take a moment)...', 'recording');
+                console.log('Starting MP4 conversion...');
+                
+                // Write WebM file to FFmpeg virtual filesystem
+                await ffmpeg.writeFile('input.webm', await fetchFile(inputBlob));
+                console.log('WebM file written to FFmpeg filesystem');
+                
+                // Convert to MP4 with H.264 codec
+                await ffmpeg.exec([
+                    '-i', 'input.webm',
+                    '-c:v', 'libx264',
+                    '-preset', 'fast',
+                    '-crf', '22',
+                    '-movflags', '+faststart',
+                    'output.mp4'
+                ]);
+                console.log('FFmpeg conversion completed');
+                
+                // Read the output file
+                const data = await ffmpeg.readFile('output.mp4');
+                const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
+                console.log('MP4 blob created, size:', mp4Blob.size, 'bytes, type:', mp4Blob.type);
+                
+                // Clean up
+                await ffmpeg.deleteFile('input.webm');
+                await ffmpeg.deleteFile('output.mp4');
+                console.log('Temporary files cleaned up');
+                
+                return mp4Blob;
+            } catch (error) {
+                console.error('Conversion failed:', error);
+                updateStatus('Conversion failed, using original format', 'error');
+                return inputBlob;
+            }
         }
         
         // Load all images
@@ -294,9 +388,13 @@
             
             // Try different codec options in order of preference
             const codecOptions = [
-                { mimeType: 'video/webm;codecs=vp9', name: 'WebM (VP9)' },
-                { mimeType: 'video/webm;codecs=vp8', name: 'WebM (VP8)' },
-                { mimeType: 'video/webm', name: 'WebM' }
+                { mimeType: 'video/webm;codecs=vp9', container: 'webm', name: 'WebM (VP9)' },
+                { mimeType: 'video/webm;codecs=vp8', container: 'webm', name: 'WebM (VP8)' },
+                { mimeType: 'video/webm', container: 'webm', name: 'WebM' },
+                // Safari/Mac fallback options - use complete codec strings for better compatibility
+                { mimeType: 'video/mp4;codecs=avc1.42E01E', container: 'mp4', name: 'MP4 (H.264 Baseline)' },
+                { mimeType: 'video/mp4;codecs=avc1', container: 'mp4', name: 'MP4 (H.264)' },
+                { mimeType: 'video/mp4', container: 'mp4', name: 'MP4' }
             ];
             
             let selectedCodec = null;
@@ -326,9 +424,26 @@
                 }
             };
             
-            mediaRecorder.onstop = () => {
-                videoBlob = new Blob(recordedChunks, { type: selectedCodec.mimeType });
-                updateStatus('Video ready! Click download to save.', 'success');
+            mediaRecorder.onstop = async () => {
+                const recordedBlob = new Blob(recordedChunks, { type: selectedCodec.mimeType });
+                
+                // If recording is already MP4, use it directly (no conversion needed)
+                if (selectedCodec.container === 'mp4') {
+                    videoBlob = recordedBlob;
+                    updateStatus('Video ready (MP4)! Click download to save.', 'success');
+                } else if (selectedCodec.container === 'webm' && ffmpegLoaded) {
+                    updateStatus('Recording complete, converting to MP4...', 'recording');
+                    // Convert WebM to MP4
+                    videoBlob = await convertToMP4(recordedBlob);
+                    const format = videoBlob.type.includes('mp4') ? 'MP4' : 'WebM';
+                    updateStatus(`Video ready (${format})! Click download to save.`, 'success');
+                } else {
+                    // Fallback: use recorded format as-is (WebM without FFmpeg)
+                    videoBlob = recordedBlob;
+                    const format = selectedCodec.container.toUpperCase();
+                    updateStatus(`Video ready (${format})! Click download to save.`, 'success');
+                }
+                
                 updateProgress(100);
                 downloadBtn.disabled = false;
             };
@@ -417,7 +532,9 @@
             
             // Create filename with timestamp (remove milliseconds and timezone from ISO string)
             const timestamp = new Date().toISOString().split('.')[0].replace(/[:.]/g, '-');
-            a.download = `hybrid-chain-transition-${timestamp}.webm`;
+            // Determine file extension based on blob type
+            const extension = videoBlob.type.includes('mp4') ? 'mp4' : 'webm';
+            a.download = `hybrid-chain-transition-${timestamp}.${extension}`;
             
             document.body.appendChild(a);
             a.click();
@@ -437,6 +554,9 @@
                 startBtn.disabled = true;
                 downloadBtn.disabled = true;
                 updateProgress(0);
+                
+                // Load FFmpeg for MP4 conversion
+                await loadFFmpeg();
                 
                 // Load all images
                 const images = await loadImages();
