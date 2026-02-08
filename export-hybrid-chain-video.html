@@ -159,7 +159,7 @@
         <h3>Video Configuration</h3>
         <ul>
             <li><strong>Resolution:</strong> 1080×1920 (9:16 vertical format)</li>
-            <li><strong>Transition Chain:</strong> IMG_1027 → IMG_1026 → IMG_1029 → IMG_1032</li>
+            <li><strong>Transition Chain:</strong> IMG_1027 &rarr; IMG_1026 &rarr; IMG_1029 &rarr; IMG_1032</li>
             <li><strong>Total Transitions:</strong> 3</li>
             <li><strong>Output Format:</strong> WebM (VP9 codec, 5 Mbps, 30 FPS)</li>
             <li><strong>Particle Count:</strong> 3000</li>
@@ -415,8 +415,8 @@
             a.style.display = 'none';
             a.href = url;
             
-            // Create filename with timestamp
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            // Create filename with timestamp (remove milliseconds and timezone from ISO string)
+            const timestamp = new Date().toISOString().split('.')[0].replace(/[:.]/g, '-');
             a.download = `hybrid-chain-transition-${timestamp}.webm`;
             
             document.body.appendChild(a);
