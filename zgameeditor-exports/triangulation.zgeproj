@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="Triangulation" Caption="Triangulation - Audio Reactive" CameraPosition="0 0 10" ViewportRatio="3" CustomViewportRatio="1.7778" ScreenMode="0" FOV="90" TargetFrameRate="60" AndroidPackageName="com.zgameeditor.triangulation">
+  <OnLoaded>
+    <ZExternalLibrary Comment="Audio Data Arrays">
+      <Source>
+<![CDATA[// Audio data arrays for FL Studio integration
+float[] SpecBandArray;
+float[] AudioArray;
+float SongPositionInBeats;
+
+// Audio processing variables
+float bass, mid, high, amplitude, beat;]]>
+      </Source>
+    </ZExternalLibrary>
+    
+    <Array Name="SpecBandArray" Type="1" Dimensions="1" SizeDim1="32" Persistent="255"/>
+    <Array Name="AudioArray" Type="1" Dimensions="1" SizeDim1="32" Persistent="255"/>
+    <Variable Name="SongPositionInBeats" Type="1"/>
+    
+    <Array Name="Parameters" Type="1" Dimensions="1" SizeDim1="5" Persistent="1"/>
+    
+    <Constant Name="ParamHelpConst" Type="1">
+      <StringValue>Triangle Size (0.02-0.2)
+Edge Thickness (0.001-0.01)
+Edge Brightness (0.0-2.0)
+Color Variation (0.0-1.0)
+Displacement (0.0-0.3)</StringValue>
+    </Constant>
+    
+    <Variable Name="u_triangleSize"/>
+    <Variable Name="u_edgeThickness"/>
+    <Variable Name="u_edgeBrightness"/>
+    <Variable Name="u_colorVariation"/>
+    <Variable Name="u_displacement"/>
+    <Variable Name="iBeat"/>
+    <Variable Name="iBass"/>
+    <Variable Name="iMid"/>
+    <Variable Name="iHigh"/>
+    <Variable Name="iAmplitude"/>
+  </OnLoaded>
+  
+  <OnUpdate>
+    <ZExpression Comment="Process Audio">
+      <Expression>
+<![CDATA[bass = 0;
+for(int i=0; i<5; i++) bass += SpecBandArray[i];
+bass = bass / 5.0;
+
+mid = 0;
+for(int i=5; i<16; i++) mid += SpecBandArray[i];
+mid = mid / 11.0;
+
+high = 0;
+for(int i=16; i<32; i++) high += SpecBandArray[i];
+high = high / 16.0;
+
+amplitude = 0;
+for(int i=0; i<32; i++) amplitude += abs(AudioArray[i]);
+amplitude = amplitude / 32.0;
+
+beat = clamp(bass * 2.0 + amplitude * 0.5, 0, 1);
+
+u_triangleSize = 0.02 + Parameters[0] * 0.18;
+u_edgeThickness = 0.001 + Parameters[1] * 0.009;
+u_edgeBrightness = Parameters[2] * 2.0;
+u_colorVariation = Parameters[3];
+u_displacement = Parameters[4] * 0.3;
+
+iBeat = beat;
+iBass = bass;
+iMid = mid;
+iHigh = high;
+iAmplitude = amplitude;]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  
+  <OnRender>
+    <RenderSetColor Color="0 0 0 1"/>
+    <RenderClearScreen/>
+    <UseMaterial Material="TriangulationMaterial"/>
+    <RenderSprite/>
+  </OnRender>
+  
+  <Content>
+    <Material Name="TriangulationMaterial" Shading="1" Light="0" ZBuffer="0" Blend="1">
+      <Shader>
+        <VertexShaderSource>
+<![CDATA[void main() {
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+}]]>
+        </VertexShaderSource>
+        <FragmentShaderSource>
+<![CDATA[// Triangulation Shader - Low-poly triangulated rendering
+// Author: indrolend | License: MIT
+
+precision mediump float;
+
+uniform float iTime;
+uniform float iBeat, iBass, iMid, iHigh, iAmplitude;
+uniform float u_triangleSize, u_edgeThickness, u_edgeBrightness, u_colorVariation, u_displacement;
+
+float beatPulse(float beat, float attack, float decay) {
+    float t = fract(iTime * 2.0);
+    float envelope = t < attack ? t / attack : 1.0 - ((t - attack) / decay);
+    return beat * smoothstep(0.0, 1.0, envelope);
+}
+
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+vec2 hash2(vec2 p) {
+    return fract(sin(vec2(
+        dot(p, vec2(127.1, 311.7)),
+        dot(p, vec2(269.5, 183.3))
+    )) * 43758.5453);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float distanceToSegment(vec2 p, vec2 a, vec2 b) {
+    vec2 pa = p - a;
+    vec2 ba = b - a;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return length(pa - ba * h);
+}
+
+vec3 barycentric(vec2 p, vec2 a, vec2 b, vec2 c) {
+    vec2 v0 = b - a;
+    vec2 v1 = c - a;
+    vec2 v2 = p - a;
+    
+    float d00 = dot(v0, v0);
+    float d01 = dot(v0, v1);
+    float d11 = dot(v1, v1);
+    float d20 = dot(v2, v0);
+    float d21 = dot(v2, v1);
+    
+    float denom = d00 * d11 - d01 * d01;
+    if (abs(denom) < 0.0001) return vec3(-1.0);
+    
+    float v = (d11 * d20 - d01 * d21) / denom;
+    float w = (d00 * d21 - d01 * d20) / denom;
+    float u = 1.0 - v - w;
+    
+    return vec3(u, v, w);
+}
+
+bool isInsideTriangle(vec3 bary) {
+    return bary.x >= 0.0 && bary.y >= 0.0 && bary.z >= 0.0;
+}
+
+float getSpectrum(float freq) {
+    return iBass * (1.0 - freq) + iMid * freq + iHigh * freq * freq;
+}
+
+void main() {
+    vec2 iResolution = vec2(1920.0, 1080.0);
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+    
+    float beatIntensity = beatPulse(iBeat, 0.1, 0.9);
+    float triangleScale = u_triangleSize * (1.0 + iBass * 0.5);
+    float edgeMod = u_edgeBrightness * (1.0 + iHigh * 0.5);
+    
+    vec2 gridUV = uv / triangleScale;
+    vec2 gridCell = floor(gridUV);
+    vec2 localUV = fract(gridUV);
+    
+    float displacement = u_displacement * (0.5 + 0.5 * sin(iTime * 2.0)) * beatIntensity;
+    
+    vec2 v0 = vec2(0.0, 0.0);
+    vec2 v1 = vec2(1.0, 0.0);
+    vec2 v2 = vec2(0.0, 1.0);
+    vec2 v3 = vec2(1.0, 1.0);
+    
+    v0 += (hash2(gridCell + v0) - 0.5) * displacement;
+    v1 += (hash2(gridCell + v1) - 0.5) * displacement;
+    v2 += (hash2(gridCell + v2) - 0.5) * displacement;
+    v3 += (hash2(gridCell + v3) - 0.5) * displacement;
+    
+    bool inTopLeft = localUV.x + localUV.y < 1.0;
+    
+    vec2 a, b, c;
+    float triHash;
+    
+    if (inTopLeft) {
+        a = v0; b = v1; c = v2;
+        triHash = hash(gridCell);
+    } else {
+        a = v3; b = v2; c = v1;
+        triHash = hash(gridCell + vec2(0.5));
+    }
+    
+    vec3 bary = barycentric(localUV, a, b, c);
+    
+    vec3 color = vec3(0.5);
+    float alpha = 0.3;
+    
+    if (isInsideTriangle(bary)) {
+        float spectrumPos = fract(triHash + iTime * 0.1);
+        float spectrum = getSpectrum(spectrumPos);
+        
+        vec3 baseColor = vec3(uv.x, uv.y, 0.5 + 0.5 * sin(iTime * 0.5));
+        
+        vec3 triColor = vec3(
+            0.5 + 0.5 * sin(triHash * 6.28318530718),
+            0.5 + 0.5 * sin(triHash * 6.28318530718 + 2.094),
+            0.5 + 0.5 * sin(triHash * 6.28318530718 + 4.189)
+        );
+        
+        color = mix(baseColor, triColor, u_colorVariation);
+        color *= (0.7 + spectrum * 0.3);
+        color *= (0.8 + iMid * 0.2);
+        
+        float edgeDist = min(
+            min(distanceToSegment(localUV, a, b),
+                distanceToSegment(localUV, b, c)),
+            distanceToSegment(localUV, c, a)
+        );
+        
+        float edge = smoothstep(u_edgeThickness * 2.0, u_edgeThickness, edgeDist);
+        
+        color += vec3(edge * edgeMod);
+        color += vec3(edge * beatIntensity * 0.5);
+        
+        alpha = (0.85 + iAmplitude * 0.15);
+    }
+    
+    color.r += iBass * 0.1;
+    
+    gl_FragColor = vec4(clamp(color, 0.0, 1.0), alpha);
+}]]>
+        </FragmentShaderSource>
+      </Shader>
+    </Material>
+  </Content>
+</ZApplication>

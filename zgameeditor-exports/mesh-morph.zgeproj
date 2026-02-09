@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="MeshMorph" Caption="Mesh Morph - Audio Reactive" CameraPosition="0 0 10" ViewportRatio="3" CustomViewportRatio="1.7778" ScreenMode="0" FOV="90" TargetFrameRate="60" AndroidPackageName="com.zgameeditor.meshmorph">
+  <OnLoaded>
+    <ZExternalLibrary Comment="Audio Data Arrays">
+      <Source>
+<![CDATA[// Audio data arrays for FL Studio integration
+float[] SpecBandArray;
+float[] AudioArray;
+float SongPositionInBeats;
+
+// Audio processing variables
+float bass, mid, high, amplitude, beat;]]>
+      </Source>
+    </ZExternalLibrary>
+    
+    <Array Name="SpecBandArray" Type="1" Dimensions="1" SizeDim1="32" Persistent="255"/>
+    <Array Name="AudioArray" Type="1" Dimensions="1" SizeDim1="32" Persistent="255"/>
+    <Variable Name="SongPositionInBeats" Type="1"/>
+    
+    <Array Name="Parameters" Type="1" Dimensions="1" SizeDim1="5" Persistent="1"/>
+    
+    <Constant Name="ParamHelpConst" Type="1">
+      <StringValue>Grid Density (5-30)
+Deform Strength (0.0-0.5)
+Warp Intensity (0.0-0.3)
+Elasticity (0.5-1.0)
+Color Shift (0.0-1.0)</StringValue>
+    </Constant>
+    
+    <Variable Name="u_gridDensity"/>
+    <Variable Name="u_deformStrength"/>
+    <Variable Name="u_warpIntensity"/>
+    <Variable Name="u_elasticity"/>
+    <Variable Name="u_colorShift"/>
+    <Variable Name="iBeat"/>
+    <Variable Name="iBass"/>
+    <Variable Name="iMid"/>
+    <Variable Name="iHigh"/>
+    <Variable Name="iAmplitude"/>
+  </OnLoaded>
+  
+  <OnUpdate>
+    <ZExpression Comment="Process Audio">
+      <Expression>
+<![CDATA[bass = 0;
+for(int i=0; i<5; i++) bass += SpecBandArray[i];
+bass = bass / 5.0;
+
+mid = 0;
+for(int i=5; i<16; i++) mid += SpecBandArray[i];
+mid = mid / 11.0;
+
+high = 0;
+for(int i=16; i<32; i++) high += SpecBandArray[i];
+high = high / 16.0;
+
+amplitude = 0;
+for(int i=0; i<32; i++) amplitude += abs(AudioArray[i]);
+amplitude = amplitude / 32.0;
+
+beat = clamp(bass * 2.0 + amplitude * 0.5, 0, 1);
+
+u_gridDensity = 5.0 + Parameters[0] * 25.0;
+u_deformStrength = Parameters[1] * 0.5;
+u_warpIntensity = Parameters[2] * 0.3;
+u_elasticity = 0.5 + Parameters[3] * 0.5;
+u_colorShift = Parameters[4];
+
+iBeat = beat;
+iBass = bass;
+iMid = mid;
+iHigh = high;
+iAmplitude = amplitude;]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  
+  <OnRender>
+    <RenderSetColor Color="0 0 0 1"/>
+    <RenderClearScreen/>
+    <UseMaterial Material="MeshMaterial"/>
+    <RenderSprite/>
+  </OnRender>
+  
+  <Content>
+    <Material Name="MeshMaterial" Shading="1" Light="0" ZBuffer="0">
+      <Shader>
+        <VertexShaderSource>
+<![CDATA[void main() {
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+}]]>
+        </VertexShaderSource>
+        <FragmentShaderSource>
+<![CDATA[// Mesh Morph Shader
+// Elastic mesh deformation with texture warping and audio-reactive displacement
+// Author: indrolend | License: MIT
+
+precision mediump float;
+
+uniform float iTime;
+uniform float iBeat, iBass, iMid, iHigh, iAmplitude;
+uniform float u_gridDensity, u_deformStrength, u_warpIntensity, u_elasticity, u_colorShift;
+
+float beatPulse(float beat, float attack, float decay) {
+    float t = fract(iTime * 2.0);
+    float envelope = t < attack ? t / attack : 1.0 - ((t - attack) / decay);
+    return beat * smoothstep(0.0, 1.0, envelope);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    
+    float a = fract(sin(dot(i, vec2(127.1, 311.7))) * 43758.5453);
+    float b = fract(sin(dot(i + vec2(1.0, 0.0), vec2(127.1, 311.7))) * 43758.5453);
+    float c = fract(sin(dot(i + vec2(0.0, 1.0), vec2(127.1, 311.7))) * 43758.5453);
+    float d = fract(sin(dot(i + vec2(1.0, 1.0), vec2(127.1, 311.7))) * 43758.5453);
+    
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float fbm(vec2 p) {
+    float value = 0.0;
+    float amplitude = 0.5;
+    float frequency = 1.0;
+    
+    for (int i = 0; i < 4; i++) {
+        value += amplitude * noise(p * frequency);
+        frequency *= 2.0;
+        amplitude *= 0.5;
+    }
+    return value;
+}
+
+float getSpectrum(float freq) {
+    return iBass * (1.0 - freq) + iMid * freq + iHigh * freq * freq;
+}
+
+vec2 gridDisplacement(vec2 uv, float time, float strength) {
+    vec2 grid = floor(uv * u_gridDensity) / u_gridDensity;
+    float spectrum = getSpectrum(grid.x);
+    
+    return vec2(
+        sin(grid.y * 10.0 + time * 2.0) * strength * spectrum,
+        cos(grid.x * 10.0 + time * 2.0) * strength * spectrum
+    );
+}
+
+vec2 waveDeform(vec2 uv, float time, float intensity) {
+    return vec2(
+        sin(uv.x * 10.0 + time * 2.0) * intensity,
+        cos(uv.y * 10.0 + time * 1.5) * intensity
+    );
+}
+
+void main() {
+    vec2 iResolution = vec2(1920.0, 1080.0);
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+    
+    float beatIntensity = beatPulse(iBeat, 0.1, 0.9);
+    float deformMod = u_deformStrength * (1.0 + iBass * 0.5);
+    
+    vec2 displacement = vec2(0.0);
+    displacement += gridDisplacement(uv, iTime, deformMod * beatIntensity);
+    displacement += waveDeform(uv, iTime, u_warpIntensity * iMid);
+    
+    vec2 noiseOffset = vec2(
+        fbm(uv * 3.0 + iTime * 0.5),
+        fbm(uv * 3.0 + iTime * 0.5 + vec2(5.3, 2.7))
+    ) - 0.5;
+    displacement += noiseOffset * deformMod * iHigh;
+    displacement *= u_elasticity;
+    
+    vec2 warpedUV = clamp(uv + displacement, 0.0, 1.0);
+    
+    vec2 grid = fract(warpedUV * u_gridDensity);
+    float gridLine = step(0.95, max(grid.x, grid.y));
+    
+    vec3 color = vec3(warpedUV.x, warpedUV.y, 0.5);
+    
+    float hueShift = u_colorShift * iMid;
+    color = vec3(
+        color.r + sin(hueShift * 6.28318530718) * 0.3,
+        color.g + sin(hueShift * 6.28318530718 + 2.094) * 0.3,
+        color.b + sin(hueShift * 6.28318530718 + 4.189) * 0.3
+    );
+    
+    color = mix(color, vec3(1.0), gridLine * 0.3);
+    color.r += iBass * 0.2;
+    color += vec3(iHigh * 0.15);
+    color += vec3(beatIntensity * 0.2);
+    color *= (0.7 + iAmplitude * 0.3);
+    
+    float depth = length(displacement) * 5.0;
+    color *= (1.0 - depth * 0.3);
+    
+    vec2 vignetteUV = uv * 2.0 - 1.0;
+    float vignette = 1.0 - dot(vignetteUV, vignetteUV) * 0.3;
+    color *= vignette;
+    
+    gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+}]]>
+        </FragmentShaderSource>
+      </Shader>
+    </Material>
+  </Content>
+</ZApplication>
