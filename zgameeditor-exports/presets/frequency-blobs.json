@@ -1,0 +1,68 @@
+{
+  "name": "Frequency Reactive Blobs",
+  "shader": "blob-metaballs.frag",
+  "description": "Organic blob shapes that morph and blend based on different frequency bands",
+  "parameters": {
+    "u_blobCount": {
+      "value": 5,
+      "audioMap": "mid",
+      "range": [2, 10],
+      "description": "Number of independent blob sources"
+    },
+    "u_threshold": {
+      "value": 1.0,
+      "audioMap": "beat",
+      "range": [0.5, 2.0],
+      "description": "Metaball threshold for surface generation"
+    },
+    "u_influenceRadius": {
+      "value": 0.25,
+      "audioMap": "bass",
+      "range": [0.1, 0.4],
+      "description": "Radius of blob influence"
+    },
+    "u_surfaceTension": {
+      "value": 0.5,
+      "audioMap": null,
+      "range": [0.0, 1.0],
+      "description": "Surface smoothness factor"
+    },
+    "u_edgeSoftness": {
+      "value": 0.15,
+      "audioMap": "high",
+      "range": [0.05, 0.3],
+      "description": "Edge fade amount"
+    }
+  },
+  "audioMapping": {
+    "iBeat": {
+      "source": "beat_detector",
+      "attack": 0.1,
+      "decay": 0.9
+    },
+    "iBass": {
+      "source": "frequency_band",
+      "frequencyRange": [20, 250],
+      "smoothing": 0.85
+    },
+    "iMid": {
+      "source": "frequency_band",
+      "frequencyRange": [250, 4000],
+      "smoothing": 0.75
+    },
+    "iHigh": {
+      "source": "frequency_band",
+      "frequencyRange": [4000, 20000],
+      "smoothing": 0.65
+    },
+    "iAmplitude": {
+      "source": "rms_level",
+      "smoothing": 0.85
+    }
+  },
+  "recommended": {
+    "genre": ["Ambient", "Chillout", "Downtempo", "Experimental"],
+    "bpm": [80, 140],
+    "notes": "Creates smooth, organic visuals that work well with atmospheric music"
+  }
+}

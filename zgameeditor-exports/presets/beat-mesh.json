@@ -1,0 +1,68 @@
+{
+  "name": "Beat Reactive Mesh Morph",
+  "shader": "mesh-morph.frag",
+  "description": "Elastic mesh with grid-based deformation that pulses and warps to the beat",
+  "parameters": {
+    "u_gridDensity": {
+      "value": 15,
+      "audioMap": "mid",
+      "range": [5, 30],
+      "description": "Mesh grid density (vertices per unit)"
+    },
+    "u_deformStrength": {
+      "value": 0.2,
+      "audioMap": "beat",
+      "range": [0.0, 0.5],
+      "description": "Overall deformation intensity"
+    },
+    "u_warpIntensity": {
+      "value": 0.15,
+      "audioMap": "bass",
+      "range": [0.0, 0.3],
+      "description": "Texture coordinate warping amount"
+    },
+    "u_elasticity": {
+      "value": 0.8,
+      "audioMap": null,
+      "range": [0.5, 1.0],
+      "description": "Mesh elasticity/springiness"
+    },
+    "u_colorShift": {
+      "value": 0.5,
+      "audioMap": "high",
+      "range": [0.0, 1.0],
+      "description": "Color shift based on audio"
+    }
+  },
+  "audioMapping": {
+    "iBeat": {
+      "source": "beat_detector",
+      "attack": 0.05,
+      "decay": 0.95
+    },
+    "iBass": {
+      "source": "frequency_band",
+      "frequencyRange": [20, 250],
+      "smoothing": 0.8
+    },
+    "iMid": {
+      "source": "frequency_band",
+      "frequencyRange": [250, 4000],
+      "smoothing": 0.7
+    },
+    "iHigh": {
+      "source": "frequency_band",
+      "frequencyRange": [4000, 20000],
+      "smoothing": 0.6
+    },
+    "iAmplitude": {
+      "source": "rms_level",
+      "smoothing": 0.85
+    }
+  },
+  "recommended": {
+    "genre": ["House", "Techno", "Trance", "Progressive"],
+    "bpm": [120, 160],
+    "notes": "Strong rhythmic pulses create hypnotic mesh deformations"
+  }
+}
