@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="ParticleExplosion" Caption="Particle Explosion - Audio Reactive" CameraPosition="0 0 10" ViewportRatio="3" CustomViewportRatio="1.7778" ScreenMode="0" FOV="90" TargetFrameRate="60" AndroidPackageName="com.zgameeditor.particleexplosion">
+  <OnLoaded>
+    <ZExternalLibrary Comment="Audio Data Arrays">
+      <Source>
+<![CDATA[// Audio data arrays for FL Studio integration
+float[] SpecBandArray;  // Frequency spectrum (32 bands)
+float[] AudioArray;     // Raw audio waveform (32 samples)
+float SongPositionInBeats;
+
+// Audio processing variables
+float bass, mid, high, amplitude, beat;]]>
+      </Source>
+    </ZExternalLibrary>
+    
+    <!-- Audio spectrum array (32 bands) -->
+    <Array Name="SpecBandArray" Type="1" Dimensions="1" SizeDim1="32" Persistent="255"/>
+    
+    <!-- Raw audio array (32 samples) -->
+    <Array Name="AudioArray" Type="1" Dimensions="1" SizeDim1="32" Persistent="255"/>
+    
+    <!-- Song position in beats -->
+    <Variable Name="SongPositionInBeats" Type="1"/>
+    
+    <!-- User parameters (exposed to FL Studio) -->
+    <Array Name="Parameters" Type="1" Dimensions="1" SizeDim1="6" Persistent="1"/>
+    
+    <!-- Parameter help text -->
+    <Constant Name="ParamHelpConst" Type="1">
+      <StringValue>Particle Density (20-100)
+Explosion Radius (0.3-0.8)
+Particle Size (1.0-8.0)
+Color Red (0.0-1.0)
+Color Green (0.0-1.0)
+Color Blue (0.0-1.0)</StringValue>
+    </Constant>
+    
+    <!-- Shader uniforms -->
+    <Variable Name="u_particleDensity"/>
+    <Variable Name="u_explosionRadius"/>
+    <Variable Name="u_particleSize"/>
+    <Variable Name="u_colorR"/>
+    <Variable Name="u_colorG"/>
+    <Variable Name="u_colorB"/>
+    <Variable Name="iBeat"/>
+    <Variable Name="iBass"/>
+    <Variable Name="iMid"/>
+    <Variable Name="iHigh"/>
+    <Variable Name="iAmplitude"/>
+  </OnLoaded>
+  
+  <OnUpdate>
+    <ZExpression Comment="Process Audio">
+      <Expression>
+<![CDATA[// Extract frequency bands from spectrum
+bass = 0;
+for(int i=0; i<5; i++) {
+  bass += SpecBandArray[i];
+}
+bass = bass / 5.0;
+
+mid = 0;
+for(int i=5; i<16; i++) {
+  mid += SpecBandArray[i];
+}
+mid = mid / 11.0;
+
+high = 0;
+for(int i=16; i<32; i++) {
+  high += SpecBandArray[i];
+}
+high = high / 16.0;
+
+// Calculate amplitude from audio array
+amplitude = 0;
+for(int i=0; i<32; i++) {
+  amplitude += abs(AudioArray[i]);
+}
+amplitude = amplitude / 32.0;
+
+// Beat detection (bass energy + amplitude spike)
+beat = clamp(bass * 2.0 + amplitude * 0.5, 0, 1);
+
+// Map parameters from 0-1 range to actual ranges
+u_particleDensity = 20.0 + Parameters[0] * 80.0;        // 20-100
+u_explosionRadius = 0.3 + Parameters[1] * 0.5;          // 0.3-0.8
+u_particleSize = 1.0 + Parameters[2] * 7.0;             // 1.0-8.0
+u_colorR = Parameters[3];                                // 0.0-1.0
+u_colorG = Parameters[4];                                // 0.0-1.0
+u_colorB = Parameters[5];                                // 0.0-1.0
+
+// Pass audio data to shader
+iBeat = beat;
+iBass = bass;
+iMid = mid;
+iHigh = high;
+iAmplitude = amplitude;]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  
+  <OnRender>
+    <RenderSetColor Color="0 0 0 1"/>
+    <RenderClearScreen/>
+    
+    <UseMaterial Material="ParticleMaterial"/>
+    <RenderSprite/>
+  </OnRender>
+  
+  <Content>
+    <!-- Material with particle explosion shader -->
+    <Material Name="ParticleMaterial" Shading="1" Light="0" ZBuffer="0">
+      <Textures>
+      </Textures>
+      <Shader>
+        <VertexShaderSource>
+<![CDATA[// Vertex Shader - Pass through
+void main() {
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+}]]>
+        </VertexShaderSource>
+        <FragmentShaderSource>
+<![CDATA[// Particle Explosion Shader
+// Audio-reactive particle explosion effect with circular soft-edged particles
+// Audio Reactivity: Particle size (bass), explosion intensity (beat), density (mid), colors (frequency bands)
+// Author: indrolend
+// License: MIT
+
+precision mediump float;
+
+// === INPUTS ===
+uniform vec2 iResolution;      // Canvas resolution
+uniform float iTime;           // Time in seconds
+uniform float iBeat;           // Beat detection (0-1)
+uniform float iBass;           // Bass frequency (0-1)
+uniform float iMid;            // Mid frequency (0-1)
+uniform float iHigh;           // High frequency (0-1)
+uniform float iAmplitude;      // Overall amplitude (0-1)
+
+// === USER PARAMETERS ===
+uniform float u_particleDensity;   // Number of particles, range: [20, 100]
+uniform float u_explosionRadius;   // Explosion radius, range: [0.3, 0.8]
+uniform float u_particleSize;      // Particle size, range: [1.0, 8.0]
+uniform float u_colorR;            // Red channel intensity, range: [0.0, 1.0]
+uniform float u_colorG;            // Green channel intensity, range: [0.0, 1.0]
+uniform float u_colorB;            // Blue channel intensity, range: [0.0, 1.0]
+
+// === HELPER FUNCTIONS ===
+
+// Smooth beat detection with attack/decay
+float beatPulse(float beat, float attack, float decay) {
+    float t = fract(iTime * 2.0); // Pulse timing
+    float envelope = t < attack ? t / attack : 1.0 - ((t - attack) / decay);
+    return beat * smoothstep(0.0, 1.0, envelope);
+}
+
+// Map frequency band to visual parameter
+float freqMap(float freq, float minVal, float maxVal) {
+    return minVal + freq * (maxVal - minVal);
+}
+
+// Hash function for pseudo-random values
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+// 2D rotation matrix
+mat2 rotate2D(float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return mat2(c, -s, s, c);
+}
+
+// === MAIN EFFECT ===
+void main() {
+    vec2 iResolution = vec2(1920.0, 1080.0); // Default resolution
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+    vec2 center = vec2(0.5, 0.5);
+    
+    // Normalize coordinates to maintain aspect ratio
+    vec2 aspectUV = uv - center;
+    aspectUV.x *= iResolution.x / iResolution.y;
+    
+    vec3 color = vec3(0.0);
+    float totalAlpha = 0.0;
+    
+    // Beat-reactive explosion intensity
+    float beatIntensity = beatPulse(iBeat, 0.1, 0.9);
+    float explosionScale = u_explosionRadius * (1.0 + beatIntensity * 0.5);
+    
+    // Bass-reactive particle size
+    float particleSizeMod = u_particleSize * (1.0 + iBass * 0.5);
+    float particleRadius = particleSizeMod / iResolution.y;
+    
+    // Mid-frequency controlled particle density
+    float densityMod = u_particleDensity * (1.0 + iMid * 0.3);
+    int particleCount = int(densityMod);
+    
+    // Render particles
+    for (int i = 0; i < 100; i++) {
+        if (i >= particleCount) break;
+        
+        float iFloat = float(i);
+        float t = iFloat / float(particleCount);
+        
+        // Pseudo-random angle for each particle
+        float angle = t * 6.28318530718 * 5.0 + hash(vec2(iFloat, 0.0)) * 6.28318530718;
+        
+        // Time-based rotation
+        float rotationSpeed = 0.5 + hash(vec2(iFloat, 1.0)) * 0.5;
+        angle += iTime * rotationSpeed;
+        
+        // Spiral motion
+        float spiral = 1.0 + sin(iTime * 0.5 + iFloat * 0.1) * 0.1;
+        float distance = explosionScale * spiral;
+        
+        // Calculate particle position
+        vec2 particlePos = vec2(cos(angle), sin(angle)) * distance;
+        
+        // Distance from current pixel to particle
+        float dist = length(aspectUV - particlePos);
+        
+        // Soft circular particle
+        float particleAlpha = smoothstep(particleRadius, particleRadius * 0.5, dist);
+        
+        // Color based on position and frequency
+        float colorPhase = t + iTime * 0.2;
+        vec3 particleColor = vec3(
+            u_colorR * (0.5 + 0.5 * sin(colorPhase)),
+            u_colorG * (0.5 + 0.5 * sin(colorPhase + 2.0)),
+            u_colorB * (0.5 + 0.5 * sin(colorPhase + 4.0))
+        );
+        
+        // High frequency shimmer
+        particleColor *= (1.0 + iHigh * 0.3);
+        
+        // Add particle to scene with additive blending
+        color += particleColor * particleAlpha;
+        totalAlpha += particleAlpha;
+    }
+    
+    // Normalize brightness
+    if (totalAlpha > 0.0) {
+        color = color / (1.0 + totalAlpha * 0.1);
+    }
+    
+    // Add glow based on amplitude
+    color += vec3(iAmplitude * 0.1);
+    
+    gl_FragColor = vec4(color, 1.0);
+}]]>
+        </FragmentShaderSource>
+      </Shader>
+    </Material>
+  </Content>
+</ZApplication>

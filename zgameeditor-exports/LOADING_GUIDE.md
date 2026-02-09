@@ -2,17 +2,22 @@
 
 Step-by-step instructions for loading and using the WebGL Particle Engine shaders in FL Studio.
 
+## Quick Start
+
+**New!** Pre-made `.zgeproj` files are now available for immediate use in FL Studio. See the [Installation Guide](INSTALLATION.md) for the fastest way to get started!
+
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
 2. [Installing ZGameEditor Visualizer](#installing-zgameeditor-visualizer)
-3. [Loading Shader Files](#loading-shader-files)
-4. [Mapping Audio Inputs](#mapping-audio-inputs)
-5. [Using Presets](#using-presets)
-6. [Customizing Parameters](#customizing-parameters)
-7. [Performance Optimization](#performance-optimization)
-8. [Troubleshooting](#troubleshooting)
-9. [Advanced Tips](#advanced-tips)
+3. [Using Pre-Made .zgeproj Files](#using-pre-made-zgeproj-files) ⭐ **NEW & RECOMMENDED**
+4. [Loading Shader Files (Advanced)](#loading-shader-files-advanced)
+5. [Mapping Audio Inputs](#mapping-audio-inputs)
+6. [Using Presets](#using-presets)
+7. [Customizing Parameters](#customizing-parameters)
+8. [Performance Optimization](#performance-optimization)
+9. [Troubleshooting](#troubleshooting)
+10. [Advanced Tips](#advanced-tips)
 
 ---
 
@@ -56,9 +61,77 @@ Launch FL Studio and create a new project or open an existing one.
 
 ---
 
-## Loading Shader Files
+## Using Pre-Made .zgeproj Files
 
-### Method 1: Direct GLSL Import
+⭐ **RECOMMENDED METHOD** - The easiest way to use these visualizers!
+
+Complete `.zgeproj` files are now available with all audio processing, parameters, and shaders pre-configured. This is the recommended method for most users.
+
+### Quick Start
+
+1. **Copy .zgeproj Files**
+   - Download all 6 `.zgeproj` files from the `zgameeditor-exports/` directory
+   - Copy them to your ZGameEditor Visualizer effects folder
+   - See [INSTALLATION.md](INSTALLATION.md) for detailed folder locations
+
+2. **Load in FL Studio**
+   - Open ZGameEditor Visualizer plugin
+   - Click the **folder icon** or **Load** button
+   - Browse to your `.zgeproj` files
+   - Select one and click **Open**
+
+3. **Start Visualizing**
+   - The visualizer immediately starts with audio reactivity
+   - All parameters are pre-configured and exposed to FL Studio
+   - Adjust sliders on the right side to customize
+   - No manual setup required!
+
+### Available .zgeproj Files
+
+All files include:
+- ✅ Complete audio processing (bass, mid, high, beat detection)
+- ✅ Pre-configured parameters exposed to FL Studio
+- ✅ Optimized shaders adapted for ZGameEditor
+- ✅ Ready-to-use with any audio source
+
+Files:
+1. `particle-explosion.zgeproj` - Explosive particle effects
+2. `blob-metaballs.zgeproj` - Organic blob shapes
+3. `mesh-morph.zgeproj` - Elastic mesh deformation
+4. `triangulation.zgeproj` - Low-poly triangulated rendering
+5. `hybrid-transition.zgeproj` - Multi-phase particle transitions
+6. `audio-spectrum-visualizer.zgeproj` - Classic spectrum analyzer
+
+### Parameter Controls
+
+Each `.zgeproj` file exposes 5-6 parameters that can be controlled directly from FL Studio:
+- Parameters appear as sliders in the ZGameEditor Visualizer window
+- All values are automatically mapped to appropriate ranges
+- Changes are reflected in real-time
+- Can be automated using FL Studio automation clips
+
+---
+
+## Loading Shader Files (Advanced)
+
+**Note:** This method is for advanced users who want to manually set up shaders. For most users, we recommend using the pre-made `.zgeproj` files above.
+
+### Method 1: Using .zgeproj Files (Easiest)
+
+See the section above "Using Pre-Made .zgeproj Files" for the recommended approach.
+
+### Method 2: Manual GLSL Import (Advanced)
+
+⚠️ **Warning:** This method requires manual configuration of audio arrays, parameters, and shader uniforms. It's significantly more complex than using the pre-made `.zgeproj` files.
+
+**Important Limitations:**
+- Raw `.frag` files cannot be directly loaded into ZGameEditor Visualizer
+- They must be embedded in a complete `.zgeproj` XML structure
+- Audio processing logic must be manually implemented
+- Parameter bindings must be configured
+- This approach is only recommended for developers or advanced users
+
+If you still want to proceed with manual import:
 
 1. **Open ZGameEditor Visualizer**
    - The plugin window should be open
@@ -67,46 +140,31 @@ Launch FL Studio and create a new project or open an existing one.
    - Click the **Edit** button (or press F9 in the plugin window)
    - This opens the ZGameEditor IDE
 
-3. **Create New Shader Object**
-   - In the left panel, find the project tree
-   - Right-click on the root or appropriate node
-   - Select **Add** > **Shader**
+3. **Create Complete Project Structure**
+   - You need to manually create:
+     - `SpecBandArray` and `AudioArray` for audio data
+     - ZExpression components for audio processing
+     - Parameter arrays and help constants
+     - Material and Shader components
+     - OnUpdate and OnRender logic
 
 4. **Import Fragment Shader**
    - In the shader properties, find **FragmentShaderSource**
-   - Click the **...** button or paste code directly
    - Copy the entire contents of your `.frag` file
+   - **Modify the shader** to remove `iChannel0` references (not supported)
    - Paste into the shader source editor
 
-5. **Configure Shader**
-   - Set **PixelFormat** to `GL_RGBA`
-   - Set **Precision** to `mediump`
-   - Enable **UseBuiltInShader** if using standard vertex shader
+5. **Configure Audio Processing**
+   - Add ZExpression to extract bass, mid, high frequencies
+   - Implement beat detection logic
+   - Map parameter arrays to shader uniforms
 
 6. **Save and Test**
    - Click **Compile** to check for errors
-   - Save your project
-   - Return to the main plugin window
+   - Save your project as `.zgeproj`
+   - Test with audio to verify reactivity
 
-### Method 2: Using ZGE Project Files
-
-If you prefer working with complete ZGE project files:
-
-1. **Create Base Project**
-   - In ZGameEditor, create a new project
-   - Add necessary render targets and states
-
-2. **Add Shader Code**
-   - Follow the GLSL import steps above
-
-3. **Save as .zge File**
-   - File > Save As
-   - Save to: `Documents/FL Studio/ZGameEditor Shaders/`
-
-4. **Load in FL Studio**
-   - In ZGameEditor Visualizer, click **Load**
-   - Browse to your saved .zge file
-   - Click **Open**
+**Recommendation:** Instead of following these complex steps, use the pre-made `.zgeproj` files which have all of this done for you!
 
 ---
 
@@ -169,9 +227,20 @@ ZGameEditor provides these automatic variables:
      - `iMid` ← `AudioMid`
      - `iHigh` ← `AudioHigh`
 
-### Step 4: Audio Spectrum Texture
+### Step 4: Audio Spectrum Data
 
-For `iChannel0` (spectrum texture):
+**Important:** The pre-made `.zgeproj` files handle audio data through arrays (`SpecBandArray`, `AudioArray`) instead of textures. This section is only relevant for advanced manual implementations.
+
+For manual implementations, the original `.frag` shaders use `iChannel0` (spectrum texture), but ZGameEditor uses arrays instead:
+
+**In .zgeproj files (recommended):**
+- Audio data comes from `SpecBandArray[32]` - frequency spectrum
+- Waveform data comes from `AudioArray[32]` - raw audio samples
+- These are automatically provided by FL Studio
+- No texture sampling needed
+
+**For reference only - spectrum texture approach:**
+If you were manually implementing texture-based spectrum (not recommended):
 
 1. **Create Audio Texture**
    - Add a **Bitmap** resource
@@ -184,6 +253,8 @@ For `iChannel0` (spectrum texture):
      uniform sampler2D iChannel0;
      ```
    - In ZGameEditor, bind the audio bitmap to texture unit 0
+
+**Note:** Our pre-made `.zgeproj` files use array-based audio processing which is more efficient and reliable in ZGameEditor.
 
 ### Example Audio Mapping Code
 

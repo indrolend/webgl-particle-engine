@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="HybridTransition" Caption="Hybrid Transition - Audio Reactive" CameraPosition="0 0 10" ViewportRatio="3" CustomViewportRatio="1.7778" ScreenMode="0" FOV="90" TargetFrameRate="60" AndroidPackageName="com.zgameeditor.hybridtransition">
+  <OnLoaded>
+    <ZExternalLibrary Comment="Audio Data Arrays">
+      <Source>
+<![CDATA[// Audio data arrays for FL Studio integration
+float[] SpecBandArray;
+float[] AudioArray;
+float SongPositionInBeats;
+
+// Audio processing variables
+float bass, mid, high, amplitude, beat;]]>
+      </Source>
+    </ZExternalLibrary>
+    
+    <Array Name="SpecBandArray" Type="1" Dimensions="1" SizeDim1="32" Persistent="255"/>
+    <Array Name="AudioArray" Type="1" Dimensions="1" SizeDim1="32" Persistent="255"/>
+    <Variable Name="SongPositionInBeats" Type="1"/>
+    
+    <Array Name="Parameters" Type="1" Dimensions="1" SizeDim1="5" Persistent="1"/>
+    
+    <Constant Name="ParamHelpConst" Type="1">
+      <StringValue>Transition Phase (0.0-4.0)
+Particle Count (50-200)
+Explosion Radius (0.2-0.8)
+Color Blend (0.0-1.0)
+Turbulence (0.0-0.5)</StringValue>
+    </Constant>
+    
+    <Variable Name="u_transitionPhase"/>
+    <Variable Name="u_particleCount"/>
+    <Variable Name="u_explosionRadius"/>
+    <Variable Name="u_colorBlend"/>
+    <Variable Name="u_turbulence"/>
+    <Variable Name="iBeat"/>
+    <Variable Name="iBass"/>
+    <Variable Name="iMid"/>
+    <Variable Name="iHigh"/>
+    <Variable Name="iAmplitude"/>
+  </OnLoaded>
+  
+  <OnUpdate>
+    <ZExpression Comment="Process Audio">
+      <Expression>
+<![CDATA[bass = 0;
+for(int i=0; i<5; i++) bass += SpecBandArray[i];
+bass = bass / 5.0;
+
+mid = 0;
+for(int i=5; i<16; i++) mid += SpecBandArray[i];
+mid = mid / 11.0;
+
+high = 0;
+for(int i=16; i<32; i++) high += SpecBandArray[i];
+high = high / 16.0;
+
+amplitude = 0;
+for(int i=0; i<32; i++) amplitude += abs(AudioArray[i]);
+amplitude = amplitude / 32.0;
+
+beat = clamp(bass * 2.0 + amplitude * 0.5, 0, 1);
+
+u_transitionPhase = Parameters[0] * 4.0;
+u_particleCount = 50.0 + Parameters[1] * 150.0;
+u_explosionRadius = 0.2 + Parameters[2] * 0.6;
+u_colorBlend = Parameters[3];
+u_turbulence = Parameters[4] * 0.5;
+
+iBeat = beat;
+iBass = bass;
+iMid = mid;
+iHigh = high;
+iAmplitude = amplitude;]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  
+  <OnRender>
+    <RenderSetColor Color="0 0 0 1"/>
+    <RenderClearScreen/>
+    <UseMaterial Material="HybridMaterial"/>
+    <RenderSprite/>
+  </OnRender>
+  
+  <Content>
+    <Material Name="HybridMaterial" Shading="1" Light="0" ZBuffer="0" Blend="1">
+      <Shader>
+        <VertexShaderSource>
+<![CDATA[void main() {
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+}]]>
+        </VertexShaderSource>
+        <FragmentShaderSource>
+<![CDATA[// Hybrid Transition Shader - Multi-phase particle-to-image transition
+// Author: indrolend | License: MIT
+
+precision mediump float;
+
+uniform float iTime;
+uniform float iBeat, iBass, iMid, iHigh, iAmplitude;
+uniform float u_transitionPhase, u_particleCount, u_explosionRadius, u_colorBlend, u_turbulence;
+
+float beatPulse(float beat, float attack, float decay) {
+    float t = fract(iTime * 2.0);
+    float envelope = t < attack ? t / attack : 1.0 - ((t - attack) / decay);
+    return beat * smoothstep(0.0, 1.0, envelope);
+}
+
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+vec2 hash2(vec2 p) {
+    return fract(sin(vec2(
+        dot(p, vec2(127.1, 311.7)),
+        dot(p, vec2(269.5, 183.3))
+    )) * 43758.5453);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+vec2 flowField(vec2 p, float time) {
+    float n1 = noise(p * 2.0 + time);
+    float n2 = noise(p * 2.0 + time + vec2(5.2, 1.3));
+    return vec2(n1, n2) * 2.0 - 1.0;
+}
+
+float getSpectrum(float freq) {
+    return iBass * (1.0 - freq) + iMid * freq + iHigh * freq * freq;
+}
+
+void main() {
+    vec2 iResolution = vec2(1920.0, 1080.0);
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+    vec2 center = vec2(0.5, 0.5);
+    
+    vec2 aspectUV = uv - center;
+    aspectUV.x *= iResolution.x / iResolution.y;
+    
+    float beatIntensity = beatPulse(iBeat, 0.1, 0.9);
+    
+    // Beat triggers disintegration
+    float disintegrationMod = beatIntensity * iBeat;
+    
+    // Bass controls recombination
+    float recombinationMod = iBass;
+    
+    // Mid controls phase timing
+    float phaseMod = u_transitionPhase + iMid * 0.5;
+    
+    // Calculate current phase
+    float phase = mod(phaseMod, 4.0);
+    
+    vec3 color = vec3(0.0);
+    float totalAlpha = 0.0;
+    
+    int particleCount = int(u_particleCount);
+    
+    for (int i = 0; i < 200; i++) {
+        if (i >= particleCount) break;
+        
+        float iFloat = float(i);
+        float t = iFloat / float(particleCount);
+        
+        // Particle home position
+        vec2 homePos = (hash2(vec2(iFloat, 0.0)) - 0.5) * 2.0;
+        
+        // Transition animation
+        vec2 particlePos = vec2(0.0);
+        float particleAlpha = 1.0;
+        
+        if (phase < 1.0) {
+            // Phase 0-1: Solid to disintegrate
+            float progress = phase;
+            vec2 explodeDir = normalize(homePos + vec2(0.001));
+            particlePos = mix(homePos, explodeDir * u_explosionRadius * (1.0 + disintegrationMod), progress);
+            particleAlpha = 1.0 - progress * 0.5;
+        }
+        else if (phase < 2.0) {
+            // Phase 1-2: Floating particles
+            float progress = phase - 1.0;
+            vec2 explodeDir = normalize(homePos + vec2(0.001));
+            vec2 basePos = explodeDir * u_explosionRadius;
+            
+            // Add turbulence
+            vec2 turbulence = flowField(homePos + iTime * 0.3, iTime) * u_turbulence;
+            particlePos = basePos + turbulence + vec2(
+                sin(iTime + iFloat * 0.1) * 0.1,
+                cos(iTime + iFloat * 0.1) * 0.1
+            );
+            particleAlpha = 0.5 + 0.5 * sin(iTime + iFloat);
+        }
+        else if (phase < 3.0) {
+            // Phase 2-3: Recombine
+            float progress = phase - 2.0;
+            vec2 explodeDir = normalize(homePos + vec2(0.001));
+            vec2 floatPos = explodeDir * u_explosionRadius + flowField(homePos, iTime) * u_turbulence;
+            particlePos = mix(floatPos, homePos * (1.0 - recombinationMod * 0.3), progress);
+            particleAlpha = 0.5 + progress * 0.5;
+        }
+        else {
+            // Phase 3-4: Solid form
+            float progress = phase - 3.0;
+            particlePos = homePos * (1.0 - progress * 0.1);
+            particleAlpha = 1.0;
+        }
+        
+        // Distance from pixel to particle
+        float dist = length(aspectUV - particlePos);
+        
+        // Particle size based on spectrum
+        float spectrum = getSpectrum(t);
+        float particleSize = 0.015 * (1.0 + spectrum * 0.5);
+        
+        // Soft particle
+        float particle = smoothstep(particleSize, particleSize * 0.3, dist);
+        
+        // Color based on position
+        vec3 particleColor = vec3(
+            0.5 + 0.5 * sin(t * 6.28318530718 + u_colorBlend),
+            0.5 + 0.5 * sin(t * 6.28318530718 + 2.094 + u_colorBlend),
+            0.5 + 0.5 * sin(t * 6.28318530718 + 4.189 + u_colorBlend)
+        );
+        
+        // Audio modulation
+        particleColor *= (1.0 + iHigh * 0.3);
+        
+        color += particleColor * particle * particleAlpha;
+        totalAlpha += particle * particleAlpha;
+    }
+    
+    // Normalize
+    if (totalAlpha > 0.0) {
+        color = color / (1.0 + totalAlpha * 0.1);
+    }
+    
+    // Add glow
+    color += vec3(iAmplitude * 0.1);
+    
+    gl_FragColor = vec4(clamp(color, 0.0, 1.0), min(totalAlpha, 1.0));
+}]]>
+        </FragmentShaderSource>
+      </Shader>
+    </Material>
+  </Content>
+</ZApplication>
