@@ -1,0 +1,74 @@
+{
+  "name": "Bass Reactive Particle Explosion",
+  "shader": "particle-explosion.frag",
+  "description": "Explosive particle system that reacts strongly to bass frequencies and beats",
+  "parameters": {
+    "u_particleDensity": {
+      "value": 50,
+      "audioMap": "bass",
+      "range": [20, 100],
+      "description": "Number of particles in the explosion"
+    },
+    "u_explosionRadius": {
+      "value": 0.5,
+      "audioMap": "beat",
+      "range": [0.3, 0.8],
+      "description": "Radius of particle spread"
+    },
+    "u_particleSize": {
+      "value": 3.0,
+      "audioMap": "amplitude",
+      "range": [1.0, 8.0],
+      "description": "Size of individual particles"
+    },
+    "u_colorR": {
+      "value": 1.0,
+      "audioMap": "high",
+      "range": [0.0, 1.0],
+      "description": "Red channel intensity"
+    },
+    "u_colorG": {
+      "value": 0.5,
+      "audioMap": "mid",
+      "range": [0.0, 1.0],
+      "description": "Green channel intensity"
+    },
+    "u_colorB": {
+      "value": 0.2,
+      "audioMap": "bass",
+      "range": [0.0, 1.0],
+      "description": "Blue channel intensity"
+    }
+  },
+  "audioMapping": {
+    "iBeat": {
+      "source": "beat_detector",
+      "attack": 0.1,
+      "decay": 0.9
+    },
+    "iBass": {
+      "source": "frequency_band",
+      "frequencyRange": [20, 250],
+      "smoothing": 0.8
+    },
+    "iMid": {
+      "source": "frequency_band",
+      "frequencyRange": [250, 4000],
+      "smoothing": 0.7
+    },
+    "iHigh": {
+      "source": "frequency_band",
+      "frequencyRange": [4000, 20000],
+      "smoothing": 0.6
+    },
+    "iAmplitude": {
+      "source": "rms_level",
+      "smoothing": 0.85
+    }
+  },
+  "recommended": {
+    "genre": ["EDM", "Bass Music", "Trap", "Dubstep"],
+    "bpm": [120, 180],
+    "notes": "Works best with music that has strong kick drums and bass lines"
+  }
+}
